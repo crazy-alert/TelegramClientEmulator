@@ -18,6 +18,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
+// Буферизация вывода — перехватывает warning'и встроенного сервера
+// (дублирует php.ini на случай, если конфиг не загрузился)
+ini_set('output_buffering', '4096');
+
 use App\Application;
 
 require dirname(__DIR__) . '/src/Application.php';
