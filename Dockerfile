@@ -5,8 +5,8 @@ RUN apk add --no-cache sqlite-dev \
 
 WORKDIR /app
 
-# Копируем php.ini до запуска приложения
-COPY php.ini /usr/local/etc/php/conf.d/emulator.ini
+# Копируем php.ini как основной конфиг (перезаписывает стандартный)
+COPY php.ini /usr/local/etc/php/php.ini
 
 ENV APP_HOST=0.0.0.0
 ENV APP_PORT=8080
