@@ -11,6 +11,9 @@ final readonly class Application {
     private Database $database;
     private BotRepository $bots;
     private ProfileRepository $profiles;
+    private MessageRepository $messages;
+    private UpdateRepository $updates;
+    private UpdateGenerator $updateGenerator;
     private View $view;
 
     public function __construct(
@@ -20,6 +23,9 @@ final readonly class Application {
         $this->database = new Database($this->dataDir);
         $this->bots = new BotRepository($this->database->pdo());
         $this->profiles = new ProfileRepository($this->database->pdo());
+        $this->messages = new MessageRepository($this->database->pdo());
+        $this->updates = new UpdateRepository($this->database->pdo());
+        $this->updateGenerator = new UpdateGenerator();
         $this->view = new View($this->rootPath . '/templates');
     }
 
@@ -36,7 +42,75 @@ final readonly class Application {
         }
     }
 
+    /**
+     * Возвращает активный профиль из cookie или null, если не выбран.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function activeProfile(): ?array {
+        $id = isset($_COOKIE['active_profile_id']) ? (int) $_COOKIE['active_profile_id'] : 0;
+
+        if ($id <= 0) {
+            return null;
+        }
+
+        $profile = $this->profiles->find($id);
+
+        if ($profile === null || ((int) $profile['enabled']) !== 1) {
+            return null;
+        }
+
+        return $profile;
+    }
+
+    /**
+     * Возвращает активного бота из cookie или null, если не выбран.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function activeBot(): ?array {
+        $id = isset($_COOKIE['active_bot_id']) ? (int) $_COOKIE['active_bot_id'] : 0;
+
+        if ($id <= 0) {
+            return null;
+        }
+
+        $bot = $this->bots->find($id);
+
+        if ($bot === null || ((int) $bot['enabled']) !== 1) {
+            return null;
+        }
+
+        return $bot;
+    }
+
     private function route(string $method, string $path): void {
+        // --- Переключатели активного профиля и бота ---
+
+        if ($method === 'POST' && $path === '/select-profile') {
+            $this->selectProfile();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/select-bot') {
+            $this->selectBot();
+            return;
+        }
+
+        // --- Чат ---
+
+        if ($method === 'GET' && $path === '/chat') {
+            $this->chatIndex();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/chat/send') {
+            $this->chatSend();
+            return;
+        }
+
+        // --- Панель и health ---
+
         if ($method === 'GET' && in_array($path, ['/', '/index.php'], true)) {
             $this->dashboard();
             return;
@@ -46,6 +120,8 @@ final readonly class Application {
             $this->health();
             return;
         }
+
+        // --- Боты ---
 
         if ($method === 'GET' && $path === '/bots') {
             $this->botsIndex();
@@ -79,6 +155,8 @@ final readonly class Application {
             Response::redirect('/bots');
             return;
         }
+
+        // --- Профили ---
 
         if ($method === 'GET' && $path === '/profiles') {
             $this->profilesIndex();
@@ -119,6 +197,135 @@ final readonly class Application {
         ], 404);
     }
 
+    // ----------------------------------------------------------------
+    // Переключатели профиля и бота (cookie)
+    // ----------------------------------------------------------------
+
+    private function selectProfile(): void {
+        $profileId = (int) ($_POST['profile_id'] ?? 0);
+        setcookie('active_profile_id', (string) $profileId, [
+            'expires' => time() + 86400 * 30,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
+    }
+
+    private function selectBot(): void {
+        $botId = (int) ($_POST['bot_id'] ?? 0);
+        setcookie('active_bot_id', (string) $botId, [
+            'expires' => time() + 86400 * 30,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
+    }
+
+    // ----------------------------------------------------------------
+    // Чат
+    // ----------------------------------------------------------------
+
+    private function chatIndex(): void {
+        $profile = $this->activeProfile();
+        $bot = $this->activeBot();
+
+        $messages = [];
+        $latestUpdate = null;
+
+        if ($profile !== null && $bot !== null) {
+            $messages = $this->messages->findByDialog(
+                (int) $bot['id'],
+                (int) $profile['id'],
+                (int) $profile['chat_id'],
+            );
+            $latestUpdate = $this->updates->findLatestByBot((int) $bot['id']);
+        }
+
+        $this->render('chat/index', [
+            'title' => 'Чат',
+            'profile' => $profile,
+            'bot' => $bot,
+            'messages' => $messages,
+            'latestUpdate' => $latestUpdate,
+        ]);
+    }
+
+    private function chatSend(): void {
+        $profile = $this->activeProfile();
+        $bot = $this->activeBot();
+
+        if ($profile === null || $bot === null) {
+            Response::redirect('/chat');
+            return;
+        }
+
+        $text = trim((string) ($_POST['text'] ?? ''));
+
+        if ($text === '') {
+            Response::redirect('/chat');
+            return;
+        }
+
+        $chatId = (int) $profile['chat_id'];
+        $botId = (int) $bot['id'];
+        $profileId = (int) $profile['id'];
+
+        // Сохраняем сообщение пользователя
+        $this->messages->create([
+            'bot_id' => $botId,
+            'profile_id' => $profileId,
+            'chat_id' => $chatId,
+            'direction' => 'user',
+            'text' => $text,
+        ]);
+
+        // Получаем только что созданное сообщение для генерации Update
+        $allMessages = $this->messages->findByDialog($botId, $profileId, $chatId);
+        $lastMessage = end($allMessages) ?: null;
+
+        if ($lastMessage !== null) {
+            // Генерируем Update payload
+            $updatePayload = $this->updateGenerator->generate($lastMessage, $profile, $bot);
+            $updatePayloadJson = json_encode($updatePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            // Сохраняем update в очереди
+            $this->updates->create([
+                'bot_id' => $botId,
+                'profile_id' => $profileId,
+                'payload' => $updatePayloadJson,
+                'delivery_mode' => $bot['delivery_mode'] ?? 'long_polling',
+                'queue_state' => 'pending',
+            ]);
+
+            // Обновляем raw_payload у сообщения
+            $this->database->pdo()->prepare(
+                'UPDATE messages SET raw_payload = :payload WHERE id = :id'
+            )->execute([
+                'payload' => $updatePayloadJson,
+                'id' => $lastMessage['id'],
+            ]);
+        }
+
+        Response::redirect('/chat');
+    }
+
+    // ----------------------------------------------------------------
+    // Инфраструктура
+    // ----------------------------------------------------------------
+
+    /**
+     * Рендерит шаблон, автоматически добавляя allProfiles и allBots для переключателей в шапке.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function render(string $template, array $data = []): void {
+        $data['allProfiles'] = $this->profiles->all();
+        $data['allBots'] = $this->bots->all();
+        $this->view->render($template, $data);
+    }
+
     private function boot(): void {
         $runner = new MigrationRunner(
             pdo: $this->database->pdo(),
@@ -129,7 +336,7 @@ final readonly class Application {
     }
 
     private function dashboard(): void {
-        $this->view->render('dashboard', [
+        $this->render('dashboard', [
             'title' => 'Панель',
             'bots' => $this->bots->all(),
             'profiles' => $this->profiles->all(),
@@ -138,7 +345,7 @@ final readonly class Application {
     }
 
     private function botsIndex(): void {
-        $this->view->render('bots/index', [
+        $this->render('bots/index', [
             'title' => 'Боты',
             'bots' => $this->bots->all(),
         ]);
@@ -152,14 +359,14 @@ final readonly class Application {
             return;
         }
 
-        $this->view->render('bots/form', [
+        $this->render('bots/form', [
             'title' => $bot === null ? 'Новый бот' : 'Редактирование бота',
             'bot' => $bot,
         ]);
     }
 
     private function profilesIndex(): void {
-        $this->view->render('profiles/index', [
+        $this->render('profiles/index', [
             'title' => 'Профили',
             'profiles' => $this->profiles->all(),
         ]);
@@ -173,7 +380,7 @@ final readonly class Application {
             return;
         }
 
-        $this->view->render('profiles/form', [
+        $this->render('profiles/form', [
             'title' => $profile === null ? 'Новый профиль' : 'Редактирование профиля',
             'profile' => $profile,
             'bots' => $this->bots->all(),

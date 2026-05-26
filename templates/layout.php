@@ -194,6 +194,36 @@
             border-radius: 8px;
             color: #536471;
         }
+
+        .header-select {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .header-select select {
+            width: auto;
+            min-height: 32px;
+            padding: 4px 8px;
+            font-size: 13px;
+            border: 1px solid #c8d3dc;
+            border-radius: 4px;
+        }
+
+        .header-select label {
+            display: inline;
+            font-weight: 500;
+            font-size: 12px;
+            color: #647482;
+            margin: 0;
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -201,9 +231,37 @@
     <nav>
         <strong>Telegram Bot Emulator</strong>
         <a href="/">Панель</a>
+        <a href="/chat">Чат</a>
         <a href="/bots">Боты</a>
         <a href="/profiles">Профили</a>
         <a href="/health">Health</a>
+
+        <?php if (isset($allProfiles) && isset($allBots)): ?>
+            <div class="nav-right">
+                <form method="post" action="/select-profile" class="header-select">
+                    <label>Профиль:</label>
+                    <select name="profile_id" onchange="this.form.submit()">
+                        <option value="0">— Не выбран —</option>
+                        <?php foreach ($allProfiles as $p): ?>
+                            <option value="<?= e($p['id']) ?>" <?= ((int) ($_COOKIE['active_profile_id'] ?? 0) === (int) $p['id']) ? 'selected' : '' ?>>
+                                <?= e($p['name']) ?> (<?= e($p['first_name']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+                <form method="post" action="/select-bot" class="header-select">
+                    <label>Бот:</label>
+                    <select name="bot_id" onchange="this.form.submit()">
+                        <option value="0">— Не выбран —</option>
+                        <?php foreach ($allBots as $b): ?>
+                            <option value="<?= e($b['id']) ?>" <?= ((int) ($_COOKIE['active_bot_id'] ?? 0) === (int) $b['id']) ? 'selected' : '' ?>>
+                                @<?= e($b['username']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+        <?php endif; ?>
     </nav>
 </header>
 <main>
