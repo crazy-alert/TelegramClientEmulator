@@ -1,8 +1,11 @@
 services:
   telegram-emulator:
-    build: .
+    image: php:8.3-cli-alpine
     container_name: telegram-emulator
     restart: unless-stopped
+    working_dir: /app
+    command: >
+      sh -lc 'php -c /app/php.ini -S "$$APP_HOST:$$APP_PORT" -t public public/index.php'
     environment:
       APP_HOST: "0.0.0.0"
       APP_PORT: "8080"
@@ -10,12 +13,16 @@ services:
       LOG_LEVEL: "info"
     expose:
       - "8080"
-    # Для прямого доступа с хоста раскомментируйте ports.
-    # В обычном режиме доступ должен идти через nginx proxy manager в сети app-backend.
-    # ports:
-    #   - "${HOST_PORT:-8080}:8080"
+    ports:
+      - "${HOST_PORT:-8080}:8080"
     volumes:
       - ./:/app
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@file_get_contents('http://127.0.0.1:' . getenv('APP_PORT') . '/health') === false ? 1 : 0);\""]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
     networks:
       - app-backend
 

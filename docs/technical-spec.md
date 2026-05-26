@@ -255,12 +255,11 @@ MVP может использовать локальную file-backed database.
 
 Обязательные deliverables:
 
-- `Dockerfile`
-- пример `docker-compose.yml`
+- запуск через `docker-compose.yml` на готовом образе `php:8.3-cli-alpine`
 - persistent volume для `/app/data`
 - healthcheck endpoint: `GET /health`
 
-Контейнер должен поддерживать development mode с source mount и production mode с собранными assets.
+Контейнер должен поддерживать development mode с source mount. Отдельная сборка образа через `Dockerfile` не требуется, пока проект не добавит расширения или runtime-зависимости, которых нет в готовом PHP-образе.
 
 ## 5. Архитектура
 

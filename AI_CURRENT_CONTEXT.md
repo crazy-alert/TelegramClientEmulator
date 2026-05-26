@@ -6,8 +6,8 @@
 
 Реализовано:
 
-- Docker runtime на PHP 8.3 CLI Alpine.
-- Nginx reverse proxy перед `php -S` для фильтрации warning встроенного PHP-сервера при некорректном `multipart/form-data`.
+- Docker runtime на готовом образе `php:8.3-cli-alpine` без локальной сборки через `Dockerfile`.
+- Встроенный PHP HTTP server запускается напрямую через `docker-compose.yml`; nginx/sub_filter удалены после проверки malformed `multipart/form-data`.
 - SQLite bootstrap и миграция `001_initial_schema.sql`.
 - CRUD ботов и профилей через server-rendered PHP templates.
 - Экран чата (`/chat`), отправка сообщений, генерация Telegram-like `Update`, inspector raw payload.
@@ -24,6 +24,7 @@
 - Проект не привязан к одному bot token.
 - Обязательны оба режима получения updates: webhook и Long Polling.
 - Для локального Docker workflow `setWebhook` принимает `http` и `https` URL, включая service DNS вроде `http://bot:3000/webhook`.
+- `php.ini` отключает автоматическое чтение POST-данных (`enable_post_data_reading = Off`), а приложение вручную парсит JSON и form-urlencoded body. Это устраняет warning встроенного PHP-сервера без reverse proxy.
 
 ## Проверки
 
@@ -33,10 +34,11 @@
   - `POST /bot123456:local-dev-token/setWebhook` с `url=http://bot:3000/webhook&secret_token=test-secret` вернул `{"ok":true,"result":true}`;
   - `url=not-a-url` вернул HTTP 400;
   - SQLite содержит `delivery_mode=webhook`, `webhook_url=http://bot:3000/webhook`, `webhook_secret_token=test-secret`.
+- 2026-05-27: прямой `php -S` на `php:8.3-cli-alpine` с `Content-Type: multipart/form-data` без boundary вернул чистый JSON `404` без warning в body и логах.
+- 2026-05-27: `docker compose up -d` поднял `telegram-emulator`, контейнер `healthy`, `GET http://127.0.0.1:8080/health` вернул HTTP 200.
 
 ## Замечания
 
-- После последних коммитов другого агента `nginx.conf` слушает фиксированный порт `8080`; переменная `APP_PORT` больше фактически не меняет порт nginx. Это стоит исправить отдельно или задокументировать как фиксированный внутренний порт.
 - На хосте нет `php` в PATH, проверки PHP выполнялись внутри Docker.
 
 ## Ближайший следующий этап

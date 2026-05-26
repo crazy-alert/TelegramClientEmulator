@@ -2,18 +2,18 @@
 
 ## Текущая задача
 
-Проверить последние изменения другого агента и реализовать Telegram Bot API метод `setWebhook`.
+Проверить, нужен ли nginx/sub_filter для warning `multipart/form-data`, перейти на готовые Docker-образы без сборки через Dockerfile и запустить `docker-compose.yml`.
 
 ## Чеклист
 
-- [completed] Проверить последние коммиты и возможные регрессии в runtime/nginx.
-- [completed] Найти текущую реализацию Bot API routes и хранилища настроек ботов.
-- [completed] Реализовать `setWebhook` минимальными изменениями.
-- [completed] Добавить или обновить сфокусированные проверки.
-- [completed] Обновить рабочий контекст и зафиксировать результат.
+- [completed] Воспроизвести malformed multipart напрямую на `php -S` без nginx.
+- [completed] Убрать nginx/sub_filter и Dockerfile из обычного runtime, если проверка подтверждает чистый JSON.
+- [completed] Обновить Docker Compose и документацию по запуску.
+- [completed] Запустить `docker compose up` и проверить `/health`.
+- [completed] Обновить рабочий контекст, сделать коммит и push.
 
 ## Заметки
 
-- `.aitasks/` пустая, задача пришла напрямую от пользователя.
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- Риск последних коммитов: nginx слушает фиксированный `8080`, `APP_PORT` больше не меняет внешний порт приложения.
+- `php:8.3-cli-alpine` уже содержит `pdo_sqlite` и `sqlite3`, отдельная сборка для SQLite не нужна.
+- Прямой `php -S` с `Content-Type: multipart/form-data` без boundary вернул чистый JSON без warning в body.

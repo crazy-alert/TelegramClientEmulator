@@ -78,17 +78,23 @@
 
 ## Пример использования через Docker Compose
 
-По умолчанию контейнер не публикует порт наружу. Он подключается к общей Docker-сети, где находятся nginx proxy manager, контейнеры ботов и другие backend-сервисы.
+Контейнер использует готовый образ `php:8.3-cli-alpine`, монтирует проект в `/app` и запускает встроенный PHP HTTP server. Отдельная сборка через `Dockerfile` не требуется.
 
 ```yaml
 services:
   telegram-emulator:
-    build: .
+    image: php:8.3-cli-alpine
+    working_dir: /app
+    command: >
+      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8080"
+      DATA_DIR: "/app/data"
     expose:
       - "8080"
-    # Для прямого доступа с хоста можно временно раскомментировать ports.
-    # ports:
-    #   - "${HOST_PORT:-8080}:8080"
+    ports:
+      - "${HOST_PORT:-8080}:8080"
     volumes:
       - ./:/app
     networks:
@@ -113,28 +119,22 @@ Token, bot id, username бота, transport mode и webhook URL настраив
 
 ## Локальный запуск Этапа 0
 
-Если приложение должно быть доступно через nginx proxy manager или другие контейнеры в backend-сети:
+Если приложение должно быть доступно с хоста и из backend-сети:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 Если фактическое имя сети отличается, например Docker Compose создал сеть с префиксом проекта:
 
 ```bash
-APP_BACKEND_NETWORK=constr_app-backend docker compose up --build
-```
-
-Если нужно временно открыть порт на хосте, раскомментируйте `ports` в `docker-compose.yml` и запустите:
-
-```bash
-docker compose up --build
+APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 ```
 
 После запуска:
 
 - внутри Docker-сети: `http://telegram-emulator:8080`;
-- при включенном `ports`: `http://localhost:8080`;
+- на хосте: `http://localhost:8080` или порт из `HOST_PORT`;
 - healthcheck: `/health`.
 
 ## Текущие возможности

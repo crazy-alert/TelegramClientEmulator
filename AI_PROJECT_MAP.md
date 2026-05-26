@@ -8,8 +8,8 @@
 - `AI_WORK_PLAN_COMPLITED.md` — архив завершенных чеклистов.
 - `README.md` — пользовательская документация.
 - `ROADMAP.md` — план реализации по этапам.
-- `Dockerfile` — runtime-образ PHP с SQLite.
-- `docker-compose.yml` — основной запуск приложения.
+- `docker-compose.yml` — основной запуск приложения на готовом образе `php:8.3-cli-alpine`.
+- `php.ini` — настройки PHP runtime для встроенного сервера.
 
 ## Приложение
 
