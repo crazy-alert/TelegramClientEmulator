@@ -12,6 +12,11 @@ final class Response {
      * @param array<string, mixed> $payload
      */
     public static function json(array $payload, int $status = 200): void {
+        // Очищаем буфер от возможных warning'ов встроенного PHP-сервера
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
         if (!headers_sent()) {
             http_response_code($status);
             header('Content-Type: application/json; charset=utf-8');
@@ -21,6 +26,10 @@ final class Response {
     }
 
     public static function redirect(string $location): void {
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
         if (!headers_sent()) {
             http_response_code(303);
             header('Location: ' . $location);

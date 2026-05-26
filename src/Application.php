@@ -36,8 +36,40 @@ final readonly class Application {
         return (string) file_get_contents('php://input');
     }
 
+    /**
+     * Парсит тело запроса в $_POST вручную (т.к. enable_post_data_reading = Off).
+     */
+    private function parseInput(): void {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            return;
+        }
+
+        $raw = $this->rawBody();
+        if ($raw === '') {
+            return;
+        }
+
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        if (str_contains($contentType, 'application/json')) {
+            $data = json_decode($raw, true);
+            if (is_array($data)) {
+                $_POST = $data;
+            }
+            return;
+        }
+
+        if (str_contains($contentType, 'application/x-www-form-urlencoded')) {
+            parse_str($raw, $_POST);
+            return;
+        }
+
+        // Для multipart/form-data парсинг не нужен (будет использоваться в будущем)
+    }
+
     public function handle(string $method, string $path): void {
         try {
+            $this->parseInput();
             $this->boot();
             $this->route($method, rtrim($path, '/') ?: '/');
         } catch (Throwable $exception) {

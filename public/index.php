@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+// Буферизация вывода с самого начала — перехватывает warning'и
+// встроенного PHP-сервера (multipart/form-data и др.)
+ob_start();
+
 /**
  * Front controller приложения Telegram Bot Emulator.
  *
