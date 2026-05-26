@@ -2,18 +2,18 @@
 
 ## Текущая задача
 
-Проверить, нужен ли nginx/sub_filter для warning `multipart/form-data`, перейти на готовые Docker-образы без сборки через Dockerfile и запустить `docker-compose.yml`.
+Разобраться с ошибкой бота `URL rejected: Malformed input to a URL function` при запросе `getMe` к локальному Bot API.
 
 ## Чеклист
 
-- [completed] Воспроизвести malformed multipart напрямую на `php -S` без nginx.
-- [completed] Убрать nginx/sub_filter и Dockerfile из обычного runtime, если проверка подтверждает чистый JSON.
-- [completed] Обновить Docker Compose и документацию по запуску.
-- [completed] Запустить `docker compose up` и проверить `/health`.
-- [completed] Обновить рабочий контекст, сделать коммит и push.
+- [completed] Проверить прямой `GET /bot{token}/getMe` на эмуляторе.
+- [completed] Проверить типовые варианты URL, которые могут собирать bot framework клиенты.
+- [completed] При необходимости обновить документацию/совместимость маршрутов.
+- [completed] Проверить результат через Docker Compose.
+- [completed] Обновить контекст и зафиксировать изменения, если они понадобятся.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- `php:8.3-cli-alpine` уже содержит `pdo_sqlite` и `sqlite3`, отдельная сборка для SQLite не нужна.
-- Прямой `php -S` с `Content-Type: multipart/form-data` без boundary вернул чистый JSON без warning в body.
+- Прямой запрос `http://127.0.0.1:8080/bot123456:local-dev-token/getMe` дошел до эмулятора и вернул JSON 404 `Бот не найден`.
+- Ошибка `URL rejected: Malformed input to a URL function` обычно возникает на стороне HTTP-клиента до отправки запроса, если в URL остались `{}`, пробелы или другая невалидная строка.

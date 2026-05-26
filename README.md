@@ -65,14 +65,16 @@
 
 Предоставить минимальную локальную поверхность Bot API, чтобы контейнеры ботов могли обращаться к endpoints эмулятора вместо настоящего Telegram:
 
-- `POST /bot{token}/sendMessage`
-- `POST /bot{token}/editMessageText`
-- `POST /bot{token}/answerCallbackQuery`
-- `GET /bot{token}/getMe`
-- `POST /bot{token}/setWebhook`
-- `POST /bot{token}/deleteWebhook`
-- `GET /bot{token}/getWebhookInfo`
-- `GET|POST /bot{token}/getUpdates`
+- `POST /bot<TOKEN>/sendMessage`
+- `POST /bot<TOKEN>/editMessageText`
+- `POST /bot<TOKEN>/answerCallbackQuery`
+- `GET /bot<TOKEN>/getMe`
+- `POST /bot<TOKEN>/setWebhook`
+- `POST /bot<TOKEN>/deleteWebhook`
+- `GET /bot<TOKEN>/getWebhookInfo`
+- `GET|POST /bot<TOKEN>/getUpdates`
+
+Фигурные скобки не являются частью URL. Например, для token `123456:local-dev-token` корректный запрос выглядит так: `http://telegram-emulator:8080/bot123456:local-dev-token/getMe`.
 
 В первой версии нужно отдать приоритет `sendMessage`, `getMe`, `getUpdates`, `setWebhook` и webhook-доставке, потому что они открывают основные локальные циклы разработки.
 
@@ -113,7 +115,7 @@ networks:
 
 Token, bot id, username бота, transport mode и webhook URL настраиваются в интерфейсе эмулятора для каждого бота или профиля. В контейнер бота не нужно зашивать один общий token проекта: бот должен использовать тот token, который разработчик выбрал в конкретном тестовом сценарии.
 
-Точные имена переменных окружения зависят от bot framework. Некоторые frameworks позволяют напрямую переопределить базовый URL Telegram Bot API, другим может понадобиться небольшой adapter.
+Точные имена переменных окружения зависят от bot framework. Если библиотека сама добавляет `/bot<TOKEN>/<METHOD>` к API root, используйте `http://telegram-emulator:8080`. Если библиотека ожидает Telegram-style base URL до token, используйте `http://telegram-emulator:8080/bot`. Не передавайте в HTTP-клиент URL с буквальными `{token}` или `{method}`: многие клиенты отклоняют такие строки как malformed URL.
 
 В режиме разработки весь проект монтируется в контейнер как `/app`. Поэтому изменения в `public`, `src`, `templates`, `migrations` и других директориях применяются без пересборки образа. SQLite-файл по умолчанию создается в локальной директории `data/`, которая игнорируется git.
 

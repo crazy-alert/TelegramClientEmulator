@@ -181,16 +181,18 @@
 Предоставить routes, совместимые с распространенными Telegram bot libraries:
 
 ```text
-GET  /bot{token}/getMe
-POST /bot{token}/sendMessage
-POST /bot{token}/editMessageText
-POST /bot{token}/answerCallbackQuery
-POST /bot{token}/setWebhook
-POST /bot{token}/deleteWebhook
-GET  /bot{token}/getWebhookInfo
-GET  /bot{token}/getUpdates
-POST /bot{token}/getUpdates
+GET  /bot<TOKEN>/getMe
+POST /bot<TOKEN>/sendMessage
+POST /bot<TOKEN>/editMessageText
+POST /bot<TOKEN>/answerCallbackQuery
+POST /bot<TOKEN>/setWebhook
+POST /bot<TOKEN>/deleteWebhook
+GET  /bot<TOKEN>/getWebhookInfo
+GET  /bot<TOKEN>/getUpdates
+POST /bot<TOKEN>/getUpdates
 ```
+
+Фигурные скобки не должны попадать в реальный URL. Для совместимости с библиотеками, которые отделяют префикс `/bot` от token, эмулятор также может принимать форму `/bot/<TOKEN>/<METHOD>`.
 
 Приоритет MVP:
 
