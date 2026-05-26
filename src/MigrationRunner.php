@@ -6,16 +6,15 @@ namespace App;
 
 use PDO;
 
-final readonly class MigrationRunner
-{
+final readonly class MigrationRunner {
+
     public function __construct(
         private PDO $pdo,
         private string $migrationsPath,
     ) {
     }
 
-    public function run(): void
-    {
+    public function run(): void {
         $this->pdo->exec(
             'CREATE TABLE IF NOT EXISTS schema_migrations (
                 version TEXT PRIMARY KEY,
@@ -58,12 +57,10 @@ final readonly class MigrationRunner
         }
     }
 
-    private function isApplied(string $version): bool
-    {
+    private function isApplied(string $version): bool {
         $statement = $this->pdo->prepare('SELECT 1 FROM schema_migrations WHERE version = :version');
         $statement->execute(['version' => $version]);
 
         return (bool) $statement->fetchColumn();
     }
 }
-

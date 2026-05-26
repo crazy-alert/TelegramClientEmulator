@@ -6,13 +6,12 @@ namespace App;
 
 use PDO;
 
-final class Database
-{
+final class Database {
+
     private PDO $pdo;
     private string $path;
 
-    public function __construct(string $dataDir)
-    {
+    public function __construct(string $dataDir) {
         if (!is_dir($dataDir) && !mkdir($dataDir, 0775, true) && !is_dir($dataDir)) {
             throw new \RuntimeException('Не удалось создать директорию данных: ' . $dataDir);
         }
@@ -24,14 +23,11 @@ final class Database
         $this->pdo->exec('PRAGMA foreign_keys = ON');
     }
 
-    public function pdo(): PDO
-    {
+    public function pdo(): PDO {
         return $this->pdo;
     }
 
-    public function path(): string
-    {
+    public function path(): string {
         return $this->path;
     }
 }
-

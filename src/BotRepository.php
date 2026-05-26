@@ -6,27 +6,34 @@ namespace App;
 
 use PDO;
 
-final readonly class BotRepository
-{
-    public function __construct(private PDO $pdo)
-    {
+/**
+ * Репозиторий для работы с ботами в SQLite.
+ *
+ * Предоставляет CRUD-операции для сущности Bot:
+ * создание, чтение (всех и по id), обновление и удаление.
+ */
+final readonly class BotRepository {
+
+    public function __construct(private PDO $pdo) {
     }
 
     /**
+     * Возвращает список всех ботов, отсортированный по дате создания (новые сверху).
+     *
      * @return list<array<string, mixed>>
      */
-    public function all(): array
-    {
+    public function all(): array {
         $statement = $this->pdo->query('SELECT * FROM bots ORDER BY created_at DESC, id DESC');
 
         return $statement->fetchAll();
     }
 
     /**
-     * @return array<string, mixed>|null
+     * Находит бота по его внутреннему идентификатору.
+     *
+     * @return array<string, mixed>|null Возвращает данные бота или null, если бот не найден.
      */
-    public function find(int $id): ?array
-    {
+    public function find(int $id): ?array {
         $statement = $this->pdo->prepare('SELECT * FROM bots WHERE id = :id');
         $statement->execute(['id' => $id]);
         $bot = $statement->fetch();
@@ -35,10 +42,11 @@ final readonly class BotRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * Создаёт нового бота.
+     *
+     * @param array<string, mixed> $data Входные данные формы (token, username, display_name, delivery_mode и др.).
      */
-    public function create(array $data): void
-    {
+    public function create(array $data): void {
         $statement = $this->pdo->prepare(
             'INSERT INTO bots (
                 token, bot_id, username, display_name, delivery_mode,
@@ -53,10 +61,11 @@ final readonly class BotRepository
     }
 
     /**
-     * @param array<string, mixed> $data
+     * Обновляет существующего бота.
+     *
+     * @param array<string, mixed> $data Входные данные формы.
      */
-    public function update(int $id, array $data): void
-    {
+    public function update(int $id, array $data): void {
         $payload = $this->normalize($data);
         $payload['id'] = $id;
 
@@ -77,18 +86,23 @@ final readonly class BotRepository
         $statement->execute($payload);
     }
 
-    public function delete(int $id): void
-    {
+    /**
+     * Удаляет бота по идентификатору.
+     */
+    public function delete(int $id): void {
         $statement = $this->pdo->prepare('DELETE FROM bots WHERE id = :id');
         $statement->execute(['id' => $id]);
     }
 
     /**
+     * Нормализует входные данные бота перед записью в БД.
+     *
+     * Удаляет пробелы, приводит типы, задаёт значения по умолчанию.
+     *
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    private function normalize(array $data): array
-    {
+    private function normalize(array $data): array {
         $botId = trim((string) ($data['bot_id'] ?? ''));
         $webhookUrl = trim((string) ($data['webhook_url'] ?? ''));
         $webhookSecretToken = trim((string) ($data['webhook_secret_token'] ?? ''));
@@ -107,4 +121,3 @@ final readonly class BotRepository
         ];
     }
 }
-

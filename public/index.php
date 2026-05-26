@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/**
+ * Front controller приложения Telegram Bot Emulator.
+ *
+ * Подключает все необходимые классы, инициализирует Application
+ * и передаёт ему входящий HTTP-запрос.
+ */
+
 use App\Application;
 
 require dirname(__DIR__) . '/src/Application.php';
@@ -13,8 +20,12 @@ require dirname(__DIR__) . '/src/Response.php';
 require dirname(__DIR__) . '/src/View.php';
 
 if (!function_exists('e')) {
-    function e(mixed $value): string
-    {
+    /**
+     * Экранирует значение для безопасного вывода в HTML.
+     *
+     * Используется в шаблонах для защиты от XSS.
+     */
+    function e(mixed $value): string {
         return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }

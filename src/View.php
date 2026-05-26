@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App;
 
-final readonly class View
-{
-    public function __construct(private string $templatesPath)
-    {
+final readonly class View {
+
+    public function __construct(private string $templatesPath) {
     }
 
     /**
@@ -15,8 +14,7 @@ final readonly class View
      *
      * @param array<string, mixed> $data
      */
-    public function render(string $template, array $data = []): void
-    {
+    public function render(string $template, array $data = []): void {
         extract($data, EXTR_SKIP);
 
         $contentTemplate = $this->templatesPath . '/' . $template . '.php';

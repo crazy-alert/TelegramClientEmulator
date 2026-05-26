@@ -6,8 +6,8 @@ namespace App;
 
 use Throwable;
 
-final readonly class Application
-{
+final readonly class Application {
+
     private Database $database;
     private BotRepository $bots;
     private ProfileRepository $profiles;
@@ -23,8 +23,7 @@ final readonly class Application
         $this->view = new View($this->rootPath . '/templates');
     }
 
-    public function handle(string $method, string $path): void
-    {
+    public function handle(string $method, string $path): void {
         try {
             $this->boot();
             $this->route($method, rtrim($path, '/') ?: '/');
@@ -37,8 +36,7 @@ final readonly class Application
         }
     }
 
-    private function route(string $method, string $path): void
-    {
+    private function route(string $method, string $path): void {
         if ($method === 'GET' && in_array($path, ['/', '/index.php'], true)) {
             $this->dashboard();
             return;
@@ -121,8 +119,7 @@ final readonly class Application
         ], 404);
     }
 
-    private function boot(): void
-    {
+    private function boot(): void {
         $runner = new MigrationRunner(
             pdo: $this->database->pdo(),
             migrationsPath: $this->rootPath . '/migrations',
@@ -131,8 +128,7 @@ final readonly class Application
         $runner->run();
     }
 
-    private function dashboard(): void
-    {
+    private function dashboard(): void {
         $this->view->render('dashboard', [
             'title' => 'Панель',
             'bots' => $this->bots->all(),
@@ -141,16 +137,14 @@ final readonly class Application
         ]);
     }
 
-    private function botsIndex(): void
-    {
+    private function botsIndex(): void {
         $this->view->render('bots/index', [
             'title' => 'Боты',
             'bots' => $this->bots->all(),
         ]);
     }
 
-    private function botForm(?int $id = null): void
-    {
+    private function botForm(?int $id = null): void {
         $bot = $id === null ? null : $this->bots->find($id);
 
         if ($id !== null && $bot === null) {
@@ -164,16 +158,14 @@ final readonly class Application
         ]);
     }
 
-    private function profilesIndex(): void
-    {
+    private function profilesIndex(): void {
         $this->view->render('profiles/index', [
             'title' => 'Профили',
             'profiles' => $this->profiles->all(),
         ]);
     }
 
-    private function profileForm(?int $id = null): void
-    {
+    private function profileForm(?int $id = null): void {
         $profile = $id === null ? null : $this->profiles->find($id);
 
         if ($id !== null && $profile === null) {
@@ -188,8 +180,7 @@ final readonly class Application
         ]);
     }
 
-    private function health(): void
-    {
+    private function health(): void {
         Response::json([
             'ok' => true,
             'service' => 'telegram-emulator',
@@ -200,4 +191,3 @@ final readonly class Application
         ]);
     }
 }
-
