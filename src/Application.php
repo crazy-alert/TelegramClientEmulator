@@ -29,6 +29,13 @@ final readonly class Application {
         $this->view = new View($this->rootPath . '/templates');
     }
 
+    /**
+     * Возвращает сырое тело запроса (используется для Bot API методов с JSON body).
+     */
+    public function rawBody(): string {
+        return (string) file_get_contents('php://input');
+    }
+
     public function handle(string $method, string $path): void {
         try {
             $this->boot();

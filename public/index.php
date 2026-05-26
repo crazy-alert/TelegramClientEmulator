@@ -9,6 +9,11 @@ declare(strict_types=1);
  * и передаёт ему входящий HTTP-запрос.
  */
 
+// Не выводить ошибки в output (чтобы не ломать JSON-ответы)
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 use App\Application;
 
 require dirname(__DIR__) . '/src/Application.php';
