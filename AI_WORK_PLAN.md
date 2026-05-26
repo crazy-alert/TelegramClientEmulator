@@ -2,18 +2,16 @@
 
 ## Текущая задача
 
-Разобраться с ошибкой бота `URL rejected: Malformed input to a URL function` при запросе `getMe` к локальному Bot API.
+Вернуть каноническое поведение Telegram Bot API routes: только `/bot<TOKEN>/<METHOD>`, без совместимой формы `/bot/<TOKEN>/<METHOD>`.
 
 ## Чеклист
 
-- [completed] Проверить прямой `GET /bot{token}/getMe` на эмуляторе.
-- [completed] Проверить типовые варианты URL, которые могут собирать bot framework клиенты.
-- [completed] При необходимости обновить документацию/совместимость маршрутов.
-- [completed] Проверить результат через Docker Compose.
-- [completed] Обновить контекст и зафиксировать изменения, если они понадобятся.
+- [completed] Убрать `/bot/<TOKEN>/...` из маршрутизации.
+- [completed] Обновить README, technical spec и текущий контекст.
+- [completed] Проверить канонический маршрут и отклонение `/bot/<TOKEN>/...`.
+- [completed] Сделать коммит и push.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- Прямой запрос `http://127.0.0.1:8080/bot123456:local-dev-token/getMe` дошел до эмулятора и вернул JSON 404 `Бот не найден`.
-- Ошибка `URL rejected: Malformed input to a URL function` обычно возникает на стороне HTTP-клиента до отправки запроса, если в URL остались `{}`, пробелы или другая невалидная строка.
+- Настоящий Telegram Bot API использует форму `/bot<TOKEN>/<METHOD>`.

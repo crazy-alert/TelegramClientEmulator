@@ -232,18 +232,18 @@ final readonly class Application {
 
         // --- Bot API маршруты (/bot{token}/...) ---
 
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot/?([^/]+)/getMe$#i', $path, $matches) === 1) {
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getMe$#i', $path, $matches) === 1) {
             $this->getMe($matches[1]);
             return;
         }
 
-        if ($method === 'POST' && preg_match('#^/bot/?([^/]+)/setWebhook$#i', $path, $matches) === 1) {
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
             $this->setWebhook($matches[1]);
             return;
         }
 
         // Заглушка для неподдерживаемых методов Bot API
-        if (preg_match('#^/bot/?([^/]+)/#', $path) === 1) {
+        if (preg_match('#^/bot([^/]+)/#', $path) === 1) {
             Response::json([
                 'ok' => false,
                 'error_code' => 501,

@@ -12,8 +12,8 @@
 - CRUD ботов и профилей через server-rendered PHP templates.
 - Экран чата (`/chat`), отправка сообщений, генерация Telegram-like `Update`, inspector raw payload.
 - Переключатели активного профиля и бота в шапке через cookie.
-- Bot API: `GET|POST /bot<TOKEN>/getMe` и совместимая форма `/bot/<TOKEN>/getMe`.
-- Bot API: `POST /bot<TOKEN>/setWebhook` и совместимая форма `/bot/<TOKEN>/setWebhook` сохраняют webhook URL, optional `secret_token` и переключают бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
+- Bot API: `GET|POST /bot<TOKEN>/getMe`.
+- Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 
 ## Важные решения
 
@@ -25,7 +25,7 @@
 - Обязательны оба режима получения updates: webhook и Long Polling.
 - Для локального Docker workflow `setWebhook` принимает `http` и `https` URL, включая service DNS вроде `http://bot:3000/webhook`.
 - `php.ini` отключает автоматическое чтение POST-данных (`enable_post_data_reading = Off`), а приложение вручную парсит JSON и form-urlencoded body. Это устраняет warning встроенного PHP-сервера без reverse proxy.
-- В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Для bot framework base URL обычно нужен `http://telegram-emulator:8080` или `http://telegram-emulator:8080/bot`, в зависимости от того, как библиотека добавляет token и method.
+- В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
 
 ## Проверки
 
@@ -37,7 +37,7 @@
   - SQLite содержит `delivery_mode=webhook`, `webhook_url=http://bot:3000/webhook`, `webhook_secret_token=test-secret`.
 - 2026-05-27: прямой `php -S` на `php:8.3-cli-alpine` с `Content-Type: multipart/form-data` без boundary вернул чистый JSON `404` без warning в body и логах.
 - 2026-05-27: `docker compose up -d` поднял `telegram-emulator`, контейнер `healthy`, `GET http://127.0.0.1:8080/health` вернул HTTP 200.
-- 2026-05-27: после расширения совместимости routes проверены оба варианта `GET /bot123456:local-dev-token/getMe` и `GET /bot/123456:local-dev-token/getMe`; оба возвращают Telegram-like JSON 404 для отсутствующего тестового token.
+- 2026-05-27: канонический `GET /bot123456:local-dev-token/getMe` возвращает Telegram-like JSON 404 для отсутствующего тестового token.
 
 ## Замечания
 
