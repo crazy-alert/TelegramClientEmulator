@@ -4,7 +4,7 @@
 
 Создать Dockerized локальный инструмент разработки для Telegram-ботов.
 
-Инструмент должен предоставлять минимальный Telegram-like веб-интерфейс и локальный webhook/Bot API эмулятор, чтобы разработчик мог тестировать поведение бота без настоящих Telegram-клиентов, публичных webhook, ngrok и production-состояния бота.
+Инструмент должен предоставлять минимальный Telegram-like веб-интерфейс и локальный Bot API эмулятор с поддержкой webhook и Long Polling, чтобы разработчик мог тестировать поведение нескольких ботов без настоящих Telegram-клиентов, публичных webhook, ngrok и production-состояния бота.
 
 ## 2. Целевой пользователь
 
@@ -15,7 +15,7 @@
 1. Запустить контейнер бота и контейнер эмулятора через Docker Compose.
 2. Открыть эмулятор в браузере.
 3. Выбрать или создать тестовый профиль.
-4. Настроить webhook URL, который указывает на контейнер бота.
+4. Выбрать бота и режим доставки: webhook или Long Polling.
 5. Отправлять сообщения в веб-интерфейсе.
 6. Смотреть ответы бота и инспектировать raw request/response payload.
 
@@ -31,34 +31,48 @@
 
 ## 4. Продуктовые требования
 
-### 4.1 Профили
+### 4.1 Боты и профили
 
-Каждый профиль представляет локальный тестовый контекст.
+Проект не должен быть привязан к одному bot token. В системе должны быть отдельные сущности бота и профиля.
+
+Бот описывает приложение, которое получает updates и вызывает Bot API mock.
+
+Обязательные поля бота:
+
+- `id`: внутренний id бота.
+- `token`: фейковый или похожий на настоящий token Telegram-бота.
+- `botId`: numeric bot id, полученный из token, если возможно, или заданный вручную.
+- `username`: username бота без `@`.
+- `displayName`: отображаемое имя бота.
+- `deliveryMode`: `webhook` или `long_polling`.
+- `webhookUrl`: URL, который принимает сгенерированные updates в режиме webhook.
+- `webhookSecretToken`: необязательное значение, отправляемое как `X-Telegram-Bot-Api-Secret-Token`.
+- `enabled`: может ли бот получать updates.
+- `createdAt`, `updatedAt`.
+
+Профиль представляет локальный тестовый контекст пользователя и чата. Один бот может использоваться в нескольких профилях, и один профиль должен позволять переключить выбранного бота.
 
 Обязательные поля профиля:
 
 - `id`: внутренний id профиля.
 - `name`: отображаемое имя профиля в интерфейсе эмулятора.
-- `botToken`: фейковый или похожий на настоящий token Telegram-бота.
-- `botId`: numeric bot id, полученный из token, если возможно, или заданный вручную.
-- `botUsername`: username бота без `@`.
+- `activeBotId`: id выбранного бота.
 - `userId`: numeric id фейкового Telegram-пользователя.
 - `username`: username фейкового Telegram-пользователя.
 - `firstName`: имя фейкового Telegram-пользователя.
 - `lastName`: необязательная фамилия фейкового Telegram-пользователя.
 - `chatId`: numeric chat id. По умолчанию равен `userId` для private chats.
 - `chatType`: изначально `private`; позже `group`, `supergroup`, `channel`.
-- `webhookUrl`: URL, который принимает сгенерированные updates.
-- `webhookSecretToken`: необязательное значение, отправляемое как `X-Telegram-Bot-Api-Secret-Token`.
 - `enabled`: может ли профиль отправлять updates.
 - `createdAt`, `updatedAt`.
 
 Ожидаемое поведение:
 
+- Пользователь может создавать, редактировать, дублировать, удалять, импортировать и экспортировать ботов.
 - Пользователь может создавать, редактировать, дублировать, удалять, импортировать и экспортировать профили.
-- Пользователь может переключать профили из верхней части интерфейса.
-- История диалога привязана к профилю.
-- Некорректные webhook URL отклоняются до отправки.
+- Пользователь может переключать профили и активного бота из верхней части интерфейса.
+- История диалога привязана к паре профиль-бот.
+- Некорректные webhook URL отклоняются до отправки в режиме webhook.
 
 ### 4.2 Chat UI
 
@@ -85,7 +99,7 @@
 - Симуляция group chat.
 - Несколько фейковых пользователей в одном чате.
 
-### 4.3 Генерация webhook update
+### 4.3 Генерация update
 
 Для текстового сообщения пользователя генерировать Telegram-like update:
 
@@ -130,7 +144,16 @@
 - Команды, начинающиеся с `/`, должны включать entity `bot_command`.
 - Сгенерированный payload должен быть виден в интерфейсе.
 
-### 4.4 Webhook delivery
+### 4.4 Доставка updates
+
+Эмулятор должен поддерживать два режима доставки для каждого бота:
+
+- `webhook`: update отправляется HTTP POST на `webhookUrl`.
+- `long_polling`: update сохраняется в очередь и отдается через `getUpdates`.
+
+Переключение режима доставки не должно требовать перезапуска контейнера эмулятора.
+
+#### Webhook delivery
 
 Требования к webhook delivery:
 
@@ -140,6 +163,18 @@
 - Сохранять request status, response status code, response headers, response body, duration и error message.
 - Использовать настраиваемый timeout. Значение MVP по умолчанию: 10 секунд.
 - Не делать автоматические retry в MVP; предоставить ручную повторную отправку.
+
+#### Long Polling
+
+Требования к Long Polling:
+
+- Реализовать `GET|POST /bot{token}/getUpdates`.
+- Поддержать параметры `offset`, `limit`, `timeout`, `allowed_updates`.
+- Хранить очередь updates отдельно для каждого бота.
+- Возвращать только updates с `update_id >= offset`, как в Telegram Bot API.
+- После получения offset больше `update_id` считать соответствующие updates подтвержденными и скрывать их из следующих ответов.
+- `timeout` в MVP можно реализовать через короткое ожидание на сервере; позже добавить более точное блокирующее ожидание.
+- В интерфейсе показывать размер очереди Long Polling и последние выданные updates.
 
 ### 4.5 Локальный Bot API mock
 
@@ -151,15 +186,20 @@ POST /bot{token}/sendMessage
 POST /bot{token}/editMessageText
 POST /bot{token}/answerCallbackQuery
 POST /bot{token}/setWebhook
+POST /bot{token}/deleteWebhook
 GET  /bot{token}/getWebhookInfo
+GET  /bot{token}/getUpdates
+POST /bot{token}/getUpdates
 ```
 
 Приоритет MVP:
 
 1. `sendMessage`
 2. `getMe`
-3. `setWebhook`
-4. `getWebhookInfo`
+3. `getUpdates`
+4. `setWebhook`
+5. `deleteWebhook`
+6. `getWebhookInfo`
 
 Поведение `sendMessage`:
 
@@ -194,9 +234,11 @@ MVP может использовать локальную file-backed database.
 
 Обязательные persistent entities:
 
+- bots;
 - profiles;
 - messages;
 - webhook delivery attempts;
+- long polling update queue;
 - emulator settings.
 
 ### 4.7 Конфигурация
@@ -224,21 +266,24 @@ MVP может использовать локальную file-backed database.
 
 Рекомендуемые высокоуровневые компоненты:
 
-- Web frontend: Telegram-like UI, управление профилями, payload inspector.
+- Web frontend: Telegram-like UI на HTMX, управление ботами и профилями, payload inspector.
 - Backend HTTP server:
+  - API ботов;
   - API профилей;
   - API сообщений;
   - webhook dispatcher;
+  - Long Polling queue;
   - Bot API mock routes.
 - Persistence layer: SQLite.
-- Event/state layer: серверное состояние диалогов, опционально WebSocket/SSE для live updates.
+- Event/state layer: серверное состояние диалогов; для MVP достаточно HTMX polling, позже можно добавить SSE.
 
-Runtime stack нужно выбрать после настройки проекта. Практичные варианты:
+Runtime stack проекта:
 
-- Node.js + Fastify/NestJS + React/Vite + SQLite.
-- Python + FastAPI + HTMX/React + SQLite.
-
-Для этого проекта сильный вариант по умолчанию: Node.js + Fastify + React/Vite, потому что многие Telegram bot frameworks используют JavaScript/TypeScript, а mock routes для Bot API реализуются прямо.
+- PHP 8.3+.
+- HTMX для интерактивности интерфейса.
+- SQLite для локального хранения.
+- Docker Compose для запуска.
+- Минимальный CSS без heavy frontend build pipeline на первом этапе.
 
 ## 6. Предлагаемые MVP milestones
 
@@ -249,30 +294,39 @@ Runtime stack нужно выбрать после настройки проек
 - Базовый UI shell открывается в браузере.
 - SQLite storage инициализировано.
 
-### Milestone 2: профили
+### Milestone 2: боты и профили
 
+- CRUD API для ботов.
 - CRUD API для профилей.
-- Переключатель профиля.
+- Переключатель профиля и активного бота.
 - Редактор профиля.
-- Сохранение профилей.
+- Сохранение ботов и профилей.
 
-### Milestone 3: webhook message loop
+### Milestone 3: Long Polling message loop
 
 - Отправка текстового сообщения пользователя из UI.
 - Генерация Telegram-like update.
-- POST update на webhook URL профиля.
+- Сохранение update в очереди выбранного бота.
+- Реализация `/bot{token}/getUpdates`.
+- Отображение raw payload и состояния очереди.
+
+### Milestone 4: webhook message loop
+
+- Отправка текстового сообщения пользователя из UI.
+- Генерация Telegram-like update.
+- POST update на webhook URL выбранного бота.
 - Отображение результата доставки и raw payload.
 
-### Milestone 4: ответы бота
+### Milestone 5: ответы бота
 
 - Реализовать `/bot{token}/sendMessage`.
 - Сохранять ответы бота.
 - Показывать ответы бота в chat UI.
 
-### Milestone 5: удобство разработки
+### Milestone 6: удобство разработки
 
 - Docker Compose пример с sample bot.
-- Import/export профилей.
+- Import/export ботов и профилей.
 - Ручная повторная отправка failed webhook.
 - Request/response inspector.
 
@@ -281,13 +335,13 @@ Runtime stack нужно выбрать после настройки проек
 - Bot frameworks по-разному переопределяют Telegram Bot API base URL. Позже в документацию нужно добавить примеры для популярных frameworks.
 - Некоторые боты зависят от API methods кроме `sendMessage`; неподдерживаемые методы должны возвращать понятные Telegram-like errors и логироваться.
 - Webhook URL чувствителен к Docker network context. В Docker Compose URL обычно должен использовать service DNS, например `http://bot:3000/webhook`, а не `localhost`.
+- Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы
 
 - Какие bot frameworks поддерживать первыми: Telegraf, aiogram, python-telegram-bot, grammY, Telegram.Bot for .NET?
-- Должен ли профиль представлять одну пару bot-user или один bot должен иметь несколько user profiles?
-- Поддерживать сначала только webhooks или также long polling через `getUpdates`?
+- Нужна ли связь many-to-many между ботами и профилями или достаточно active bot внутри профиля?
 - Интерфейс проекта и документация должны быть только на русском или двуязычными?
 
 ## 9. Ссылки
@@ -297,4 +351,3 @@ Runtime stack нужно выбрать после настройки проек
 - telegram-test-api: https://github.com/OvyFlash/telegram-test-api
 - Telegraf-Test: https://github.com/TiagoDanin/Telegraf-Test
 - Telemelya: https://github.com/luckyraul/telemelya
-

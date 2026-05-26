@@ -1,0 +1,13 @@
+.git/
+.idea/
+.vscode/
+data/
+var/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+.env
+.env.*
+!.env.example
+

@@ -1,0 +1,25 @@
+services:
+  telegram-emulator:
+    build: .
+    container_name: telegram-emulator
+    restart: unless-stopped
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8080"
+      DATA_DIR: "/app/data"
+      LOG_LEVEL: "info"
+    expose:
+      - "8080"
+    # Для прямого доступа с хоста раскомментируйте ports.
+    # В обычном режиме доступ должен идти через nginx proxy manager в сети app-backend.
+    # ports:
+    #   - "${HOST_PORT:-8080}:8080"
+    volumes:
+      - ./:/app
+    networks:
+      - app-backend
+
+networks:
+  app-backend:
+    external: true
+    name: "${APP_BACKEND_NETWORK:-constr_app-backend}"
