@@ -232,7 +232,7 @@ final readonly class Application {
 
         // --- Bot API маршруты (/bot{token}/...) ---
 
-        if (preg_match('#^/bot([^/]+)/getMe$#i', $path, $matches) === 1) {
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getMe$#i', $path, $matches) === 1) {
             $this->getMe($matches[1]);
             return;
         }
