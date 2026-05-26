@@ -107,6 +107,26 @@ final readonly class BotRepository {
         return $bot === false ? null : $bot;
     }
 
+    public function setWebhook(int $id, ?string $webhookUrl, ?string $secretToken): void {
+        $deliveryMode = $webhookUrl === null ? 'long_polling' : 'webhook';
+
+        $statement = $this->pdo->prepare(
+            'UPDATE bots SET
+                delivery_mode = :delivery_mode,
+                webhook_url = :webhook_url,
+                webhook_secret_token = :webhook_secret_token,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id'
+        );
+
+        $statement->execute([
+            'id' => $id,
+            'delivery_mode' => $deliveryMode,
+            'webhook_url' => $webhookUrl,
+            'webhook_secret_token' => $secretToken,
+        ]);
+    }
+
     /**
      * Нормализует входные данные бота перед записью в БД.
      *

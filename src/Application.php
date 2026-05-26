@@ -237,6 +237,11 @@ final readonly class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
+            $this->setWebhook($matches[1]);
+            return;
+        }
+
         // Заглушка для неподдерживаемых методов Bot API
         if (preg_match('#^/bot([^/]+)/#', $path) === 1) {
             Response::json([
@@ -448,6 +453,15 @@ final readonly class Application {
     // ----------------------------------------------------------------
 
     /**
+     * Возвращает параметры Bot API запроса из query string и тела запроса.
+     *
+     * @return array<string, mixed>
+     */
+    private function botApiParams(): array {
+        return array_replace($_GET, $_POST);
+    }
+
+    /**
      * GET /bot{token}/getMe — возвращает информацию о боте.
      */
     private function getMe(string $token): void {
@@ -474,6 +488,79 @@ final readonly class Application {
                 'supports_inline_queries' => false,
             ],
         ]);
+    }
+
+    /**
+     * POST /bot{token}/setWebhook — сохраняет URL webhook для локальной доставки updates.
+     */
+    private function setWebhook(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+
+        if (!array_key_exists('url', $params)) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "url" is required',
+            ], 400);
+            return;
+        }
+
+        $url = trim((string) $params['url']);
+        $secretToken = trim((string) ($params['secret_token'] ?? $params['webhook_secret_token'] ?? ''));
+
+        if ($url === '') {
+            $this->bots->setWebhook((int) $bot['id'], null, null);
+            Response::json([
+                'ok' => true,
+                'result' => true,
+                'description' => 'Webhook was deleted',
+            ]);
+            return;
+        }
+
+        if (!$this->isValidWebhookUrl($url)) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: invalid webhook URL',
+            ], 400);
+            return;
+        }
+
+        $this->bots->setWebhook(
+            (int) $bot['id'],
+            $url,
+            $secretToken === '' ? null : $secretToken,
+        );
+
+        Response::json([
+            'ok' => true,
+            'result' => true,
+            'description' => 'Webhook was set',
+        ]);
+    }
+
+    private function isValidWebhookUrl(string $url): bool {
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = (string) ($parts['host'] ?? '');
+
+        return $host !== '' && in_array($scheme, ['http', 'https'], true);
     }
 
     private function health(): void {
