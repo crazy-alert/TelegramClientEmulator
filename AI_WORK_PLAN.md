@@ -2,16 +2,15 @@
 
 ## Текущая задача
 
-Вернуть каноническое поведение Telegram Bot API routes: только `/bot<TOKEN>/<METHOD>`, без совместимой формы `/bot/<TOKEN>/<METHOD>`.
+Добавить в постоянные правила запрет на самовольное неканоничное поведение Telegram Bot API.
 
 ## Чеклист
 
-- [completed] Убрать `/bot/<TOKEN>/...` из маршрутизации.
-- [completed] Обновить README, technical spec и текущий контекст.
-- [completed] Проверить канонический маршрут и отклонение `/bot/<TOKEN>/...`.
-- [completed] Сделать коммит и push.
+- [completed] Обновить `AGENTS.md` правилом о каноничности Bot API.
+- [completed] Обновить рабочий контекст.
+- [completed] Проверить diff, сделать коммит и push.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- Настоящий Telegram Bot API использует форму `/bot<TOKEN>/<METHOD>`.
+- Причина: агент ранее добавил `/bot/<TOKEN>/<METHOD>` без запроса пользователя, хотя настоящий Telegram Bot API использует `/bot<TOKEN>/<METHOD>`.
