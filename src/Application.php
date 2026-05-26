@@ -191,6 +191,23 @@ final readonly class Application {
             return;
         }
 
+        // --- Bot API маршруты (/bot{token}/...) ---
+
+        if ($method === 'GET' && preg_match('#^/bot([^/]+)/getMe$#', $path, $matches) === 1) {
+            $this->getMe($matches[1]);
+            return;
+        }
+
+        // Заглушка для неподдерживаемых методов Bot API
+        if (preg_match('#^/bot([^/]+)/#', $path) === 1) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 501,
+                'description' => 'Метод пока не поддерживается эмулятором',
+            ], 501);
+            return;
+        }
+
         Response::json([
             'ok' => false,
             'error' => 'Маршрут не найден',
@@ -384,6 +401,39 @@ final readonly class Application {
             'title' => $profile === null ? 'Новый профиль' : 'Редактирование профиля',
             'profile' => $profile,
             'bots' => $this->bots->all(),
+        ]);
+    }
+
+    // ----------------------------------------------------------------
+    // Bot API методы
+    // ----------------------------------------------------------------
+
+    /**
+     * GET /bot{token}/getMe — возвращает информацию о боте.
+     */
+    private function getMe(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => [
+                'id' => (int) ($bot['bot_id'] ?? 0),
+                'is_bot' => true,
+                'first_name' => $bot['display_name'],
+                'username' => $bot['username'],
+                'can_join_groups' => true,
+                'can_read_all_group_messages' => false,
+                'supports_inline_queries' => false,
+            ],
         ]);
     }
 

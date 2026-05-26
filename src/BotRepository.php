@@ -95,6 +95,19 @@ final readonly class BotRepository {
     }
 
     /**
+     * Находит бота по токену (используется для маршрутов /bot{token}/...).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByToken(string $token): ?array {
+        $statement = $this->pdo->prepare('SELECT * FROM bots WHERE token = :token');
+        $statement->execute(['token' => $token]);
+        $bot = $statement->fetch();
+
+        return $bot === false ? null : $bot;
+    }
+
+    /**
      * Нормализует входные данные бота перед записью в БД.
      *
      * Удаляет пробелы, приводит типы, задаёт значения по умолчанию.
