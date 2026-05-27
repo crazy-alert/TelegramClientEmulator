@@ -1,6 +1,8 @@
 <?php
 $isEdit = $bot !== null;
 $action = $isEdit ? '/bots/' . $bot['id'] : '/bots';
+$tokenPlaceholder = $bot['token'] ?? $generatedCredentials['token'] ?? '100001:local-dev-token-000000';
+$botIdPlaceholder = $bot['bot_id'] ?? $generatedCredentials['bot_id'] ?? '100001';
 ?>
 
 <div class="toolbar">
@@ -9,6 +11,10 @@ $action = $isEdit ? '/bots/' . $bot['id'] : '/bots';
 </div>
 
 <form class="editor" method="post" action="<?= e($action) ?>">
+    <?php if (!$isEdit && $generatedCredentials !== null): ?>
+        <input type="hidden" name="generated_token" value="<?= e($generatedCredentials['token']) ?>">
+    <?php endif; ?>
+
     <label>
         Название
         <input name="display_name" required value="<?= e($bot['display_name'] ?? '') ?>" placeholder="Локальный тестовый бот">
@@ -16,12 +22,12 @@ $action = $isEdit ? '/bots/' . $bot['id'] : '/bots';
 
     <label>
         Token
-        <input name="token" required value="<?= e($bot['token'] ?? '') ?>" placeholder="100001:local-dev-token">
+        <input name="token" value="<?= e($bot['token'] ?? '') ?>" placeholder="<?= e((string) $tokenPlaceholder) ?>">
     </label>
 
     <label>
         Bot ID
-        <input name="bot_id" inputmode="numeric" value="<?= e($bot['bot_id'] ?? '') ?>" placeholder="100001">
+        <input name="bot_id" inputmode="numeric" value="<?= e($bot['bot_id'] ?? '') ?>" placeholder="<?= e((string) $botIdPlaceholder) ?>">
     </label>
 
     <label>
@@ -58,4 +64,3 @@ $action = $isEdit ? '/bots/' . $bot['id'] : '/bots';
         <a class="button secondary" href="/bots">Отмена</a>
     </div>
 </form>
-

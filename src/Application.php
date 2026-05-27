@@ -242,6 +242,11 @@ final readonly class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/deleteWebhook$#i', $path, $matches) === 1) {
+            $this->deleteWebhook($matches[1]);
+            return;
+        }
+
         // Заглушка для неподдерживаемых методов Bot API
         if (preg_match('#^/bot([^/]+)/#', $path) === 1) {
             Response::json([
@@ -423,6 +428,7 @@ final readonly class Application {
         $this->render('bots/form', [
             'title' => $bot === null ? 'Новый бот' : 'Редактирование бота',
             'bot' => $bot,
+            'generatedCredentials' => $bot === null ? $this->bots->generateCredentials() : null,
         ]);
     }
 
@@ -551,6 +557,36 @@ final readonly class Application {
         ]);
     }
 
+    /**
+     * POST /bot{token}/deleteWebhook — удаляет webhook и возвращает бота в Long Polling.
+     */
+    private function deleteWebhook(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+
+        $this->bots->setWebhook((int) $bot['id'], null, null);
+
+        if ($this->isTruthyBotApiParam($params['drop_pending_updates'] ?? false)) {
+            $this->updates->dropPendingByBot((int) $bot['id']);
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => true,
+            'description' => 'Webhook was deleted',
+        ]);
+    }
+
     private function isValidWebhookUrl(string $url): bool {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             return false;
@@ -561,6 +597,14 @@ final readonly class Application {
         $host = (string) ($parts['host'] ?? '');
 
         return $host !== '' && in_array($scheme, ['http', 'https'], true);
+    }
+
+    private function isTruthyBotApiParam(mixed $value): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
     }
 
     private function health(): void {

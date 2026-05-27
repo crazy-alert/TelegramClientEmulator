@@ -86,4 +86,14 @@ final readonly class UpdateRepository {
 
         return $statement->fetchAll();
     }
+
+    /**
+     * Удаляет неподтверждённые updates бота при `drop_pending_updates`.
+     */
+    public function dropPendingByBot(int $botId): void {
+        $statement = $this->pdo->prepare(
+            'DELETE FROM updates WHERE bot_id = :bot_id AND queue_state = \'pending\''
+        );
+        $statement->execute(['bot_id' => $botId]);
+    }
 }
