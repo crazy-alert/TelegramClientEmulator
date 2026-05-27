@@ -2,19 +2,20 @@
 
 ## Текущая задача
 
-Реализовать следующий этап: Long Polling `GET|POST /bot<TOKEN>/getUpdates` для локального Bot API.
+Реализовать `POST /bot<TOKEN>/sendMessage`: принимать ответ бота, сохранять его в историю диалога и возвращать Telegram-like `Message`.
 
 ## Чеклист
 
-- [completed] Проверить текущую модель updates и параметры Bot API, которые нужно поддержать.
-- [completed] Добавить методы очереди для подтверждения offset, выдачи pending updates и подсчета очереди.
-- [completed] Реализовать маршрут `getUpdates` с `offset`, `limit`, `timeout`, `allowed_updates` и конфликтом при активном webhook.
-- [completed] Обновить UI/документацию минимально там, где нужно показать состояние Long Polling.
-- [completed] Прогнать PHP lint и HTTP-проверку Long Polling в Docker.
+- [completed] Проверить текущие репозитории сообщений/профилей и нужные параметры `sendMessage`.
+- [completed] Добавить поиск профиля по `bot_id` и `chat_id`.
+- [completed] Добавить сохранение сообщения бота с возвратом созданной записи.
+- [completed] Реализовать маршрут `sendMessage` с JSON/form-urlencoded body и Telegram-like ошибками.
+- [completed] Обновить README/контекст при необходимости.
+- [completed] Прогнать PHP lint и HTTP-проверку `sendMessage` в Docker.
 - [completed] Обновить `AI_CURRENT_CONTEXT.md`, проверить diff/status, сделать коммит и push.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
 - Внешние сервисы и опасные права не требуются: работа локальная, в PHP/SQLite.
-- `timeout` в MVP делаем коротким ожиданием с верхней границей, чтобы не подвесить single-process встроенный PHP server.
+- Scope MVP: текстовые сообщения без клавиатур, attachments и полного набора параметров Telegram Bot API.

@@ -242,6 +242,11 @@ final readonly class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendMessage$#i', $path, $matches) === 1) {
+            $this->sendMessage($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
             $this->setWebhook($matches[1]);
             return;
@@ -505,6 +510,75 @@ final readonly class Application {
     }
 
     /**
+     * POST /bot{token}/sendMessage — сохраняет ответ бота в локальную историю чата.
+     */
+    private function sendMessage(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+
+        if (!array_key_exists('chat_id', $params) || trim((string) $params['chat_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "chat_id" is required',
+            ], 400);
+            return;
+        }
+
+        if (!array_key_exists('text', $params) || trim((string) $params['text']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "text" is required',
+            ], 400);
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        if ($chatId === 0) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $profile = $this->profiles->findEnabledByBotAndChat((int) $bot['id'], $chatId);
+        if ($profile === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $message = $this->messages->create([
+            'bot_id' => (int) $bot['id'],
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'direction' => 'bot',
+            'text' => trim((string) $params['text']),
+        ]);
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
+    }
+
+    /**
      * GET|POST /bot{token}/getUpdates — отдаёт очередь Long Polling updates.
      */
     private function getUpdates(string $token): void {
@@ -758,6 +832,33 @@ final readonly class Application {
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $bot
+     * @return array<string, mixed>
+     */
+    private function botMessagePayload(array $message, array $profile, array $bot): array {
+        return [
+            'message_id' => (int) $message['telegram_message_id'],
+            'from' => [
+                'id' => (int) ($bot['bot_id'] ?? 0),
+                'is_bot' => true,
+                'first_name' => $bot['display_name'],
+                'username' => $bot['username'],
+            ],
+            'chat' => [
+                'id' => (int) $profile['chat_id'],
+                'type' => $profile['chat_type'] ?? 'private',
+                'username' => $profile['username'] ?? '',
+                'first_name' => $profile['first_name'] ?? '',
+                'last_name' => $profile['last_name'] ?? '',
+            ],
+            'date' => strtotime((string) $message['created_at']) ?: time(),
+            'text' => $message['text'],
+        ];
     }
 
     private function health(): void {

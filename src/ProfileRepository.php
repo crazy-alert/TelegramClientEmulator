@@ -48,6 +48,27 @@ final readonly class ProfileRepository {
     }
 
     /**
+     * Находит активный профиль, чей диалог соответствует боту и chat_id.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findEnabledByBotAndChat(int $botId, int $chatId): ?array {
+        $statement = $this->pdo->prepare(
+            'SELECT * FROM profiles
+            WHERE active_bot_id = :bot_id AND chat_id = :chat_id AND enabled = 1
+            ORDER BY id ASC
+            LIMIT 1'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'chat_id' => $chatId,
+        ]);
+        $profile = $statement->fetch();
+
+        return $profile === false ? null : $profile;
+    }
+
+    /**
      * Создаёт новый профиль.
      *
      * @param array<string, mixed> $data Входные данные формы (name, user_id, username, chat_id и др.).

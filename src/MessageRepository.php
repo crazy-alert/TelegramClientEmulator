@@ -41,8 +41,10 @@ final readonly class MessageRepository {
      * Создаёт новое сообщение с автоинкрементным telegram_message_id в пределах диалога.
      *
      * @param array<string, mixed> $data Поля: bot_id, profile_id, chat_id, direction, text, raw_payload (опционально).
+     *
+     * @return array<string, mixed>
      */
-    public function create(array $data): void {
+    public function create(array $data): array {
         $nextMessageId = $this->nextMessageId(
             (int) $data['bot_id'],
             (int) $data['chat_id'],
@@ -62,6 +64,31 @@ final readonly class MessageRepository {
             'text' => $data['text'],
             'raw_payload' => $data['raw_payload'] ?? null,
         ]);
+
+        return $this->find((int) $this->pdo->lastInsertId()) ?? [
+            'id' => (int) $this->pdo->lastInsertId(),
+            'bot_id' => (int) $data['bot_id'],
+            'profile_id' => (int) $data['profile_id'],
+            'chat_id' => (int) $data['chat_id'],
+            'telegram_message_id' => $nextMessageId,
+            'direction' => $data['direction'],
+            'text' => $data['text'],
+            'raw_payload' => $data['raw_payload'] ?? null,
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+    }
+
+    /**
+     * Находит сообщение по внутреннему идентификатору.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function find(int $id): ?array {
+        $statement = $this->pdo->prepare('SELECT * FROM messages WHERE id = :id');
+        $statement->execute(['id' => $id]);
+        $message = $statement->fetch();
+
+        return $message === false ? null : $message;
     }
 
     /**
