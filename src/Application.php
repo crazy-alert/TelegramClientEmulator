@@ -83,61 +83,7 @@ final readonly class Application {
         }
     }
 
-    /**
-     * Возвращает активный профиль из cookie или null, если не выбран.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function activeProfile(): ?array {
-        $id = isset($_COOKIE['active_profile_id']) ? (int) $_COOKIE['active_profile_id'] : 0;
-
-        if ($id <= 0) {
-            return null;
-        }
-
-        $profile = $this->profiles->find($id);
-
-        if ($profile === null || ((int) $profile['enabled']) !== 1) {
-            return null;
-        }
-
-        return $profile;
-    }
-
-    /**
-     * Возвращает активного бота из cookie или null, если не выбран.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function activeBot(): ?array {
-        $id = isset($_COOKIE['active_bot_id']) ? (int) $_COOKIE['active_bot_id'] : 0;
-
-        if ($id <= 0) {
-            return null;
-        }
-
-        $bot = $this->bots->find($id);
-
-        if ($bot === null || ((int) $bot['enabled']) !== 1) {
-            return null;
-        }
-
-        return $bot;
-    }
-
     private function route(string $method, string $path): void {
-        // --- Переключатели активного профиля и бота ---
-
-        if ($method === 'POST' && $path === '/select-profile') {
-            $this->selectProfile();
-            return;
-        }
-
-        if ($method === 'POST' && $path === '/select-bot') {
-            $this->selectBot();
-            return;
-        }
-
         // --- Чат ---
 
         if ($method === 'GET' && $path === '/chat') {
@@ -197,7 +143,7 @@ final readonly class Application {
             return;
         }
 
-        // --- Профили ---
+        // --- Пользователи ---
 
         if ($method === 'GET' && $path === '/profiles') {
             $this->profilesIndex();
@@ -281,38 +227,12 @@ final readonly class Application {
     }
 
     // ----------------------------------------------------------------
-    // Переключатели профиля и бота (cookie)
-    // ----------------------------------------------------------------
-
-    private function selectProfile(): void {
-        $profileId = (int) ($_POST['profile_id'] ?? 0);
-        setcookie('active_profile_id', (string) $profileId, [
-            'expires' => time() + 86400 * 30,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
-    }
-
-    private function selectBot(): void {
-        $botId = (int) ($_POST['bot_id'] ?? 0);
-        setcookie('active_bot_id', (string) $botId, [
-            'expires' => time() + 86400 * 30,
-            'path' => '/',
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
-    }
-
-    // ----------------------------------------------------------------
     // Чат
     // ----------------------------------------------------------------
 
     private function chatIndex(): void {
-        $profile = $this->activeProfile();
-        $bot = $this->activeBot();
+        $profile = $this->selectedUser();
+        $bot = $this->selectedBot();
 
         $messages = [];
         $latestUpdate = null;
@@ -340,12 +260,16 @@ final readonly class Application {
             'latestUpdate' => $latestUpdate,
             'latestDeliveryAttempt' => $latestDeliveryAttempt,
             'pendingUpdateCount' => $pendingUpdateCount,
+            'selectedProfileId' => (int) ($_GET['profile_id'] ?? 0),
+            'selectedBotId' => (int) ($_GET['bot_id'] ?? 0),
         ]);
     }
 
     private function chatSend(): void {
-        $profile = $this->activeProfile();
-        $bot = $this->activeBot();
+        $profileId = (int) ($_POST['profile_id'] ?? 0);
+        $botId = (int) ($_POST['bot_id'] ?? 0);
+        $profile = $this->enabledUserById($profileId);
+        $bot = $this->enabledBotById($botId);
 
         if ($profile === null || $bot === null) {
             Response::redirect('/chat');
@@ -403,7 +327,59 @@ final readonly class Application {
             }
         }
 
-        Response::redirect('/chat');
+        Response::redirect('/chat?profile_id=' . $profileId . '&bot_id=' . $botId);
+    }
+
+    /**
+     * Возвращает выбранного пользователя из query string.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function selectedUser(): ?array {
+        return $this->enabledUserById((int) ($_GET['profile_id'] ?? 0));
+    }
+
+    /**
+     * Возвращает выбранного бота из query string.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function selectedBot(): ?array {
+        return $this->enabledBotById((int) ($_GET['bot_id'] ?? 0));
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function enabledUserById(int $id): ?array {
+        if ($id <= 0) {
+            return null;
+        }
+
+        $profile = $this->profiles->find($id);
+
+        if ($profile === null || ((int) $profile['enabled']) !== 1) {
+            return null;
+        }
+
+        return $profile;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function enabledBotById(int $id): ?array {
+        if ($id <= 0) {
+            return null;
+        }
+
+        $bot = $this->bots->find($id);
+
+        if ($bot === null || ((int) $bot['enabled']) !== 1) {
+            return null;
+        }
+
+        return $bot;
     }
 
     // ----------------------------------------------------------------
@@ -411,12 +387,12 @@ final readonly class Application {
     // ----------------------------------------------------------------
 
     /**
-     * Рендерит шаблон, автоматически добавляя allProfiles и allBots для переключателей в шапке.
+     * Рендерит шаблон, автоматически добавляя пользователей и ботов для выбора контекста.
      *
      * @param array<string, mixed> $data
      */
     private function render(string $template, array $data = []): void {
-        $data['allProfiles'] = $this->profiles->all();
+        $data['allUsers'] = $this->profiles->all();
         $data['allBots'] = $this->bots->all();
         $this->view->render($template, $data);
     }
@@ -434,7 +410,7 @@ final readonly class Application {
         $this->render('dashboard', [
             'title' => 'Панель',
             'bots' => $this->bots->all(),
-            'profiles' => $this->profiles->all(),
+            'users' => $this->profiles->all(),
             'databasePath' => $this->database->path(),
         ]);
     }
@@ -463,8 +439,8 @@ final readonly class Application {
 
     private function profilesIndex(): void {
         $this->render('profiles/index', [
-            'title' => 'Профили',
-            'profiles' => $this->profiles->all(),
+            'title' => 'Пользователи',
+            'users' => $this->profiles->all(),
         ]);
     }
 
@@ -472,14 +448,13 @@ final readonly class Application {
         $profile = $id === null ? null : $this->profiles->find($id);
 
         if ($id !== null && $profile === null) {
-            Response::json(['ok' => false, 'error' => 'Профиль не найден'], 404);
+            Response::json(['ok' => false, 'error' => 'Пользователь не найден'], 404);
             return;
         }
 
         $this->render('profiles/form', [
-            'title' => $profile === null ? 'Новый профиль' : 'Редактирование профиля',
+            'title' => $profile === null ? 'Новый пользователь' : 'Редактирование пользователя',
             'profile' => $profile,
-            'bots' => $this->bots->all(),
         ]);
     }
 
@@ -603,7 +578,7 @@ final readonly class Application {
             return;
         }
 
-        $profile = $this->profiles->findEnabledByBotAndChat((int) $bot['id'], $chatId);
+        $profile = $this->profiles->findEnabledByChat($chatId);
         if ($profile === null) {
             Response::json([
                 'ok' => false,

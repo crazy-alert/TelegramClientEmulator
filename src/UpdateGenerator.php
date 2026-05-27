@@ -7,7 +7,7 @@ namespace App;
 /**
  * Генератор Telegram-совместимых Update payload'ов.
  *
- * Принимает данные сообщения, профиля и бота, возвращает JSON-подобный массив,
+ * Принимает данные сообщения, пользователя и бота, возвращает JSON-подобный массив,
  * соответствующий формату Telegram Bot API Update.
  *
  * Расширяемость: для новых типов updates (callback_query, edited_message)
@@ -19,7 +19,7 @@ final readonly class UpdateGenerator {
      * Генерирует Update для текстового сообщения от пользователя.
      *
      * @param array<string, mixed> $message  Запись из таблицы messages.
-     * @param array<string, mixed> $profile  Запись из таблицы profiles.
+     * @param array<string, mixed> $profile  Запись пользователя из таблицы profiles.
      * @param array<string, mixed> $bot      Запись из таблицы bots.
      * @return array<string, mixed>          Telegram-like Update payload.
      */

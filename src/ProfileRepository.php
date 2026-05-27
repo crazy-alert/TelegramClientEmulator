@@ -7,9 +7,9 @@ namespace App;
 use PDO;
 
 /**
- * Репозиторий для работы с профилями в SQLite.
+ * Репозиторий для работы с пользователями в SQLite.
  *
- * Предоставляет CRUD-операции для сущности Profile:
+ * Предоставляет CRUD-операции для локального пользователя:
  * создание, чтение (всех c JOIN ботов и по id), обновление и удаление.
  */
 final readonly class ProfileRepository {
@@ -18,26 +18,21 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Возвращает список всех профилей с информацией о привязанном боте,
+     * Возвращает список всех пользователей,
      * отсортированный по дате создания (новые сверху).
      *
      * @return list<array<string, mixed>>
      */
     public function all(): array {
-        $statement = $this->pdo->query(
-            'SELECT profiles.*, bots.display_name AS bot_display_name, bots.username AS bot_username
-            FROM profiles
-            LEFT JOIN bots ON bots.id = profiles.active_bot_id
-            ORDER BY profiles.created_at DESC, profiles.id DESC'
-        );
+        $statement = $this->pdo->query('SELECT * FROM profiles ORDER BY created_at DESC, id DESC');
 
         return $statement->fetchAll();
     }
 
     /**
-     * Находит профиль по его внутреннему идентификатору.
+     * Находит пользователя по его внутреннему идентификатору.
      *
-     * @return array<string, mixed>|null Возвращает данные профиля или null, если профиль не найден.
+     * @return array<string, mixed>|null Возвращает данные пользователя или null, если пользователь не найден.
      */
     public function find(int $id): ?array {
         $statement = $this->pdo->prepare('SELECT * FROM profiles WHERE id = :id');
@@ -48,19 +43,18 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Находит активный профиль, чей диалог соответствует боту и chat_id.
+     * Находит включенного пользователя по chat_id.
      *
      * @return array<string, mixed>|null
      */
-    public function findEnabledByBotAndChat(int $botId, int $chatId): ?array {
+    public function findEnabledByChat(int $chatId): ?array {
         $statement = $this->pdo->prepare(
             'SELECT * FROM profiles
-            WHERE active_bot_id = :bot_id AND chat_id = :chat_id AND enabled = 1
+            WHERE chat_id = :chat_id AND enabled = 1
             ORDER BY id ASC
             LIMIT 1'
         );
         $statement->execute([
-            'bot_id' => $botId,
             'chat_id' => $chatId,
         ]);
         $profile = $statement->fetch();
@@ -69,9 +63,9 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Создаёт новый профиль.
+     * Создаёт нового пользователя.
      *
-     * @param array<string, mixed> $data Входные данные формы (name, user_id, username, chat_id и др.).
+     * @param array<string, mixed> $data Входные данные формы (user_id, username, chat_id и др.).
      */
     public function create(array $data): void {
         $statement = $this->pdo->prepare(
@@ -88,7 +82,7 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Обновляет существующий профиль.
+     * Обновляет существующего пользователя.
      *
      * @param array<string, mixed> $data Входные данные формы.
      */
@@ -116,7 +110,7 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Удаляет профиль по идентификатору.
+     * Удаляет пользователя по идентификатору.
      */
     public function delete(int $id): void {
         $statement = $this->pdo->prepare('DELETE FROM profiles WHERE id = :id');
@@ -124,7 +118,7 @@ final readonly class ProfileRepository {
     }
 
     /**
-     * Нормализует входные данные профиля перед записью в БД.
+     * Нормализует входные данные пользователя перед записью в БД.
      *
      * Удаляет пробелы, приводит типы, задаёт значения по умолчанию.
      *
@@ -132,14 +126,14 @@ final readonly class ProfileRepository {
      * @return array<string, mixed>
      */
     private function normalize(array $data): array {
-        $activeBotId = trim((string) ($data['active_bot_id'] ?? ''));
+        $username = ltrim(trim((string) ($data['username'] ?? '')), '@');
         $lastName = trim((string) ($data['last_name'] ?? ''));
 
         return [
-            'name' => trim((string) ($data['name'] ?? '')),
-            'active_bot_id' => $activeBotId === '' ? null : (int) $activeBotId,
+            'name' => $username,
+            'active_bot_id' => null,
             'user_id' => (int) ($data['user_id'] ?? 0),
-            'username' => ltrim(trim((string) ($data['username'] ?? '')), '@'),
+            'username' => $username,
             'first_name' => trim((string) ($data['first_name'] ?? '')),
             'last_name' => $lastName === '' ? null : $lastName,
             'chat_id' => (int) ($data['chat_id'] ?? 0),

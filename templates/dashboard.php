@@ -13,21 +13,19 @@
 
     <section class="panel">
         <div class="toolbar">
-            <h2>Профили</h2>
+            <h2>Пользователи</h2>
             <a class="button" href="/profiles/new">Добавить</a>
         </div>
 
-        <p class="muted">Настроено профилей: <?= e(count($profiles)) ?></p>
-        <p><a href="/profiles">Открыть управление профилями</a></p>
+        <p class="muted">Настроено пользователей: <?= e(count($users)) ?></p>
+        <p><a href="/profiles">Открыть управление пользователями</a></p>
     </section>
 </div>
 
 <section class="panel" style="margin-top: 18px;">
     <h2>Состояние Этапа 1</h2>
     <p>
-        CRUD для ботов и профилей работает через SQLite. Следующий шаг: базовый чат,
-        генерация Telegram-like updates и очередь Long Polling.
+        CRUD для ботов и пользователей работает через SQLite. Чат открывается для выбранной пары пользователь-бот.
     </p>
     <p class="muted">База данных: <code><?= e($databasePath) ?></code></p>
 </section>
-

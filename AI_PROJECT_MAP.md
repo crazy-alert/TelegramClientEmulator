@@ -18,7 +18,7 @@
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
-- `src/ProfileRepository.php` — доступ к данным профилей.
+- `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/Response.php` — HTTP response helpers.
 - `src/View.php` — рендеринг шаблонов.
 
@@ -27,7 +27,7 @@
 - `templates/layout.php` — общий HTML layout и базовые стили.
 - `templates/dashboard.php` — панель состояния.
 - `templates/bots/` — список и форма ботов.
-- `templates/profiles/` — список и форма профилей.
+- `templates/profiles/` — список и форма пользователей (исторически путь `/profiles`).
 
 ## Данные
 

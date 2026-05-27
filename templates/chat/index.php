@@ -1,12 +1,43 @@
 <h1>Чат</h1>
 
+<form class="editor" method="get" action="/chat" style="margin-bottom: 18px;">
+    <div class="grid">
+        <label>
+            Пользователь
+            <select name="profile_id" required>
+                <option value="">Выберите пользователя</option>
+                <?php foreach ($allUsers as $user): ?>
+                    <option value="<?= e($user['id']) ?>" <?= (int) ($selectedProfileId ?? 0) === (int) $user['id'] ? 'selected' : '' ?>>
+                        @<?= e($user['username']) ?> · <?= e($user['first_name']) ?> <?= e($user['last_name'] ?? '') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+
+        <label>
+            Бот
+            <select name="bot_id" required>
+                <option value="">Выберите бота</option>
+                <?php foreach ($allBots as $availableBot): ?>
+                    <option value="<?= e($availableBot['id']) ?>" <?= (int) ($selectedBotId ?? 0) === (int) $availableBot['id'] ? 'selected' : '' ?>>
+                        @<?= e($availableBot['username']) ?> · <?= e($availableBot['display_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+    </div>
+    <div class="actions">
+        <button type="submit">Открыть чат</button>
+    </div>
+</form>
+
 <?php if ($profile === null || $bot === null): ?>
     <div class="empty">
-        Выберите профиль и бота в верхней панели, чтобы начать диалог.
+        Выберите сохраненного пользователя и бота, чтобы открыть диалог.
     </div>
 <?php else: ?>
     <div class="panel" style="margin-bottom: 18px;">
-        <strong>Активный профиль:</strong> <?= e($profile['name']) ?>
+        <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
         (<?= e($profile['first_name']) ?> <?= e($profile['last_name'] ?? '') ?>,
         ID: <?= e($profile['user_id']) ?>,
         чат: <?= e($profile['chat_type']) ?> #<?= e($profile['chat_id']) ?>)
@@ -41,6 +72,8 @@
 
     <!-- Поле ввода -->
     <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
+        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
         <label>
             Сообщение
             <textarea name="text" rows="3" required

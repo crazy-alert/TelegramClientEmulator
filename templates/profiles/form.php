@@ -4,28 +4,11 @@ $action = $isEdit ? '/profiles/' . $profile['id'] : '/profiles';
 ?>
 
 <div class="toolbar">
-    <h1><?= $isEdit ? 'Редактирование профиля' : 'Новый профиль' ?></h1>
+    <h1><?= $isEdit ? 'Редактирование пользователя' : 'Новый пользователь' ?></h1>
     <a class="button secondary" href="/profiles">Назад</a>
 </div>
 
 <form class="editor" method="post" action="<?= e($action) ?>">
-    <label>
-        Название профиля
-        <input name="name" required value="<?= e($profile['name'] ?? '') ?>" placeholder="Пользователь 1">
-    </label>
-
-    <label>
-        Активный бот
-        <select name="active_bot_id">
-            <option value="">Не выбран</option>
-            <?php foreach ($bots as $bot): ?>
-                <option value="<?= e($bot['id']) ?>" <?= (string) ($profile['active_bot_id'] ?? '') === (string) $bot['id'] ? 'selected' : '' ?>>
-                    <?= e($bot['display_name']) ?> (@<?= e($bot['username']) ?>)
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </label>
-
     <label>
         User ID
         <input name="user_id" required inputmode="numeric" value="<?= e($profile['user_id'] ?? '') ?>" placeholder="1001">
@@ -77,4 +60,3 @@ $action = $isEdit ? '/profiles/' . $profile['id'] : '/profiles';
         <a class="button secondary" href="/profiles">Отмена</a>
     </div>
 </form>
-

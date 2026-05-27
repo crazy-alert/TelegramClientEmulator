@@ -9,26 +9,28 @@
 - Docker runtime на готовом образе `php:8.3-cli-alpine` без локальной сборки через `Dockerfile`.
 - Встроенный PHP HTTP server запускается напрямую через `docker-compose.yml`; nginx/sub_filter удалены после проверки malformed `multipart/form-data`.
 - SQLite bootstrap и миграция `001_initial_schema.sql`.
-- CRUD ботов и профилей через server-rendered PHP templates.
+- CRUD ботов через server-rendered PHP templates.
 - Экран чата (`/chat`), отправка сообщений, генерация Telegram-like `Update`, inspector raw payload.
-- Переключатели активного профиля и бота в шапке через cookie.
+- CRUD пользователей через server-rendered PHP templates; исторически маршрут и таблица остаются `/profiles` и `profiles`.
+- Экран чата (`/chat`) открывает диалог для явной пары пользователь-бот через query params `profile_id` и `bot_id`; cookie-состояние выбора больше не используется, поэтому разные вкладки могут работать с разными пользователями и ботами.
 - Форма создания бота автоматически генерирует `bot_id` и `token`; token соответствует `/\d{5,10}[:][a-zA-Z0-9_.+-]{15,}/`, показывается как placeholder и отправляется скрытым полем, если пользователь не ввел свой token.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` отдаёт pending updates Long Polling, поддерживает `offset`, `limit`, `timeout`, `allowed_updates`, подтверждает updates с `update_id < offset`, возвращает 409 при активном webhook.
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo` возвращает `url`, `has_custom_certificate=false`, `pending_update_count` и `max_connections=40`.
-- Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенный профиль по `active_bot_id` и `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
+- Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенного пользователя по `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
 - Webhook delivery loop: при `delivery_mode=webhook` и настроенном `webhook_url` созданный update отправляется POST-запросом с JSON body, `Content-Type: application/json` и optional `X-Telegram-Bot-Api-Secret-Token`; попытка сохраняется в `delivery_attempts`, update получает `queue_state=delivered` или `failed`.
 - Chat UI показывает размер pending-очереди Long Polling для активного бота.
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
+- В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
 
 ## Важные решения
 
 - Основной язык: PHP, стиль K&R для фигурных скобок.
 - Интерактивность интерфейса: server-rendered PHP templates, HTMX планируется дальше.
 - Хранение: SQLite в `data/telegram_emulator.sqlite`.
-- Активный профиль/бот: cookie (MVP), позже можно перенести в SQLite settings.
+- Выбор пользователя и бота для чата хранится в URL, а не в cookie, чтобы разные вкладки могли работать с разными диалогами.
 - Проект не привязан к одному bot token.
 - Обязательны оба режима получения updates: webhook и Long Polling.
 - Постоянное правило из `AGENTS.md`: поведение маршрутов, payload, параметров, кодов ошибок и семантики Telegram Bot API должно быть каноничным; неканоничные aliases/shortcuts/альтернативные URL-формы нельзя добавлять без явного запроса пользователя.
@@ -37,6 +39,7 @@
 - В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
 - `getUpdates.timeout` в MVP ограничен коротким ожиданием до 3 секунд, чтобы не блокировать single-process встроенный PHP server надолго.
 - Webhook delivery в MVP делает одну попытку без retry; `WEBHOOK_TIMEOUT_MS` читается из окружения и ограничивается 1-60 секундами.
+- Групповой сценарий запланирован как несколько сохраненных пользователей с одним `chat_id`, выбор отправителя в group chat и доставка updates выбранному боту; отдельная сущность группы пока не введена.
 
 ## Проверки
 
@@ -59,7 +62,7 @@
   - SQLite содержит `delivery_mode=long_polling`, пустые `webhook_url` и `webhook_secret_token`.
 - 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
 - 2026-05-27: HTTP-проверка Long Polling в одноразовом `php:8.3-cli-alpine` контейнере:
-  - создан бот и профиль, `/chat/send` с cookie активного профиля/бота создал update;
+  - создан бот и пользователь, `/chat/send` создал update;
   - `GET /bot<TOKEN>/getUpdates` вернул один update с реальным `update_id` и текстом `/start`;
   - повторный `getUpdates?offset=<update_id+1>` вернул пустой массив и перевёл update в `queue_state=confirmed`;
   - `allowed_updates=["callback_query"]` отфильтровал message update;
@@ -83,6 +86,13 @@
   - receiver получил `X-Telegram-Bot-Api-Secret-Token`;
   - SQLite содержит `updates.queue_state=delivered`, `delivered_at`, `delivery_attempts.response_status=202`, response body и пустой error;
   - `getWebhookInfo` после доставки вернул `pending_update_count=0`.
+- 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
+- 2026-05-27: HTTP-проверка выбора пользователя/бота без cookie в одноразовом `php:8.3-cli-alpine` контейнере:
+  - форма пользователя не содержит `Название профиля`, `Активный бот`, `nav-right`;
+  - создание пользователя сохраняет `name=username` и `active_bot_id=NULL`;
+  - `/chat?profile_id=<user1>&bot_id=<bot1>` и `/chat?profile_id=<user2>&bot_id=<bot2>` открывают разные диалоги;
+  - `/chat/send` с hidden `profile_id`/`bot_id` сохраняет сообщения в правильные пары пользователь-бот;
+  - cookie-поля выбора не попадают в HTML чата.
 
 ## Замечания
 
@@ -90,4 +100,4 @@
 
 ## Ближайший следующий этап
 
-Следующий практичный этап: отдельный inspector/list для delivery attempts и ручной resend failed webhook delivery.
+Следующий практичный этап: групповые чаты — несколько пользователей в одном `chat_id`, выбор отправителя и проверка реакции бота в общем диалоге.
