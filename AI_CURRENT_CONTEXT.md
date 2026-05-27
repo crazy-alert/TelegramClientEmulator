@@ -37,6 +37,7 @@
 
 ## Проверки
 
+- 2026-05-27: обновлен `ROADMAP.md` под текущий статус: реализованные Bot API методы, фактический Docker runtime без `Dockerfile`, статусы этапов 0-5, следующий крупный этап webhook delivery.
 - 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
 - 2026-05-27: HTTP-проверка в контейнере через `docker run -p 127.0.0.1:18081:8080 ...`:
   - создание тестового бота через `/bots`;
