@@ -10,7 +10,6 @@ use PDO;
  * Репозиторий для работы с очередью updates в SQLite.
  *
  * Хранит сгенерированные Telegram-like Update объекты.
- * На Этапе 3 будет расширен методами для Long Polling (findPending, confirmByOffset).
  */
 final readonly class UpdateRepository {
 
@@ -23,8 +22,9 @@ final readonly class UpdateRepository {
      * update_id вычисляется как 100_000_000 + автоинкрементный id строки.
      *
      * @param array<string, mixed> $data Поля: bot_id, profile_id, payload, delivery_mode, queue_state.
+     * @return array{id: int, update_id: int, payload: string}
      */
-    public function create(array $data): void {
+    public function create(array $data): array {
         $statement = $this->pdo->prepare(
             'INSERT INTO updates (bot_id, profile_id, update_id, payload, delivery_mode, queue_state)
             VALUES (:bot_id, :profile_id, :update_id, :payload, :delivery_mode, :queue_state)'
@@ -42,12 +42,20 @@ final readonly class UpdateRepository {
 
         $rowId = (int) $this->pdo->lastInsertId();
         $updateId = 100_000_000 + $rowId;
+        $payload = $this->payloadWithUpdateId((string) $data['payload'], $updateId);
 
-        $update = $this->pdo->prepare('UPDATE updates SET update_id = :update_id WHERE id = :id');
+        $update = $this->pdo->prepare('UPDATE updates SET update_id = :update_id, payload = :payload WHERE id = :id');
         $update->execute([
             'update_id' => $updateId,
+            'payload' => $payload,
             'id' => $rowId,
         ]);
+
+        return [
+            'id' => $rowId,
+            'update_id' => $updateId,
+            'payload' => $payload,
+        ];
     }
 
     /**
@@ -67,7 +75,7 @@ final readonly class UpdateRepository {
     }
 
     /**
-     * Возвращает неподтверждённые updates для бота (заготовка для Этапа 3 — Long Polling).
+     * Возвращает неподтверждённые updates для бота.
      *
      * @return list<array<string, mixed>>
      */
@@ -88,6 +96,57 @@ final readonly class UpdateRepository {
     }
 
     /**
+     * Возвращает последние неподтверждённые updates для отрицательного offset.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findLastPending(int $botId, int $limit): array {
+        $statement = $this->pdo->prepare(
+            'SELECT * FROM updates
+            WHERE bot_id = :bot_id AND queue_state = \'pending\'
+            ORDER BY update_id DESC
+            LIMIT :limit'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'limit' => $limit,
+        ]);
+
+        return array_reverse($statement->fetchAll());
+    }
+
+    /**
+     * Подтверждает updates с `update_id` меньше переданного offset.
+     */
+    public function confirmBeforeOffset(int $botId, int $offset): void {
+        if ($offset <= 0) {
+            return;
+        }
+
+        $statement = $this->pdo->prepare(
+            'UPDATE updates
+            SET queue_state = \'confirmed\', confirmed_at = CURRENT_TIMESTAMP
+            WHERE bot_id = :bot_id AND queue_state = \'pending\' AND update_id < :offset'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'offset' => $offset,
+        ]);
+    }
+
+    /**
+     * Считает неподтверждённые updates бота для интерфейса.
+     */
+    public function countPendingByBot(int $botId): int {
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM updates WHERE bot_id = :bot_id AND queue_state = \'pending\''
+        );
+        $statement->execute(['bot_id' => $botId]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
      * Удаляет неподтверждённые updates бота при `drop_pending_updates`.
      */
     public function dropPendingByBot(int $botId): void {
@@ -95,5 +154,17 @@ final readonly class UpdateRepository {
             'DELETE FROM updates WHERE bot_id = :bot_id AND queue_state = \'pending\''
         );
         $statement->execute(['bot_id' => $botId]);
+    }
+
+    private function payloadWithUpdateId(string $payload, int $updateId): string {
+        $decoded = json_decode($payload, true);
+
+        if (!is_array($decoded)) {
+            return $payload;
+        }
+
+        $decoded['update_id'] = $updateId;
+
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: $payload;
     }
 }

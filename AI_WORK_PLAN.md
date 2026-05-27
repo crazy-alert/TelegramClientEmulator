@@ -2,17 +2,19 @@
 
 ## Текущая задача
 
-Упростить создание бота: автоматически генерировать `id` и `token`, показывать их в плейсхолдерах формы, и добавить поддержку Bot API метода `deleteWebhook`.
+Реализовать следующий этап: Long Polling `GET|POST /bot<TOKEN>/getUpdates` для локального Bot API.
 
 ## Чеклист
 
-- [completed] Найти текущие форму создания бота, валидацию token/id и маршруты Bot API webhook.
-- [completed] Добавить генерацию bot id/token и убрать обязательный ручной ввод id/token при создании.
-- [completed] Реализовать `deleteWebhook` с каноничным поведением Telegram Bot API.
-- [completed] Добавить или обновить сфокусированные проверки/тесты и документацию при необходимости.
-- [completed] Обновить рабочий контекст, проверить diff и состояние git.
+- [completed] Проверить текущую модель updates и параметры Bot API, которые нужно поддержать.
+- [completed] Добавить методы очереди для подтверждения offset, выдачи pending updates и подсчета очереди.
+- [completed] Реализовать маршрут `getUpdates` с `offset`, `limit`, `timeout`, `allowed_updates` и конфликтом при активном webhook.
+- [completed] Обновить UI/документацию минимально там, где нужно показать состояние Long Polling.
+- [completed] Прогнать PHP lint и HTTP-проверку Long Polling в Docker.
+- [completed] Обновить `AI_CURRENT_CONTEXT.md`, проверить diff/status, сделать коммит и push.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- Внешние сервисы и опасные права не требуются: изменения локальные, в PHP-коде и SQLite-слое.
+- Внешние сервисы и опасные права не требуются: работа локальная, в PHP/SQLite.
+- `timeout` в MVP делаем коротким ожиданием с верхней границей, чтобы не подвесить single-process встроенный PHP server.

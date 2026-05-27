@@ -237,6 +237,11 @@ final readonly class Application {
             return;
         }
 
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getUpdates$#i', $path, $matches) === 1) {
+            $this->getUpdates($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
             $this->setWebhook($matches[1]);
             return;
@@ -299,6 +304,7 @@ final readonly class Application {
 
         $messages = [];
         $latestUpdate = null;
+        $pendingUpdateCount = 0;
 
         if ($profile !== null && $bot !== null) {
             $messages = $this->messages->findByDialog(
@@ -307,6 +313,7 @@ final readonly class Application {
                 (int) $profile['chat_id'],
             );
             $latestUpdate = $this->updates->findLatestByBot((int) $bot['id']);
+            $pendingUpdateCount = $this->updates->countPendingByBot((int) $bot['id']);
         }
 
         $this->render('chat/index', [
@@ -315,6 +322,7 @@ final readonly class Application {
             'bot' => $bot,
             'messages' => $messages,
             'latestUpdate' => $latestUpdate,
+            'pendingUpdateCount' => $pendingUpdateCount,
         ]);
     }
 
@@ -357,7 +365,7 @@ final readonly class Application {
             $updatePayloadJson = json_encode($updatePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             // Сохраняем update в очереди
-            $this->updates->create([
+            $createdUpdate = $this->updates->create([
                 'bot_id' => $botId,
                 'profile_id' => $profileId,
                 'payload' => $updatePayloadJson,
@@ -369,7 +377,7 @@ final readonly class Application {
             $this->database->pdo()->prepare(
                 'UPDATE messages SET raw_payload = :payload WHERE id = :id'
             )->execute([
-                'payload' => $updatePayloadJson,
+                'payload' => $createdUpdate['payload'],
                 'id' => $lastMessage['id'],
             ]);
         }
@@ -497,6 +505,54 @@ final readonly class Application {
     }
 
     /**
+     * GET|POST /bot{token}/getUpdates — отдаёт очередь Long Polling updates.
+     */
+    private function getUpdates(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 409,
+                'description' => 'Conflict: can\'t use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first',
+            ], 409);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        $offset = $this->intParam($params['offset'] ?? 0, 0);
+        $limit = max(1, min(100, $this->intParam($params['limit'] ?? 100, 100)));
+        $timeout = max(0, $this->intParam($params['timeout'] ?? 0, 0));
+        $allowedUpdates = $this->allowedUpdatesParam($params['allowed_updates'] ?? null);
+        $botId = (int) $bot['id'];
+        $waitUntil = microtime(true) + min($timeout, 3);
+
+        do {
+            $updates = $this->pendingUpdates($botId, $offset, $limit);
+            $result = $this->updatesResult($updates, $allowedUpdates);
+
+            if ($result !== [] || $timeout === 0 || microtime(true) >= $waitUntil) {
+                Response::json([
+                    'ok' => true,
+                    'result' => $result,
+                ]);
+                return;
+            }
+
+            usleep(250_000);
+        } while (true);
+    }
+
+    /**
      * POST /bot{token}/setWebhook — сохраняет URL webhook для локальной доставки updates.
      */
     private function setWebhook(string $token): void {
@@ -605,6 +661,103 @@ final readonly class Application {
         }
 
         return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function intParam(mixed $value, int $default): int {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $value = trim((string) $value);
+        if (preg_match('/^-?\d+$/', $value) !== 1) {
+            return $default;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private function allowedUpdatesParam(mixed $value): ?array {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($value) || $value === []) {
+            return null;
+        }
+
+        $allowedUpdates = [];
+        foreach ($value as $item) {
+            if (is_string($item) && $item !== '') {
+                $allowedUpdates[] = $item;
+            }
+        }
+
+        return $allowedUpdates === [] ? null : $allowedUpdates;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function pendingUpdates(int $botId, int $offset, int $limit): array {
+        if ($offset < 0) {
+            $updates = $this->updates->findLastPending($botId, abs($offset));
+            if ($updates !== []) {
+                $this->updates->confirmBeforeOffset($botId, (int) $updates[0]['update_id']);
+            }
+
+            return array_slice($updates, 0, $limit);
+        }
+
+        $this->updates->confirmBeforeOffset($botId, $offset);
+
+        return $this->updates->findPending($botId, $limit, $offset);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $updates
+     * @param list<string>|null $allowedUpdates
+     * @return list<array<string, mixed>>
+     */
+    private function updatesResult(array $updates, ?array $allowedUpdates): array {
+        $result = [];
+
+        foreach ($updates as $update) {
+            $payload = json_decode((string) $update['payload'], true);
+            if (!is_array($payload)) {
+                continue;
+            }
+
+            $payload['update_id'] = (int) $update['update_id'];
+            if ($allowedUpdates !== null && !$this->isAllowedUpdate($payload, $allowedUpdates)) {
+                continue;
+            }
+
+            $result[] = $payload;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param list<string> $allowedUpdates
+     */
+    private function isAllowedUpdate(array $payload, array $allowedUpdates): bool {
+        foreach (array_keys($payload) as $key) {
+            if ($key !== 'update_id' && in_array($key, $allowedUpdates, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function health(): void {

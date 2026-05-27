@@ -13,7 +13,8 @@
         &nbsp;·&nbsp;
         <strong>Бот:</strong> <?= e($bot['display_name']) ?>
         (@<?= e($bot['username']) ?>,
-        режим: <?= e($bot['delivery_mode']) ?>)
+        режим: <?= e($bot['delivery_mode']) ?>,
+        очередь Long Polling: <?= e($pendingUpdateCount ?? 0) ?>)
     </div>
 
     <!-- История сообщений -->

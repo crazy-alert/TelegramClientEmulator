@@ -144,6 +144,9 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Панель состояния: `/`.
 - Управление ботами: `/bots`.
 - Управление профилями: `/profiles`.
+- Bot API: `GET|POST /bot<TOKEN>/getMe`.
+- Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`.
+- Bot API: `POST /bot<TOKEN>/setWebhook` и `POST /bot<TOKEN>/deleteWebhook`.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
 - Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.
 

@@ -14,8 +14,10 @@
 - Переключатели активного профиля и бота в шапке через cookie.
 - Форма создания бота автоматически генерирует `bot_id` и `token`; token соответствует `/\d{5,10}[:][a-zA-Z0-9_.+-]{15,}/`, показывается как placeholder и отправляется скрытым полем, если пользователь не ввел свой token.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
+- Bot API: `GET|POST /bot<TOKEN>/getUpdates` отдаёт pending updates Long Polling, поддерживает `offset`, `limit`, `timeout`, `allowed_updates`, подтверждает updates с `update_id < offset`, возвращает 409 при активном webhook.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
+- Chat UI показывает размер pending-очереди Long Polling для активного бота.
 
 ## Важные решения
 
@@ -29,6 +31,7 @@
 - Для локального Docker workflow `setWebhook` принимает `http` и `https` URL, включая service DNS вроде `http://bot:3000/webhook`.
 - `php.ini` отключает автоматическое чтение POST-данных (`enable_post_data_reading = Off`), а приложение вручную парсит JSON и form-urlencoded body. Это устраняет warning встроенного PHP-сервера без reverse proxy.
 - В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
+- `getUpdates.timeout` в MVP ограничен коротким ожиданием до 3 секунд, чтобы не блокировать single-process встроенный PHP server надолго.
 
 ## Проверки
 
@@ -48,6 +51,13 @@
   - `POST /bot<TOKEN>/setWebhook` вернул `{"ok":true,"result":true,"description":"Webhook was set"}`;
   - `POST /bot<TOKEN>/deleteWebhook` вернул `{"ok":true,"result":true,"description":"Webhook was deleted"}`;
   - SQLite содержит `delivery_mode=long_polling`, пустые `webhook_url` и `webhook_secret_token`.
+- 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
+- 2026-05-27: HTTP-проверка Long Polling в одноразовом `php:8.3-cli-alpine` контейнере:
+  - создан бот и профиль, `/chat/send` с cookie активного профиля/бота создал update;
+  - `GET /bot<TOKEN>/getUpdates` вернул один update с реальным `update_id` и текстом `/start`;
+  - повторный `getUpdates?offset=<update_id+1>` вернул пустой массив и перевёл update в `queue_state=confirmed`;
+  - `allowed_updates=["callback_query"]` отфильтровал message update;
+  - при активном webhook `POST /bot<TOKEN>/getUpdates` вернул Telegram-like 409 conflict.
 
 ## Замечания
 
@@ -55,4 +65,4 @@
 
 ## Ближайший следующий этап
 
-Long Polling: `GET|POST /bot{token}/getUpdates`, поддержка `offset`, `limit`, `timeout`, подтверждение updates.
+Следующий практичный этап: `POST /bot<TOKEN>/sendMessage`, сохранение ответов бота в историю и отображение в chat UI.
