@@ -228,7 +228,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 Цель: поддержать ботов, которые работают через webhook.
 
-Статус: частично реализовано.
+Статус: реализовано в базовом виде.
 
 Реализовано:
 
@@ -238,20 +238,15 @@ Update хранит Telegram-like событие, созданное эмуля�
 - хранение webhook URL и secret token;
 - переключение режима доставки между `webhook` и `long_polling`;
 - 409 conflict для `getUpdates`, если активен webhook.
+- отправка update на webhook URL выбранного бота;
+- сохранение request/response;
+- отображение ошибок доставки.
 
 Осталось:
 
-- отправка update на webhook URL выбранного бота;
-- сохранение request/response;
 - ручной resend failed delivery;
-- отображение ошибок доставки.
-
-Результат:
-
-- отправка update на webhook URL выбранного бота;
-- сохранение request/response;
-- ручной resend failed delivery;
-- отображение ошибок доставки.
+- отдельный список delivery attempts и фильтры по боту/update;
+- настройки webhook timeout в UI.
 
 Критерий готовности: бот-контейнер получает update через Docker service URL, а эмулятор показывает статус доставки.
 
@@ -331,8 +326,8 @@ Update хранит Telegram-like событие, созданное эмуля�
 4. Long Polling через `getUpdates` — реализовано.
 5. `sendMessage` для отображения ответов — реализовано для текста.
 6. Webhook configuration (`setWebhook`, `deleteWebhook`, `getWebhookInfo`) — реализовано.
-7. Webhook delivery — следующий крупный этап.
-8. Инспектор payload и ошибок — payload inspector реализован частично, delivery inspector впереди.
+7. Webhook delivery — реализовано в базовом виде.
+8. Инспектор payload и ошибок — payload inspector и последний delivery attempt реализованы частично; отдельный delivery inspector впереди.
 
 Long Polling был реализован до webhook-доставки, потому что он не требует отдельного HTTP endpoint в контейнере бота и быстрее проверяет корректность очереди updates.
 

@@ -27,6 +27,7 @@ use App\Application;
 require dirname(__DIR__) . '/src/Application.php';
 require dirname(__DIR__) . '/src/BotRepository.php';
 require dirname(__DIR__) . '/src/Database.php';
+require dirname(__DIR__) . '/src/DeliveryAttemptRepository.php';
 require dirname(__DIR__) . '/src/MessageRepository.php';
 require dirname(__DIR__) . '/src/MigrationRunner.php';
 require dirname(__DIR__) . '/src/ProfileRepository.php';

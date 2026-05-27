@@ -2,17 +2,20 @@
 
 ## Текущая задача
 
-Добавить Bot API метод `GET|POST /bot<TOKEN>/getWebhookInfo`.
+Реализовать webhook delivery loop: отправлять созданные updates на `webhook_url`, сохранять попытки доставки и показывать результат в инспекторе.
 
 ## Чеклист
 
-- [completed] Проверить текущие поля webhook и очереди updates.
-- [completed] Добавить маршрут и Telegram-like ответ `getWebhookInfo`.
-- [completed] Обновить README и текущий контекст.
-- [completed] Прогнать PHP lint и HTTP-проверку `getWebhookInfo` в Docker.
+- [completed] Проверить схему `delivery_attempts` и текущий путь создания updates.
+- [completed] Добавить репозиторий попыток доставки webhook.
+- [completed] Добавить отправку JSON update на webhook URL с `Content-Type` и optional secret token.
+- [completed] Обновить состояние update (`delivered`/`failed`) и inspector в UI.
+- [completed] Обновить README/контекст при необходимости.
+- [completed] Прогнать PHP lint и HTTP-проверку webhook delivery в Docker.
 - [completed] Проверить diff/status, сделать коммит и push.
 
 ## Заметки
 
 - Рабочее дерево на старте чистое: `master...origin/master`.
-- История webhook delivery attempts пока не реализована, поэтому `last_error_*` не возвращаем до появления реальной доставки.
+- Внешних опасных прав не требуется; webhook delivery делает обычный HTTP POST на URL, настроенный пользователем для локальной разработки.
+- Retry и ручной resend оставляем на следующий шаг: в этом этапе одна попытка на созданный update.

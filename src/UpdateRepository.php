@@ -147,6 +147,23 @@ final readonly class UpdateRepository {
     }
 
     /**
+     * Отмечает результат webhook-доставки update.
+     */
+    public function markWebhookDelivery(int $id, bool $delivered): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE updates
+            SET queue_state = :queue_state,
+                delivered_at = :delivered_at
+            WHERE id = :id'
+        );
+        $statement->execute([
+            'id' => $id,
+            'queue_state' => $delivered ? 'delivered' : 'failed',
+            'delivered_at' => $delivered ? date('Y-m-d H:i:s') : null,
+        ]);
+    }
+
+    /**
      * Удаляет неподтверждённые updates бота при `drop_pending_updates`.
      */
     public function dropPendingByBot(int $botId): void {

@@ -79,6 +79,31 @@
                 <summary>Raw payload (JSON)</summary>
                 <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($latestUpdate['payload']) ?></code></pre>
             </details>
+            <?php if ($latestDeliveryAttempt !== null): ?>
+                <h3>Webhook delivery</h3>
+                <table>
+                    <tr>
+                        <th>URL</th>
+                        <td><code><?= e($latestDeliveryAttempt['webhook_url']) ?></code></td>
+                    </tr>
+                    <tr>
+                        <th>HTTP status</th>
+                        <td><?= e($latestDeliveryAttempt['response_status'] ?? '') ?></td>
+                    </tr>
+                    <tr>
+                        <th>duration_ms</th>
+                        <td><?= e($latestDeliveryAttempt['duration_ms'] ?? '') ?></td>
+                    </tr>
+                    <tr>
+                        <th>error</th>
+                        <td><?= e($latestDeliveryAttempt['error'] ?? '') ?></td>
+                    </tr>
+                </table>
+                <details style="margin-top: 12px;">
+                    <summary>Webhook response body</summary>
+                    <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($latestDeliveryAttempt['response_body'] ?? '') ?></code></pre>
+                </details>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 <?php endif; ?>

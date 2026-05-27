@@ -19,7 +19,9 @@
 - Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенный профиль по `active_bot_id` и `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
+- Webhook delivery loop: при `delivery_mode=webhook` и настроенном `webhook_url` созданный update отправляется POST-запросом с JSON body, `Content-Type: application/json` и optional `X-Telegram-Bot-Api-Secret-Token`; попытка сохраняется в `delivery_attempts`, update получает `queue_state=delivered` или `failed`.
 - Chat UI показывает размер pending-очереди Long Polling для активного бота.
+- Chat UI показывает последнюю webhook delivery attempt для последнего update.
 
 ## Важные решения
 
@@ -34,6 +36,7 @@
 - `php.ini` отключает автоматическое чтение POST-данных (`enable_post_data_reading = Off`), а приложение вручную парсит JSON и form-urlencoded body. Это устраняет warning встроенного PHP-сервера без reverse proxy.
 - В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
 - `getUpdates.timeout` в MVP ограничен коротким ожиданием до 3 секунд, чтобы не блокировать single-process встроенный PHP server надолго.
+- Webhook delivery в MVP делает одну попытку без retry; `WEBHOOK_TIMEOUT_MS` читается из окружения и ограничивается 1-60 секундами.
 
 ## Проверки
 
@@ -72,6 +75,14 @@
   - до настройки webhook метод вернул пустой `url` и `pending_update_count=1`;
   - после `setWebhook` метод вернул `url=http://bot:3000/webhook`, `has_custom_certificate=false`, `max_connections=40`, `pending_update_count=1`;
   - неизвестный token вернул Telegram-like `404`.
+- 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
+- 2026-05-27: HTTP-проверка webhook delivery в одноразовом `php:8.3-cli-alpine` контейнере:
+  - подняты два локальных PHP server: приложение и webhook receiver;
+  - сообщение из `/chat/send` при `delivery_mode=webhook` отправило update на receiver;
+  - receiver получил JSON body с реальным `update_id` и `message.text=/start`;
+  - receiver получил `X-Telegram-Bot-Api-Secret-Token`;
+  - SQLite содержит `updates.queue_state=delivered`, `delivered_at`, `delivery_attempts.response_status=202`, response body и пустой error;
+  - `getWebhookInfo` после доставки вернул `pending_update_count=0`.
 
 ## Замечания
 
@@ -79,4 +90,4 @@
 
 ## Ближайший следующий этап
 
-Следующий практичный этап: webhook delivery loop — отправлять созданные updates на `webhook_url`, сохранять попытки доставки и показывать результат в inspector.
+Следующий практичный этап: отдельный inspector/list для delivery attempts и ручной resend failed webhook delivery.
