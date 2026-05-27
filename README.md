@@ -89,6 +89,7 @@ services:
       APP_HOST: "0.0.0.0"
       APP_PORT: "8080"
       DATA_DIR: "/app/data"
+      LOG_DIR: "/app/var/logs"
     expose:
       - "8080"
     ports:
@@ -147,6 +148,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `POST /bot<TOKEN>/setWebhook` и `POST /bot<TOKEN>/deleteWebhook`.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
+- HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
 - Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.
 
 ## Проверенные готовые проекты

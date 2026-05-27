@@ -6,7 +6,7 @@ namespace App;
 
 use Throwable;
 
-final readonly class Application {
+final class Application {
 
     private Database $database;
     private BotRepository $bots;
@@ -15,11 +15,14 @@ final readonly class Application {
     private UpdateRepository $updates;
     private DeliveryAttemptRepository $deliveryAttempts;
     private UpdateGenerator $updateGenerator;
+    private HttpLogger $httpLogger;
     private View $view;
+    private ?string $rawBody = null;
 
     public function __construct(
         private string $rootPath,
         private string $dataDir,
+        private string $logDir,
     ) {
         $this->database = new Database($this->dataDir);
         $this->bots = new BotRepository($this->database->pdo());
@@ -28,6 +31,7 @@ final readonly class Application {
         $this->updates = new UpdateRepository($this->database->pdo());
         $this->deliveryAttempts = new DeliveryAttemptRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
+        $this->httpLogger = new HttpLogger($this->logDir);
         $this->view = new View($this->rootPath . '/templates');
     }
 
@@ -35,7 +39,11 @@ final readonly class Application {
      * Возвращает сырое тело запроса (используется для Bot API методов с JSON body).
      */
     public function rawBody(): string {
-        return (string) file_get_contents('php://input');
+        if ($this->rawBody === null) {
+            $this->rawBody = (string) file_get_contents('php://input');
+        }
+
+        return $this->rawBody;
     }
 
     /**
@@ -70,17 +78,44 @@ final readonly class Application {
     }
 
     public function handle(string $method, string $path): void {
+        $startedAt = microtime(true);
+        $logContext = $this->httpLogger->requestContext($_SERVER, $this->rawBody());
+        $errorContext = null;
+
         try {
             $this->parseInput();
             $this->boot();
             $this->route($method, rtrim($path, '/') ?: '/');
         } catch (Throwable $exception) {
+            $errorContext = $this->httpLogger->errorContext($exception);
             Response::json([
                 'ok' => false,
                 'error' => 'Внутренняя ошибка приложения',
                 'details' => $exception->getMessage(),
             ], 500);
+        } finally {
+            try {
+                $this->httpLogger->log(array_replace_recursive($logContext, [
+                    'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                    'response' => [
+                        'status' => http_response_code(),
+                        'headers' => headers_list(),
+                        'body' => $this->currentOutput(),
+                    ],
+                    'error' => $errorContext,
+                ]));
+            } catch (Throwable $loggerException) {
+                error_log('HTTP logger failed: ' . $loggerException->getMessage());
+            }
         }
+    }
+
+    private function currentOutput(): string {
+        if (ob_get_level() <= 0) {
+            return '';
+        }
+
+        return (string) ob_get_contents();
     }
 
     private function route(string $method, string $path): void {

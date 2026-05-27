@@ -9,6 +9,7 @@ coverage/
 
 # Runtime-данные
 data/
+var/logs/
 *.sqlite
 *.sqlite3
 *.db

@@ -21,6 +21,7 @@
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
 - Webhook delivery loop: при `delivery_mode=webhook` и настроенном `webhook_url` созданный update отправляется POST-запросом с JSON body, `Content-Type: application/json` и optional `X-Telegram-Bot-Api-Secret-Token`; попытка сохраняется в `delivery_attempts`, update получает `queue_state=delivered` или `failed`.
+- HTTP-логирование: каждый запрос пишет JSONL-событие в `LOG_DIR` или `var/logs/http-YYYY-MM-DD.jsonl` с request headers/body, response status/headers/body, duration и error; файлы `http-*.jsonl` старше 5 дней удаляются автоматически при запросах.
 - Chat UI показывает размер pending-очереди Long Polling для активного бота.
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
@@ -39,6 +40,7 @@
 - В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
 - `getUpdates.timeout` в MVP ограничен коротким ожиданием до 3 секунд, чтобы не блокировать single-process встроенный PHP server надолго.
 - Webhook delivery в MVP делает одну попытку без retry; `WEBHOOK_TIMEOUT_MS` читается из окружения и ограничивается 1-60 секундами.
+- Логи находятся в runtime-директории `var/logs/` и исключены из git.
 - Групповой сценарий запланирован как несколько сохраненных пользователей с одним `chat_id`, выбор отправителя в group chat и доставка updates выбранному боту; отдельная сущность группы пока не введена.
 
 ## Проверки

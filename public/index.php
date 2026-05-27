@@ -28,6 +28,7 @@ require dirname(__DIR__) . '/src/Application.php';
 require dirname(__DIR__) . '/src/BotRepository.php';
 require dirname(__DIR__) . '/src/Database.php';
 require dirname(__DIR__) . '/src/DeliveryAttemptRepository.php';
+require dirname(__DIR__) . '/src/HttpLogger.php';
 require dirname(__DIR__) . '/src/MessageRepository.php';
 require dirname(__DIR__) . '/src/MigrationRunner.php';
 require dirname(__DIR__) . '/src/ProfileRepository.php';
@@ -50,6 +51,7 @@ if (!function_exists('e')) {
 $application = new Application(
     rootPath: dirname(__DIR__),
     dataDir: getenv('DATA_DIR') ?: dirname(__DIR__) . '/data',
+    logDir: getenv('LOG_DIR') ?: dirname(__DIR__) . '/var/logs',
 );
 
 $application->handle(
