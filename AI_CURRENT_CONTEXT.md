@@ -15,6 +15,7 @@
 - Форма создания бота автоматически генерирует `bot_id` и `token`; token соответствует `/\d{5,10}[:][a-zA-Z0-9_.+-]{15,}/`, показывается как placeholder и отправляется скрытым полем, если пользователь не ввел свой token.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` отдаёт pending updates Long Polling, поддерживает `offset`, `limit`, `timeout`, `allowed_updates`, подтверждает updates с `update_id < offset`, возвращает 409 при активном webhook.
+- Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo` возвращает `url`, `has_custom_certificate=false`, `pending_update_count` и `max_connections=40`.
 - Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенный профиль по `active_bot_id` и `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
@@ -65,6 +66,11 @@
   - JSON `POST /bot<TOKEN>/sendMessage` сохранил второе сообщение и вернул `message_id=2`, `chat.id=1001`;
   - неизвестный `chat_id` вернул Telegram-like `400`;
   - SQLite содержит 2 сообщения направления `bot`.
+- 2026-05-27: `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — синтаксических ошибок нет.
+- 2026-05-27: HTTP-проверка `getWebhookInfo` в одноразовом `php:8.3-cli-alpine` контейнере:
+  - до настройки webhook метод вернул пустой `url` и `pending_update_count=1`;
+  - после `setWebhook` метод вернул `url=http://bot:3000/webhook`, `has_custom_certificate=false`, `max_connections=40`, `pending_update_count=1`;
+  - неизвестный token вернул Telegram-like `404`.
 
 ## Замечания
 

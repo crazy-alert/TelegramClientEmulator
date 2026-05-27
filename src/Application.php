@@ -247,6 +247,11 @@ final readonly class Application {
             return;
         }
 
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getWebhookInfo$#i', $path, $matches) === 1) {
+            $this->getWebhookInfo($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
             $this->setWebhook($matches[1]);
             return;
@@ -505,6 +510,32 @@ final readonly class Application {
                 'can_join_groups' => true,
                 'can_read_all_group_messages' => false,
                 'supports_inline_queries' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * GET|POST /bot{token}/getWebhookInfo — возвращает текущую настройку webhook.
+     */
+    private function getWebhookInfo(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => [
+                'url' => (string) ($bot['webhook_url'] ?? ''),
+                'has_custom_certificate' => false,
+                'pending_update_count' => $this->updates->countPendingByBot((int) $bot['id']),
+                'max_connections' => 40,
             ],
         ]);
     }
