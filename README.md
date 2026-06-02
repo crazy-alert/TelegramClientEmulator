@@ -151,6 +151,33 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
 - Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.
 
+## Bot API и тесты
+
+Текущая поддерживаемая поверхность Bot API:
+
+- `GET|POST /bot<TOKEN>/getMe`;
+- `GET|POST /bot<TOKEN>/getUpdates`;
+- `POST /bot<TOKEN>/sendMessage`;
+- `GET|POST /bot<TOKEN>/getWebhookInfo`;
+- `POST /bot<TOKEN>/setWebhook`;
+- `POST /bot<TOKEN>/deleteWebhook`.
+
+Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Файловые части multipart-запросов пока игнорируются, потому что методы загрузки файлов в эмуляторе не реализованы.
+
+Методы вне этой поверхности, включая запланированные `editMessageText` и `answerCallbackQuery`, сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
+
+Проверки Bot API запускаются в контейнере:
+
+```bash
+docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
+```
+
+Синтаксис PHP-файлов:
+
+```bash
+docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"
+```
+
 ## Проверенные готовые проекты
 
 Полного совпадения с нужным продуктом пока не найдено, но несколько проектов полезны как ориентиры:

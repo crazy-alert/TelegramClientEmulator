@@ -206,6 +206,7 @@ POST /bot<TOKEN>/getUpdates
 
 - Проверять, что token соответствует известному боту.
 - Принимать JSON и form-encoded requests, если это практично.
+- Принимать текстовые поля `multipart/form-data` для совместимости с bot frameworks, которые отправляют Bot API параметры как multipart даже без файлов.
 - Сохранять сообщение бота в истории диалога пользователя.
 - Возвращать Telegram-like response:
 
@@ -223,6 +224,8 @@ POST /bot<TOKEN>/getUpdates
   }
 }
 ```
+
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `getWebhookInfo`, `setWebhook` и `deleteWebhook`. Методы `editMessageText`, `answerCallbackQuery` и остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
 
 ### 4.6 Хранение
 

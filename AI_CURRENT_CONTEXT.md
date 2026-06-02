@@ -1,5 +1,14 @@
 # Текущий контекст проекта
 
+## Последнее обновление
+
+2026-06-03: добавлен ручной парсинг текстовых полей `multipart/form-data` при `enable_post_data_reading = Off`, поэтому `setWebhook` теперь читает `url`, `secret_token` и другие параметры из multipart-запросов bot frameworks. Добавлен интеграционный тест `tests/bot_api_test.php`, который поднимает встроенный PHP server во временной директории и проверяет реализованные Bot API методы, структуры `User`/`Chat`/`Message`/`Update`/`WebhookInfo`, ошибки валидации, конфликт `getUpdates` при активном webhook, фильтр `allowed_updates`, подтверждение offset и явные 501 для неподдерживаемых `editMessageText`/`answerCallbackQuery`. Обновлены `README.md` и `docs/technical-spec.md` по текущей поверхности Bot API, multipart-параметрам и запуску тестов.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 ## Состояние
 
 Проект: локальный эмулятор Telegram Bot API для разработки и тестирования ботов.

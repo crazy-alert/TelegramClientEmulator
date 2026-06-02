@@ -74,7 +74,53 @@ final class Application {
             return;
         }
 
-        // Для multipart/form-data парсинг не нужен (будет использоваться в будущем)
+        if (str_contains($contentType, 'multipart/form-data')) {
+            $_POST = $this->parseMultipartFormData($raw, $contentType);
+        }
+    }
+
+    /**
+     * Парсит текстовые поля multipart/form-data при отключенном enable_post_data_reading.
+     *
+     * @return array<string, string>
+     */
+    private function parseMultipartFormData(string $raw, string $contentType): array {
+        if (preg_match('/boundary=(?:"([^"]+)"|([^;]+))/i', $contentType, $matches) !== 1) {
+            return [];
+        }
+
+        $boundary = $matches[1] !== '' ? $matches[1] : trim($matches[2]);
+        if ($boundary === '') {
+            return [];
+        }
+
+        $fields = [];
+        $parts = explode('--' . $boundary, $raw);
+
+        foreach ($parts as $part) {
+            $part = ltrim($part, "\r\n");
+            $part = preg_replace("/\r\n--\r\n?$/", '', $part) ?? $part;
+            $part = rtrim($part, "\r\n");
+
+            if ($part === '' || $part === '--') {
+                continue;
+            }
+
+            $separator = str_contains($part, "\r\n\r\n") ? "\r\n\r\n" : "\n\n";
+            [$headers, $body] = array_pad(explode($separator, $part, 2), 2, '');
+
+            if (preg_match('/Content-Disposition:\s*form-data\b[^\r\n]*\bname="([^"]+)"/i', $headers, $nameMatches) !== 1) {
+                continue;
+            }
+
+            if (preg_match('/Content-Disposition:\s*form-data\b[^\r\n]*\bfilename="/i', $headers) === 1) {
+                continue;
+            }
+
+            $fields[$nameMatches[1]] = $body;
+        }
+
+        return $fields;
     }
 
     public function handle(string $method, string $path): void {
