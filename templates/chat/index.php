@@ -36,6 +36,29 @@
         Выберите сохраненного пользователя и бота, чтобы открыть диалог.
     </div>
 <?php else: ?>
+    <?php
+    $replyKeyboard = null;
+    for ($i = count($messages) - 1; $i >= 0; $i--) {
+        if (($messages[$i]['direction'] ?? '') !== 'bot') {
+            continue;
+        }
+
+        $rawPayload = json_decode((string) ($messages[$i]['raw_payload'] ?? ''), true);
+        $markup = is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])
+            ? $rawPayload['reply_markup']
+            : null;
+
+        if ($markup !== null && !empty($markup['remove_keyboard'])) {
+            $replyKeyboard = null;
+            break;
+        }
+
+        if ($markup !== null && isset($markup['keyboard']) && is_array($markup['keyboard'])) {
+            $replyKeyboard = $markup['keyboard'];
+            break;
+        }
+    }
+    ?>
     <div class="panel" style="margin-bottom: 18px;">
         <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
         (<?= e($profile['first_name']) ?> <?= e($profile['last_name'] ?? '') ?>,
@@ -48,16 +71,55 @@
         очередь Long Polling: <?= e($pendingUpdateCount ?? 0) ?>)
     </div>
 
+    <?php if (($botCommands ?? []) !== []): ?>
+        <div class="panel" style="margin-bottom: 18px;">
+            <h2>Команды бота</h2>
+            <form method="post" action="/chat/send" style="display: flex; gap: 8px; align-items: end; margin-bottom: 12px;">
+                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                <label style="flex: 1; margin-bottom: 0;">
+                    Выберите команду
+                    <select name="text" required>
+                        <?php foreach ($botCommands as $command): ?>
+                            <option value="/<?= e($command['command']) ?>">
+                                /<?= e($command['command']) ?> — <?= e($command['description']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <button type="submit">Отправить</button>
+            </form>
+            <div class="actions">
+                <?php foreach ($botCommands as $command): ?>
+                    <form method="post" action="/chat/send">
+                        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                        <input type="hidden" name="text" value="/<?= e($command['command']) ?>">
+                        <button type="submit" class="secondary" title="<?= e($command['description']) ?>">
+                            /<?= e($command['command']) ?>
+                        </button>
+                    </form>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- История сообщений -->
     <div class="panel" style="margin-bottom: 18px; min-height: 200px; max-height: 500px; overflow-y: auto;">
         <?php if ($messages === []): ?>
             <p class="muted">Диалог пуст. Отправьте первое сообщение.</p>
         <?php else: ?>
             <?php foreach ($messages as $msg): ?>
+                <?php
+                $rawPayload = json_decode((string) ($msg['raw_payload'] ?? ''), true);
+                $replyMarkup = is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])
+                    ? $rawPayload['reply_markup']
+                    : null;
+                ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
                         <strong style="color: <?= $msg['direction'] === 'user' ? '#2481cc' : '#4caf50' ?>">
-                            <?= $msg['direction'] === 'user' ? '👤 Пользователь' : '🤖 Бот' ?>
+                            <?= $msg['direction'] === 'user' ? 'Пользователь' : 'Бот' ?>
                         </strong>
                         <span class="muted" style="font-size: 12px;">
                             #<?= e($msg['telegram_message_id']) ?>
@@ -65,10 +127,64 @@
                         </span>
                     </div>
                     <div style="white-space: pre-wrap;"><?= e($msg['text']) ?></div>
+                    <?php if ($msg['direction'] === 'bot' && $replyMarkup !== null && isset($replyMarkup['inline_keyboard']) && is_array($replyMarkup['inline_keyboard'])): ?>
+                        <div style="display: grid; gap: 6px; margin-top: 10px; max-width: 420px;">
+                            <?php foreach ($replyMarkup['inline_keyboard'] as $row): ?>
+                                <?php if (!is_array($row)) { continue; } ?>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    <?php foreach ($row as $button): ?>
+                                        <?php if (!is_array($button)) { continue; } ?>
+                                        <?php if (isset($button['callback_data'])): ?>
+                                            <form method="post" action="/chat/callback">
+                                                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                                                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                                                <input type="hidden" name="message_id" value="<?= e($msg['id']) ?>">
+                                                <input type="hidden" name="callback_data" value="<?= e($button['callback_data']) ?>">
+                                                <button type="submit" class="secondary"><?= e($button['text'] ?? $button['callback_data']) ?></button>
+                                            </form>
+                                        <?php elseif (isset($button['url'])): ?>
+                                            <a class="button secondary" href="<?= e($button['url']) ?>" target="_blank" rel="noreferrer">
+                                                <?= e($button['text'] ?? $button['url']) ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <button type="button" class="secondary" disabled><?= e($button['text'] ?? 'Кнопка') ?></button>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <?php if (is_array($replyKeyboard)): ?>
+        <div class="panel" style="margin-bottom: 18px;">
+            <h2>Клавиатура</h2>
+            <div style="display: grid; gap: 8px; max-width: 520px;">
+                <?php foreach ($replyKeyboard as $row): ?>
+                    <?php if (!is_array($row)) { continue; } ?>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <?php foreach ($row as $button): ?>
+                            <?php
+                            $buttonText = is_array($button) ? (string) ($button['text'] ?? '') : (string) $button;
+                            if ($buttonText === '') {
+                                continue;
+                            }
+                            ?>
+                            <form method="post" action="/chat/send">
+                                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                                <input type="hidden" name="text" value="<?= e($buttonText) ?>">
+                                <button type="submit" class="secondary"><?= e($buttonText) ?></button>
+                            </form>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Поле ввода -->
     <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
@@ -89,7 +205,7 @@
     <!-- Инспектор последнего Update -->
     <?php if ($latestUpdate !== null): ?>
         <section class="panel">
-            <h2>📦 Последний Update (inspector)</h2>
+            <h2>Последний Update (inspector)</h2>
             <table>
                 <tr>
                     <th>update_id</th>

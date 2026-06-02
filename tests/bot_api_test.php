@@ -228,6 +228,34 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue('local_bot', $json['result']['username'], 'getMe возвращает username бота');
     assertArrayHasKeyValue('can_join_groups', $json['result'], 'getMe возвращает Bot API capability fields');
 
+    $commands = [
+        [
+            'command' => 'start',
+            'description' => 'Начать диалог',
+        ],
+        [
+            'command' => 'help',
+            'description' => 'Показать помощь',
+        ],
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setMyCommands', json_encode([
+        'commands' => $commands,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(true, $json['result'], 'setMyCommands возвращает true');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
+    assertSameValue($commands, $json['result'], 'getMyCommands возвращает сохраненные команды');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setMyCommands', formBody([
+        'commands' => json_encode([
+            [
+                'command' => 'InvalidCommand',
+                'description' => 'Некорректная команда',
+            ],
+        ], JSON_THROW_ON_ERROR),
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue(400, $json['error_code'], 'setMyCommands валидирует формат команд');
+
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot000000:missing-token/getMe'), 404, false);
     assertSameValue(404, $json['error_code'], 'Неизвестный token возвращает Telegram-like 404');
 
@@ -288,10 +316,59 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue(true, $json['result'], 'deleteWebhook возвращает true');
     assertSameValue('Webhook was deleted', $json['description'], 'deleteWebhook возвращает Telegram-like описание');
 
+    $inlineMarkup = [
+        'inline_keyboard' => [
+            [
+                [
+                    'text' => 'Inline action',
+                    'callback_data' => 'inline-action',
+                ],
+                [
+                    'text' => 'Docs',
+                    'url' => 'https://example.test/docs',
+                ],
+            ],
+        ],
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendMessage', json_encode([
+        'chat_id' => 1001,
+        'text' => 'Inline buttons',
+        'reply_markup' => $inlineMarkup,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(3, $json['result']['message_id'], 'sendMessage с inline keyboard возвращает следующий message_id');
+    assertSameValue($inlineMarkup, $json['result']['reply_markup'], 'sendMessage возвращает inline reply_markup');
+
+    $replyMarkup = [
+        'keyboard' => [
+            [
+                [
+                    'text' => 'Reply A',
+                ],
+                [
+                    'text' => 'Reply B',
+                ],
+            ],
+        ],
+        'resize_keyboard' => true,
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendMessage', json_encode([
+        'chat_id' => 1001,
+        'text' => 'Reply keyboard',
+        'reply_markup' => $replyMarkup,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(4, $json['result']['message_id'], 'sendMessage с reply keyboard возвращает следующий message_id');
+    assertSameValue($replyMarkup, $json['result']['reply_markup'], 'sendMessage возвращает reply keyboard');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
+    assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
+    assertTrueValue(str_contains($chat['body'], 'Inline action'), 'Чат показывает inline keyboard');
+    assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
+
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '1',
         'bot_id' => '1',
-        'text' => '/start',
+        'text' => '/help',
     ]), ['Content-Type: application/x-www-form-urlencoded']);
     assertSameValue(303, $response['status'], '/chat/send должен редиректить обратно в чат');
     assertSameValue(null, $response['json'], 'Редирект /chat/send не обязан быть JSON');
@@ -306,11 +383,11 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue(1, count($json['result']), 'getUpdates возвращает pending message update');
     $update = $json['result'][0];
     assertTrueValue(($update['update_id'] ?? 0) >= 100000001, 'Update.update_id должен быть реальным id из очереди');
-    assertSameValue('/start', $update['message']['text'], 'Update.message.text должен совпадать с отправленным текстом');
+    assertSameValue('/help', $update['message']['text'], 'Update.message.text должен совпадать с отправленным текстом');
     assertSameValue([
         [
             'offset' => 0,
-            'length' => 6,
+            'length' => 5,
             'type' => 'bot_command',
         ],
     ], $update['message']['entities'], 'Update.message.entities должен содержать bot_command');
@@ -319,6 +396,45 @@ function runHttpTests(string $baseUrl): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
     assertSameValue([], $json['result'], 'offset подтверждает старые updates');
 
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'text' => 'Reply A',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Reply keyboard button отправляет текст в чат');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getUpdates', json_encode([
+        'limit' => 1,
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue('Reply A', $json['result'][0]['message']['text'], 'Reply keyboard click создает message update');
+    $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
+
+    $response = httpRequest('POST', $baseUrl . '/chat/callback', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_id' => '3',
+        'callback_data' => 'inline-action',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Inline keyboard callback должен редиректить обратно в чат');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?allowed_updates=' . rawurlencode('["callback_query"]')), 200, true);
+    assertSameValue(1, count($json['result']), 'Inline callback создает callback_query update');
+    assertSameValue('inline-action', $json['result'][0]['callback_query']['data'], 'callback_query содержит callback_data');
+    assertSameValue(false, $json['result'][0]['callback_query']['from']['is_bot'], 'callback_query.from описывает пользователя');
+    assertSameValue(3, $json['result'][0]['callback_query']['message']['message_id'], 'callback_query.message ссылается на сообщение с кнопкой');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([
+        'callback_query_id' => $json['result'][0]['callback_query']['id'],
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(true, $json['result'], 'answerCallbackQuery подтверждает callback');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteMyCommands'), 200, true);
+    assertSameValue(true, $json['result'], 'deleteMyCommands возвращает true');
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
+    assertSameValue([], $json['result'], 'deleteMyCommands очищает команды');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/editMessageText', formBody([
         'chat_id' => '1001',
         'message_id' => '1',
@@ -326,10 +442,8 @@ function runHttpTests(string $baseUrl): void {
     ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
     assertSameValue(501, $json['error_code'], 'Неподдерживаемый Bot API метод возвращает 501');
 
-    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([
-        'callback_query_id' => 'local-callback',
-    ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
-    assertSameValue(501, $json['error_code'], 'Неподдерживаемая структура callback_query пока явно не реализована');
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "callback_query_id" is required', $json['description'], 'answerCallbackQuery требует callback_query_id');
 }
 
 function main(): int {

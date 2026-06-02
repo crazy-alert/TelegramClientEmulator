@@ -10,6 +10,7 @@ final class Application {
 
     private Database $database;
     private BotRepository $bots;
+    private BotCommandRepository $botCommands;
     private ProfileRepository $profiles;
     private MessageRepository $messages;
     private UpdateRepository $updates;
@@ -26,6 +27,7 @@ final class Application {
     ) {
         $this->database = new Database($this->dataDir);
         $this->bots = new BotRepository($this->database->pdo());
+        $this->botCommands = new BotCommandRepository($this->database->pdo());
         $this->profiles = new ProfileRepository($this->database->pdo());
         $this->messages = new MessageRepository($this->database->pdo());
         $this->updates = new UpdateRepository($this->database->pdo());
@@ -177,6 +179,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && $path === '/chat/callback') {
+            $this->chatCallback();
+            return;
+        }
+
         // --- Панель и health ---
 
         if ($method === 'GET' && in_array($path, ['/', '/index.php'], true)) {
@@ -281,6 +288,26 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/setMyCommands$#i', $path, $matches) === 1) {
+            $this->setMyCommands($matches[1]);
+            return;
+        }
+
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getMyCommands$#i', $path, $matches) === 1) {
+            $this->getMyCommands($matches[1]);
+            return;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/deleteMyCommands$#i', $path, $matches) === 1) {
+            $this->deleteMyCommands($matches[1]);
+            return;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/answerCallbackQuery$#i', $path, $matches) === 1) {
+            $this->answerCallbackQuery($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
             $this->setWebhook($matches[1]);
             return;
@@ -319,6 +346,7 @@ final class Application {
         $latestUpdate = null;
         $latestDeliveryAttempt = null;
         $pendingUpdateCount = 0;
+        $botCommands = [];
 
         if ($profile !== null && $bot !== null) {
             $messages = $this->messages->findByDialog(
@@ -331,6 +359,7 @@ final class Application {
                 $latestDeliveryAttempt = $this->deliveryAttempts->findLatestByUpdate((int) $latestUpdate['id']);
             }
             $pendingUpdateCount = $this->updates->countPendingByBot((int) $bot['id']);
+            $botCommands = $this->botCommands->allForBot((int) $bot['id']);
         }
 
         $this->render('chat/index', [
@@ -341,6 +370,7 @@ final class Application {
             'latestUpdate' => $latestUpdate,
             'latestDeliveryAttempt' => $latestDeliveryAttempt,
             'pendingUpdateCount' => $pendingUpdateCount,
+            'botCommands' => $botCommands,
             'selectedProfileId' => (int) ($_GET['profile_id'] ?? 0),
             'selectedBotId' => (int) ($_GET['bot_id'] ?? 0),
         ]);
@@ -409,6 +439,46 @@ final class Application {
         }
 
         Response::redirect('/chat?profile_id=' . $profileId . '&bot_id=' . $botId);
+    }
+
+    private function chatCallback(): void {
+        $profileId = (int) ($_POST['profile_id'] ?? 0);
+        $botId = (int) ($_POST['bot_id'] ?? 0);
+        $messageId = (int) ($_POST['message_id'] ?? 0);
+        $callbackData = (string) ($_POST['callback_data'] ?? '');
+        $profile = $this->enabledUserById($profileId);
+        $bot = $this->enabledBotById($botId);
+        $message = $messageId > 0 ? $this->messages->find($messageId) : null;
+
+        if (
+            $profile === null
+            || $bot === null
+            || $message === null
+            || $callbackData === ''
+            || (int) $message['bot_id'] !== (int) $bot['id']
+            || (int) $message['profile_id'] !== (int) $profile['id']
+            || (string) $message['direction'] !== 'bot'
+        ) {
+            Response::redirect('/chat');
+            return;
+        }
+
+        $updatePayload = $this->updateGenerator->generateCallbackQuery($message, $profile, $bot, $callbackData);
+        $updatePayloadJson = json_encode($updatePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $createdUpdate = $this->updates->create([
+            'bot_id' => (int) $bot['id'],
+            'profile_id' => (int) $profile['id'],
+            'payload' => $updatePayloadJson,
+            'delivery_mode' => $bot['delivery_mode'] ?? 'long_polling',
+            'queue_state' => 'pending',
+        ]);
+
+        if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
+            $this->deliverWebhookUpdate($createdUpdate, $bot);
+        }
+
+        Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
     }
 
     /**
@@ -669,17 +739,128 @@ final class Application {
             return;
         }
 
+        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: object expected as reply markup',
+            ], 400);
+            return;
+        }
+
         $message = $this->messages->create([
             'bot_id' => (int) $bot['id'],
             'profile_id' => (int) $profile['id'],
             'chat_id' => $chatId,
             'direction' => 'bot',
             'text' => trim((string) $params['text']),
+            'raw_payload' => $replyMarkup === null
+                ? null
+                : json_encode(['reply_markup' => $replyMarkup], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
 
         Response::json([
             'ok' => true,
             'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
+    }
+
+    private function setMyCommands(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        $commands = $this->commandsParam($params['commands'] ?? null);
+
+        if ($commands === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "commands" is required',
+            ], 400);
+            return;
+        }
+
+        $this->botCommands->replaceForBot((int) $bot['id'], $commands);
+
+        Response::json([
+            'ok' => true,
+            'result' => true,
+        ]);
+    }
+
+    private function getMyCommands(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botCommands->allForBot((int) $bot['id']),
+        ]);
+    }
+
+    private function deleteMyCommands(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $this->botCommands->deleteForBot((int) $bot['id']);
+
+        Response::json([
+            'ok' => true,
+            'result' => true,
+        ]);
+    }
+
+    private function answerCallbackQuery(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!array_key_exists('callback_query_id', $params) || trim((string) $params['callback_query_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "callback_query_id" is required',
+            ], 400);
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => true,
         ]);
     }
 
@@ -883,6 +1064,73 @@ final class Application {
     }
 
     /**
+     * @return list<array{command: string, description: string}>|null
+     */
+    private function commandsParam(mixed $value): ?array {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : null;
+        }
+
+        if (!is_array($value)) {
+            return null;
+        }
+
+        $commands = [];
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                return null;
+            }
+
+            $command = ltrim(trim((string) ($item['command'] ?? '')), '/');
+            $description = trim((string) ($item['description'] ?? ''));
+
+            if (preg_match('/^[a-z0-9_]{1,32}$/', $command) !== 1 || $description === '' || mb_strlen($description) > 256) {
+                return null;
+            }
+
+            $commands[] = [
+                'command' => $command,
+                'description' => $description,
+            ];
+        }
+
+        return count($commands) > 100 ? null : $commands;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function replyMarkupParam(mixed $value): ?array {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : null;
+        }
+
+        if (!is_array($value)) {
+            return null;
+        }
+
+        $allowedKeys = [
+            'inline_keyboard',
+            'keyboard',
+            'resize_keyboard',
+            'one_time_keyboard',
+            'is_persistent',
+            'input_field_placeholder',
+            'selective',
+            'remove_keyboard',
+            'force_reply',
+        ];
+
+        return array_intersect_key($value, array_flip($allowedKeys));
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function pendingUpdates(int $botId, int $offset, int $limit): array {
@@ -1030,7 +1278,7 @@ final class Application {
      * @return array<string, mixed>
      */
     private function botMessagePayload(array $message, array $profile, array $bot): array {
-        return [
+        $payload = [
             'message_id' => (int) $message['telegram_message_id'],
             'from' => [
                 'id' => (int) ($bot['bot_id'] ?? 0),
@@ -1048,6 +1296,13 @@ final class Application {
             'date' => strtotime((string) $message['created_at']) ?: time(),
             'text' => $message['text'],
         ];
+
+        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
+        if (is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])) {
+            $payload['reply_markup'] = $rawPayload['reply_markup'];
+        }
+
+        return $payload;
     }
 
     private function health(): void {

@@ -1,5 +1,15 @@
 # Завершенные планы работы
 
+## Команды и клавиатуры Bot API (2026-06-03)
+
+- [x] Изучить текущие слои хранения сообщений и updates для минимальной реализации.
+- [x] Добавить хранение команд бота и Bot API методы `setMyCommands`/`getMyCommands`/`deleteMyCommands`.
+- [x] Расширить `sendMessage` на `reply_markup` и сохранить markup у сообщений бота.
+- [x] Добавить UI команд, кликабельные команды, reply keyboard и inline keyboard.
+- [x] Добавить callback/button updates и минимальный `answerCallbackQuery`.
+- [x] Обновить тесты и документацию.
+- [x] Прогнать проверки, обновить контекст, закрыть `.aitasks/task.txt`, сделать коммит и push.
+
 ## Тесты Bot API и multipart setWebhook (2026-06-03)
 
 - [x] Изучить структуру проекта, текущие Bot API маршруты, генерацию payload и существующие тесты.

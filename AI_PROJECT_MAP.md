@@ -18,6 +18,7 @@
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
+- `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/Response.php` — HTTP response helpers.
 - `src/View.php` — рендеринг шаблонов.
@@ -32,8 +33,13 @@
 ## Данные
 
 - `migrations/001_initial_schema.sql` — базовая схема SQLite.
+- `migrations/002_bot_commands.sql` — таблица команд бота.
 - `data/` — локальные runtime-данные, игнорируются git.
 - `var/` — служебная runtime-директория.
+
+## Тесты
+
+- `tests/bot_api_test.php` — интеграционный тест Bot API через встроенный PHP HTTP server.
 
 ## Документация
 

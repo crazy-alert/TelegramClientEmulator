@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: добавлена поддержка команд и клавиатур Bot API. Новые методы: `setMyCommands`, `getMyCommands`, `deleteMyCommands`, минимальный `answerCallbackQuery`. Команды хранятся в `bot_commands` через миграцию `002_bot_commands.sql` и `BotCommandRepository`; `/chat` показывает выпадающий список и кликабельные команды. `sendMessage` принимает и возвращает `reply_markup`; интерфейс показывает `inline_keyboard` под сообщением бота и `keyboard` как основную клавиатуру. Reply-кнопки отправляют обычный текстовый message update, inline-кнопки с `callback_data` создают `callback_query` update. Обновлены `README.md`, `docs/technical-spec.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: добавлен ручной парсинг текстовых полей `multipart/form-data` при `enable_post_data_reading = Off`, поэтому `setWebhook` теперь читает `url`, `secret_token` и другие параметры из multipart-запросов bot frameworks. Добавлен интеграционный тест `tests/bot_api_test.php`, который поднимает встроенный PHP server во временной директории и проверяет реализованные Bot API методы, структуры `User`/`Chat`/`Message`/`Update`/`WebhookInfo`, ошибки валидации, конфликт `getUpdates` при активном webhook, фильтр `allowed_updates`, подтверждение offset и явные 501 для неподдерживаемых `editMessageText`/`answerCallbackQuery`. Обновлены `README.md` и `docs/technical-spec.md` по текущей поверхности Bot API, multipart-параметрам и запуску тестов.
 
 Проверки:

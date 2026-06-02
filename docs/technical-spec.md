@@ -184,6 +184,9 @@ GET  /bot<TOKEN>/getMe
 POST /bot<TOKEN>/sendMessage
 POST /bot<TOKEN>/editMessageText
 POST /bot<TOKEN>/answerCallbackQuery
+POST /bot<TOKEN>/setMyCommands
+GET  /bot<TOKEN>/getMyCommands
+POST /bot<TOKEN>/deleteMyCommands
 POST /bot<TOKEN>/setWebhook
 POST /bot<TOKEN>/deleteWebhook
 GET  /bot<TOKEN>/getWebhookInfo
@@ -208,6 +211,7 @@ POST /bot<TOKEN>/getUpdates
 - Принимать JSON и form-encoded requests, если это практично.
 - Принимать текстовые поля `multipart/form-data` для совместимости с bot frameworks, которые отправляют Bot API параметры как multipart даже без файлов.
 - Сохранять сообщение бота в истории диалога пользователя.
+- Сохранять и возвращать `reply_markup` для `inline_keyboard` и `keyboard`, чтобы интерфейс чата мог показать кнопки.
 - Возвращать Telegram-like response:
 
 ```json
@@ -225,7 +229,14 @@ POST /bot<TOKEN>/getUpdates
 }
 ```
 
-Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `getWebhookInfo`, `setWebhook` и `deleteWebhook`. Методы `editMessageText`, `answerCallbackQuery` и остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. Методы `editMessageText` и остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
+
+Поведение команд и кнопок:
+
+- `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.
+- `/chat` показывает выпадающий список команд и отдельные кликабельные команды.
+- `reply_markup.inline_keyboard` отображается под сообщением бота; кнопки с `callback_data` создают `callback_query` update, URL-кнопки открываются как ссылки.
+- `reply_markup.keyboard` отображается как основная клавиатура чата; нажатие отправляет текст кнопки как обычное пользовательское сообщение.
 
 ### 4.6 Хранение
 

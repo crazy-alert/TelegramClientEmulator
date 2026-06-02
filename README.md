@@ -144,8 +144,12 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`.
 - Bot API: `POST /bot<TOKEN>/sendMessage` сохраняет текстовый ответ бота в историю локального чата.
+- Bot API: `sendMessage` поддерживает `reply_markup` для показа `inline_keyboard` и `keyboard` в интерфейсе чата.
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` и `POST /bot<TOKEN>/deleteWebhook`.
+- Bot API: `POST /bot<TOKEN>/setMyCommands`, `GET|POST /bot<TOKEN>/getMyCommands`, `POST /bot<TOKEN>/deleteMyCommands`.
+- Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
+- Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
 - HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
@@ -160,11 +164,15 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - `POST /bot<TOKEN>/sendMessage`;
 - `GET|POST /bot<TOKEN>/getWebhookInfo`;
 - `POST /bot<TOKEN>/setWebhook`;
-- `POST /bot<TOKEN>/deleteWebhook`.
+- `POST /bot<TOKEN>/deleteWebhook`;
+- `POST /bot<TOKEN>/setMyCommands`;
+- `GET|POST /bot<TOKEN>/getMyCommands`;
+- `POST /bot<TOKEN>/deleteMyCommands`;
+- `POST /bot<TOKEN>/answerCallbackQuery`.
 
 Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Файловые части multipart-запросов пока игнорируются, потому что методы загрузки файлов в эмуляторе не реализованы.
 
-Методы вне этой поверхности, включая запланированные `editMessageText` и `answerCallbackQuery`, сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
+`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности, включая запланированный `editMessageText`, сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
 
 Проверки Bot API запускаются в контейнере:
 

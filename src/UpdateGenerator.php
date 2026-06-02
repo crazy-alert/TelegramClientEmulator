@@ -63,6 +63,69 @@ final readonly class UpdateGenerator {
     }
 
     /**
+     * Генерирует Update для нажатия inline-кнопки с callback_data.
+     *
+     * @param array<string, mixed> $message  Сообщение бота, к которому привязана кнопка.
+     * @param array<string, mixed> $profile  Пользователь, который нажал кнопку.
+     * @param array<string, mixed> $bot      Бот, отправивший сообщение.
+     * @return array<string, mixed>
+     */
+    public function generateCallbackQuery(
+        array $message,
+        array $profile,
+        array $bot,
+        string $callbackData,
+    ): array {
+        $timestamp = strtotime((string) ($message['created_at'] ?? '')) ?: time();
+        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
+        $messagePayload = [
+            'message_id' => (int) ($message['telegram_message_id'] ?? 0),
+            'date' => $timestamp,
+            'chat' => [
+                'id' => (int) ($profile['chat_id'] ?? 0),
+                'type' => $profile['chat_type'] ?? 'private',
+                'username' => $profile['username'] ?? '',
+                'first_name' => $profile['first_name'] ?? '',
+                'last_name' => $profile['last_name'] ?? '',
+            ],
+            'from' => [
+                'id' => (int) ($bot['bot_id'] ?? 0),
+                'is_bot' => true,
+                'first_name' => $bot['display_name'] ?? '',
+                'username' => $bot['username'] ?? '',
+            ],
+            'text' => (string) ($message['text'] ?? ''),
+        ];
+
+        if (is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])) {
+            $messagePayload['reply_markup'] = $rawPayload['reply_markup'];
+        }
+
+        return [
+            'update_id' => 0,
+            'callback_query' => [
+                'id' => hash('sha256', implode(':', [
+                    (string) ($message['id'] ?? 0),
+                    (string) ($profile['id'] ?? 0),
+                    $callbackData,
+                    (string) microtime(true),
+                ])),
+                'from' => [
+                    'id' => (int) ($profile['user_id'] ?? 0),
+                    'is_bot' => false,
+                    'username' => $profile['username'] ?? '',
+                    'first_name' => $profile['first_name'] ?? '',
+                    'last_name' => $profile['last_name'] ?? '',
+                    'language_code' => $profile['language_code'] ?? 'ru',
+                ],
+                'message' => $messagePayload,
+                'chat_instance' => hash('sha256', (string) ($profile['chat_id'] ?? '0')),
+                'data' => $callbackData,
+            ],
+        ];
+    }
+
+    /**
      * Извлекает сущности (entities) из текста сообщения.
      *
      * Поддерживает bot_command (текст, начинающийся с '/').
