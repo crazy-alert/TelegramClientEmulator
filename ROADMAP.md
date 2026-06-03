@@ -282,9 +282,11 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 Цель: сделать интерфейс удобным для ежедневной разработки.
 
+Статус: частично реализовано.
+
 Результат:
 
-- HTMX polling для обновления чата;
+- HTMX polling для обновления чата — реализовано через `/chat/fragment`;
 - inline validation форм;
 - вкладки: чат, боты, пользователи, updates, delivery attempts;
 - inspector request/response;

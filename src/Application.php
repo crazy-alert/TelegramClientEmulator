@@ -181,6 +181,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && $path === '/chat/fragment') {
+            $this->chatFragment();
+            return;
+        }
+
         if ($method === 'POST' && $path === '/chat/send') {
             $this->chatSend();
             return;
@@ -361,6 +366,20 @@ final class Application {
     // ----------------------------------------------------------------
 
     private function chatIndex(): void {
+        $this->render('chat/index', $this->chatViewData());
+    }
+
+    private function chatFragment(): void {
+        $data = $this->chatViewData();
+
+        $data['chatFragment'] = true;
+        $this->renderPartial('chat/index', $data);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function chatViewData(): array {
         $profile = $this->selectedUser();
         $bot = $this->selectedBot();
 
@@ -384,7 +403,7 @@ final class Application {
             $botCommands = $this->botCommands->allForBot((int) $bot['id']);
         }
 
-        $this->render('chat/index', [
+        return [
             'title' => 'Чат',
             'profile' => $profile,
             'bot' => $bot,
@@ -395,7 +414,7 @@ final class Application {
             'botCommands' => $botCommands,
             'selectedProfileId' => (int) ($_GET['profile_id'] ?? 0),
             'selectedBotId' => (int) ($_GET['bot_id'] ?? 0),
-        ]);
+        ];
     }
 
     private function chatSend(): void {
@@ -605,6 +624,15 @@ final class Application {
         $data['allUsers'] = $this->profiles->all();
         $data['allBots'] = $this->bots->all();
         $this->view->render($template, $data);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function renderPartial(string $template, array $data = []): void {
+        $data['allUsers'] = $this->profiles->all();
+        $data['allBots'] = $this->bots->all();
+        $this->view->renderPartial($template, $data);
     }
 
     private function boot(): void {

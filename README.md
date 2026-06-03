@@ -153,6 +153,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `POST /bot<TOKEN>/setMyCommands`, `GET|POST /bot<TOKEN>/getMyCommands`, `POST /bot<TOKEN>/deleteMyCommands`.
 - Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
 - Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
+- Чат на `/chat` периодически обновляет историю, клавиатуры и inspector через HTMX-фрагмент `/chat/fragment?profile_id=<ID>&bot_id=<ID>`.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
 - Failed webhook delivery можно повторить вручную из inspector последнего update.

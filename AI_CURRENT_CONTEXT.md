@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task04.md` — добавлен HTMX polling для чата. `GET /chat/fragment?profile_id=<id>&bot_id=<id>` возвращает обновляемый фрагмент выбранной пары без формы выбора, а полная страница `/chat` содержит `hx-get`, `hx-trigger="every 3s"` и `hx-swap="innerHTML"`. Фрагмент сохраняет историю сообщений, raw inspector, resend failed webhook, inline keyboard и reply keyboard. `View` получил `renderPartial()`, layout подключает HTMX. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task03.md` — timeout webhook-доставки теперь виден и настраивается на панели `/`. Добавлен `SettingsRepository` для таблицы `settings`, маршрут `POST /settings/webhook-timeout`, валидация диапазона 1000–60000 мс и использование сохраненного значения в webhook-доставке. `WEBHOOK_TIMEOUT_MS` остается env/default, UI-настройка переопределяет его в SQLite. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -78,6 +85,7 @@
 - HTTP-логирование: каждый запрос пишет JSONL-событие в `LOG_DIR` или `var/logs/http-YYYY-MM-DD.jsonl` с request headers/body, response status/headers/body, duration и error; файлы `http-*.jsonl` старше 5 дней удаляются автоматически при запросах.
 - Chat UI показывает размер pending-очереди Long Polling для активного бота.
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
+- Chat UI периодически обновляет выбранную пару пользователь-бот через HTMX-фрагмент `/chat/fragment`.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
 
 ## Важные решения

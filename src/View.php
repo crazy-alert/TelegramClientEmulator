@@ -20,4 +20,15 @@ final readonly class View {
         $contentTemplate = $this->templatesPath . '/' . $template . '.php';
         require $this->templatesPath . '/layout.php';
     }
+
+    /**
+     * Рендерит шаблон без общего layout для HTMX-фрагментов.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function renderPartial(string $template, array $data = []): void {
+        extract($data, EXTR_SKIP);
+
+        require $this->templatesPath . '/' . $template . '.php';
+    }
 }

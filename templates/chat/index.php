@@ -1,3 +1,6 @@
+<?php $chatFragment = (bool) ($chatFragment ?? false); ?>
+
+<?php if (!$chatFragment): ?>
 <h1>Чат</h1>
 
 <form class="editor" method="get" action="/chat" style="margin-bottom: 18px;">
@@ -30,12 +33,21 @@
         <button type="submit">Открыть чат</button>
     </div>
 </form>
+<?php endif; ?>
 
 <?php if ($profile === null || $bot === null): ?>
     <div class="empty">
         Выберите сохраненного пользователя и бота, чтобы открыть диалог.
     </div>
 <?php else: ?>
+    <?php if (!$chatFragment): ?>
+        <div
+            id="chat-thread"
+            hx-get="/chat/fragment?profile_id=<?= e($profile['id']) ?>&amp;bot_id=<?= e($bot['id']) ?>"
+            hx-trigger="every 3s"
+            hx-swap="innerHTML"
+        >
+    <?php endif; ?>
     <?php
     $replyKeyboard = null;
     for ($i = count($messages) - 1; $i >= 0; $i--) {
@@ -278,5 +290,8 @@
                 <?php endif; ?>
             <?php endif; ?>
         </section>
+    <?php endif; ?>
+    <?php if (!$chatFragment): ?>
+        </div>
     <?php endif; ?>
 <?php endif; ?>
