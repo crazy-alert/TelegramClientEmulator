@@ -183,6 +183,7 @@
 GET  /bot<TOKEN>/getMe
 POST /bot<TOKEN>/sendMessage
 POST /bot<TOKEN>/sendPhoto
+POST /bot<TOKEN>/sendDocument
 POST /bot<TOKEN>/editMessageText
 POST /bot<TOKEN>/answerCallbackQuery
 POST /bot<TOKEN>/setMyCommands
@@ -230,7 +231,7 @@ POST /bot<TOKEN>/getUpdates
 }
 ```
 
-Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto` в первой версии принимает только строковое/URL значение `photo` без файловых upload. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
 
 Поведение команд и кнопок:
 

@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Базовый sendDocument (2026-06-03)
+
+- [x] Добавить Bot API route `sendDocument` и валидацию параметров.
+- [x] Сохранять document metadata и возвращать Telegram-like `Message.document`.
+- [x] Показать document placeholder с caption в чате.
+- [x] Обновить тесты и документацию по ограничениям upload.
+- [x] Прогнать проверки, удалить задачу, обновить контекст, сделать коммит и push.
+
 ## Базовый sendPhoto (2026-06-03)
 
 - [x] Добавить Bot API route `sendPhoto` и валидацию параметров.

@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task12.md` — добавлен базовый Bot API `POST /bot<TOKEN>/sendDocument`. Метод принимает JSON/form-urlencoded/multipart text fields, требует `chat_id` и строковый/URL `document`, поддерживает optional `caption` и `reply_markup`, сохраняет document metadata в `raw_payload`, возвращает Telegram-like `Message.document` и показывает document placeholder с caption в чате. Файловые upload пока не поддерживаются. Обновлены `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task11.md` — добавлен базовый Bot API `POST /bot<TOKEN>/sendPhoto`. Метод принимает JSON/form-urlencoded/multipart text fields, требует `chat_id` и строковый/URL `photo`, поддерживает optional `caption` и `reply_markup`, сохраняет photo metadata в `raw_payload`, возвращает Telegram-like `Message.photo` и показывает photo placeholder с caption в чате. Файловые upload пока не поддерживаются. Обновлены `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -128,6 +135,7 @@
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo` возвращает `url`, `has_custom_certificate=false`, `pending_update_count` и `max_connections=40`.
 - Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенного пользователя по `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/sendPhoto` принимает строковый/URL `photo`, optional `caption`/`reply_markup`, возвращает Telegram-like `Message.photo`; файловые upload пока не поддерживаются.
+- Bot API: `POST /bot<TOKEN>/sendDocument` принимает строковый/URL `document`, optional `caption`/`reply_markup`, возвращает Telegram-like `Message.document`; файловые upload пока не поддерживаются.
 - Bot API: `POST /bot<TOKEN>/editMessageText` редактирует только сообщения бота по `chat_id`/`message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.

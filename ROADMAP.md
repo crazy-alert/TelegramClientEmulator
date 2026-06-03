@@ -134,7 +134,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 ### Следующие методы
 
-- `POST /bot{token}/sendDocument`
+- `POST /bot{token}/sendVideo`
 
 Неподдерживаемые методы должны возвращать Telegram-like ошибку:
 
@@ -307,7 +307,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - reply keyboard — реализовано для отправки текстовых кнопок;
 - `editMessageText` — реализовано для текстовых сообщений бота и optional `reply_markup`;
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, caption и optional `reply_markup`;
-- базовые attachments: document.
+- базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`.
 
 Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.
 

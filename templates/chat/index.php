@@ -156,6 +156,10 @@
                     ? $rawPayload['photo']
                     : null;
                 $photoSource = is_array($rawPayload) ? (string) ($rawPayload['photo_source'] ?? '') : '';
+                $documentPayload = is_array($rawPayload) && isset($rawPayload['document']) && is_array($rawPayload['document'])
+                    ? $rawPayload['document']
+                    : null;
+                $documentSource = is_array($rawPayload) ? (string) ($rawPayload['document_source'] ?? '') : '';
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -172,6 +176,14 @@
                             <strong>Photo</strong>
                             <?php if ($photoSource !== ''): ?>
                                 <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($photoSource) ?></code></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($documentPayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Document</strong>
+                            <?php if ($documentSource !== ''): ?>
+                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($documentSource) ?></code></div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>

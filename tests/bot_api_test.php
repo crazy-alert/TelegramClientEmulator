@@ -667,6 +667,29 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
     assertSameValue('Bad Request: chat not found', $json['description'], 'sendPhoto проверяет существование чата');
 
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', json_encode([
+        'chat_id' => 1001,
+        'document' => 'https://example.test/manual.pdf',
+        'caption' => 'Document caption',
+        'reply_markup' => $photoMarkup,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(7, $json['result']['message_id'], 'sendDocument возвращает следующий message_id');
+    assertSameValue('Document caption', $json['result']['caption'], 'sendDocument возвращает caption');
+    assertSameValue('https://example.test/manual.pdf', $json['result']['document']['file_id'], 'sendDocument возвращает Telegram-like document');
+    assertSameValue('manual.pdf', $json['result']['document']['file_name'], 'sendDocument возвращает file_name');
+    assertSameValue($photoMarkup, $json['result']['reply_markup'], 'sendDocument возвращает reply_markup');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', formBody([
+        'chat_id' => '1001',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "document" is required', $json['description'], 'sendDocument требует document');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', formBody([
+        'chat_id' => '9999',
+        'document' => 'file-id',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: chat not found', $json['description'], 'sendDocument проверяет существование чата');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
@@ -674,6 +697,8 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'Edited reply keyboard'), 'Чат показывает отредактированное сообщение бота');
     assertTrueValue(str_contains($chat['body'], 'Photo caption'), 'Чат показывает caption photo-сообщения');
     assertTrueValue(str_contains($chat['body'], 'https://example.test/photo.jpg'), 'Чат показывает photo placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Document caption'), 'Чат показывает caption document-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/manual.pdf'), 'Чат показывает document placeholder');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
@@ -834,9 +859,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
     assertSameValue([], $json['result'], 'deleteMyCommands очищает команды');
 
-    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', formBody([
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', formBody([
         'chat_id' => '1001',
-        'document' => 'file-id',
+        'video' => 'file-id',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
     assertSameValue(501, $json['error_code'], 'Неподдерживаемый Bot API метод возвращает 501');
 

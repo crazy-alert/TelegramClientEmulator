@@ -358,6 +358,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendDocument$#i', $path, $matches) === 1) {
+            $this->sendDocument($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/editMessageText$#i', $path, $matches) === 1) {
             $this->editMessageText($matches[1]);
             return;
@@ -1616,6 +1621,95 @@ final class Application {
         ]);
     }
 
+    private function sendDocument(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!array_key_exists('chat_id', $params) || trim((string) $params['chat_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "chat_id" is required',
+            ], 400);
+            return;
+        }
+
+        if (!array_key_exists('document', $params) || trim((string) $params['document']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "document" is required',
+            ], 400);
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        if ($chatId === 0) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $profile = $this->profiles->findEnabledByChat($chatId);
+        if ($profile === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: object expected as reply markup',
+            ], 400);
+            return;
+        }
+
+        $document = trim((string) $params['document']);
+        $caption = trim((string) ($params['caption'] ?? ''));
+        $rawPayload = [
+            'document' => $this->documentPayload($document),
+            'document_source' => $document,
+        ];
+        if ($caption !== '') {
+            $rawPayload['caption'] = $caption;
+        }
+        if ($replyMarkup !== null) {
+            $rawPayload['reply_markup'] = $replyMarkup;
+        }
+
+        $message = $this->messages->create([
+            'bot_id' => (int) $bot['id'],
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'direction' => 'bot',
+            'text' => $caption,
+            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
+    }
+
     private function setMyCommands(string $token): void {
         $bot = $this->bots->findByToken($token);
 
@@ -2167,6 +2261,11 @@ final class Application {
             if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
                 $payload['caption'] = (string) $rawPayload['caption'];
             }
+        } elseif (is_array($rawPayload) && isset($rawPayload['document']) && is_array($rawPayload['document'])) {
+            $payload['document'] = $rawPayload['document'];
+            if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
+                $payload['caption'] = (string) $rawPayload['caption'];
+            }
         } else {
             $payload['text'] = $message['text'];
         }
@@ -2189,6 +2288,20 @@ final class Application {
                 'width' => 0,
                 'height' => 0,
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function documentPayload(string $document): array {
+        $path = parse_url($document, PHP_URL_PATH);
+        $fileName = basename((string) ($path ?: $document));
+
+        return [
+            'file_id' => $document,
+            'file_unique_id' => substr(sha1($document), 0, 16),
+            'file_name' => $fileName === '' ? null : $fileName,
         ];
     }
 
