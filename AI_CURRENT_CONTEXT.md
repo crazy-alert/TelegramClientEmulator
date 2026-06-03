@@ -2,6 +2,12 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task13.md` — расширена документация Docker Compose сценариев. В `README.md` добавлен раздел с compose-фрагментами для Long Polling и webhook ботов, fake token `123456:local-dev-token`, service DNS (`telegram-emulator`, `bot`), пояснение `localhost` внутри контейнера и варианты `TELEGRAM_API_BASE_URL`.
+
+Проверки:
+
+- Просмотрен diff README и поиск по token/base URL: примеры используют fake token и Docker service DNS.
+
 2026-06-03: выполнена `.aitasks/task12.md` — добавлен базовый Bot API `POST /bot<TOKEN>/sendDocument`. Метод принимает JSON/form-urlencoded/multipart text fields, требует `chat_id` и строковый/URL `document`, поддерживает optional `caption` и `reply_markup`, сохраняет document metadata в `raw_payload`, возвращает Telegram-like `Message.document` и показывает document placeholder с caption в чате. Файловые upload пока не поддерживаются. Обновлены `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `tests/bot_api_test.php`.
 
 Проверки:

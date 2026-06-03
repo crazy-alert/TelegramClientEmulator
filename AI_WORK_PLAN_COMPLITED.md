@@ -1,5 +1,12 @@
 # Завершенные планы работы
 
+## Документация Docker Compose сценариев (2026-06-03)
+
+- [x] Расширить README compose-фрагментами для webhook и Long Polling.
+- [x] Объяснить service DNS, `localhost` внутри контейнера и `TELEGRAM_API_BASE_URL`.
+- [x] Проверить, что примеры используют fake token.
+- [x] Обновить контекст, удалить задачу, сделать коммит и push.
+
 ## Базовый sendDocument (2026-06-03)
 
 - [x] Добавить Bot API route `sendDocument` и валидацию параметров.

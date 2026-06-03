@@ -119,6 +119,90 @@ Token, bot id, username бота, transport mode и webhook URL настраив
 
 В режиме разработки весь проект монтируется в контейнер как `/app`. Поэтому изменения в `public`, `src`, `templates`, `migrations` и других директориях применяются без пересборки образа. SQLite-файл по умолчанию создается в локальной директории `data/`, которая игнорируется git.
 
+## Docker Compose сценарии подключения бота
+
+### Long Polling бот
+
+Подходит для ботов, которые сами вызывают `getUpdates`. В интерфейсе эмулятора создайте бота с fake token, например `123456:local-dev-token`, и оставьте режим доставки `long_polling`.
+
+```yaml
+services:
+  telegram-emulator:
+    image: php:8.3-cli-alpine
+    working_dir: /app
+    command: >
+      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8080"
+      DATA_DIR: "/app/data"
+      LOG_DIR: "/app/var/logs"
+    volumes:
+      - ./:/app
+    networks:
+      - app-backend
+
+  bot:
+    build: ../my-bot
+    environment:
+      TELEGRAM_BOT_TOKEN: "123456:local-dev-token"
+      TELEGRAM_API_BASE_URL: "http://telegram-emulator:8080"
+    networks:
+      - app-backend
+
+networks:
+  app-backend:
+    name: "${APP_BACKEND_NETWORK:-telegram-dev}"
+```
+
+### Webhook бот
+
+Подходит для ботов, которые принимают updates на HTTP endpoint внутри своей контейнерной сети. В интерфейсе эмулятора укажите webhook URL как service DNS, например `http://bot:3000/telegram/webhook`, а не `localhost`.
+
+```yaml
+services:
+  telegram-emulator:
+    image: php:8.3-cli-alpine
+    working_dir: /app
+    command: >
+      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8080"
+      DATA_DIR: "/app/data"
+      LOG_DIR: "/app/var/logs"
+      WEBHOOK_TIMEOUT_MS: "10000"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+    networks:
+      - app-backend
+
+  bot:
+    build: ../my-bot
+    environment:
+      TELEGRAM_BOT_TOKEN: "123456:local-dev-token"
+      TELEGRAM_WEBHOOK_PATH: "/telegram/webhook"
+    expose:
+      - "3000"
+    networks:
+      - app-backend
+
+networks:
+  app-backend:
+    name: "${APP_BACKEND_NETWORK:-telegram-dev}"
+```
+
+### Что важно про `localhost`
+
+`localhost` внутри контейнера указывает на сам контейнер, а не на соседний сервис и не на хост-машину. Поэтому:
+
+- бот обращается к эмулятору как `http://telegram-emulator:8080`;
+- эмулятор доставляет webhook в контейнер бота как `http://bot:3000/...`;
+- URL `http://localhost:8080` используйте из браузера на хосте, если порт проброшен через `ports`;
+- если bot framework сам дописывает `/bot<TOKEN>/<METHOD>`, задавайте `TELEGRAM_API_BASE_URL=http://telegram-emulator:8080`; если framework ожидает префикс до token, используйте `http://telegram-emulator:8080/bot`.
+
 ## Локальный запуск Этапа 0
 
 Если приложение должно быть доступно с хоста и из backend-сети:
