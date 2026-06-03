@@ -158,6 +158,61 @@ function removeDirectory(string $path): void {
     rmdir($path);
 }
 
+/**
+ * @return resource
+ */
+function startWebhookReceiver(string $runtime, int $port): mixed {
+    $receiverRoot = $runtime . '/receiver';
+    mkdir($receiverRoot, 0777, true);
+    file_put_contents($receiverRoot . '/receiver.php', <<<'PHP'
+<?php
+
+$status = (int) ($_GET['status'] ?? 202);
+$body = file_get_contents('php://input') ?: '';
+$logFile = getenv('WEBHOOK_RECEIVER_LOG') ?: sys_get_temp_dir() . '/telegram-emulator-webhook.log';
+file_put_contents($logFile, json_encode([
+    'status' => $status,
+    'headers' => [
+        'secret_token' => $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? null,
+        'content_type' => $_SERVER['CONTENT_TYPE'] ?? null,
+    ],
+    'body' => $body,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND);
+http_response_code($status);
+header('Content-Type: application/json');
+echo json_encode(['ok' => $status >= 200 && $status < 300]);
+PHP);
+
+    $command = PHP_BINARY . ' -S 127.0.0.1:' . $port
+        . ' -t ' . escapeshellarg($receiverRoot)
+        . ' ' . escapeshellarg($receiverRoot . '/receiver.php');
+
+    $process = proc_open($command, [
+        0 => ['pipe', 'r'],
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ], $pipes, $receiverRoot, [
+        'WEBHOOK_RECEIVER_LOG' => $runtime . '/receiver.log',
+    ]);
+
+    if (!is_resource($process)) {
+        throw new TestFailure('Не удалось запустить webhook receiver');
+    }
+
+    $deadline = microtime(true) + 5;
+    do {
+        $response = @httpRequest('GET', 'http://127.0.0.1:' . $port . '/receiver.php?status=204');
+        if (($response['status'] ?? 0) === 204) {
+            return $process;
+        }
+        usleep(100_000);
+    } while (microtime(true) < $deadline);
+
+    proc_terminate($process);
+    proc_close($process);
+    throw new TestFailure('Webhook receiver не запустился');
+}
+
 function runUnitTests(): void {
     $generator = new UpdateGenerator();
     $payload = $generator->generate(
@@ -196,7 +251,7 @@ function runUnitTests(): void {
     ], $payload['message']['entities'], 'Команда в начале текста должна давать entity bot_command');
 }
 
-function runHttpTests(string $baseUrl): void {
+function runHttpTests(string $baseUrl, int $receiverPort): void {
     $token = '123456:local-dev-token-test';
 
     $response = httpRequest('POST', $baseUrl . '/bots', formBody([
@@ -294,7 +349,7 @@ function runHttpTests(string $baseUrl): void {
 
     $boundary = '----TelegramClientEmulatorTestBoundary';
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setWebhook', multipartBody([
-        'url' => 'http://bot:3000/webhook',
+        'url' => 'http://127.0.0.1:' . $receiverPort . '/receiver.php?status=500',
         'secret_token' => 'test-secret',
         'drop_pending_updates' => '1',
     ], $boundary), ['Content-Type: multipart/form-data; boundary=' . $boundary]), 200, true);
@@ -305,10 +360,37 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue(409, $json['error_code'], 'getUpdates конфликтует с активным webhook');
 
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getWebhookInfo'), 200, true);
-    assertSameValue('http://bot:3000/webhook', $json['result']['url'], 'getWebhookInfo возвращает webhook URL');
+    assertSameValue('http://127.0.0.1:' . $receiverPort . '/receiver.php?status=500', $json['result']['url'], 'getWebhookInfo возвращает webhook URL');
     assertSameValue(false, $json['result']['has_custom_certificate'], 'getWebhookInfo возвращает has_custom_certificate=false');
     assertSameValue(40, $json['result']['max_connections'], 'getWebhookInfo возвращает max_connections');
     assertSameValue(0, $json['result']['pending_update_count'], 'getWebhookInfo возвращает pending_update_count');
+
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'text' => '/webhook_failed',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Сообщение при webhook должно редиректить обратно в чат');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Чат после failed webhook должен открываться');
+    assertTrueValue(str_contains($chat['body'], 'queue_state</th>'), 'Inspector должен показывать update');
+    assertTrueValue(str_contains($chat['body'], '>failed<'), 'Failed webhook должен оставить update в состоянии failed');
+    assertTrueValue(str_contains($chat['body'], '/updates/1/resend'), 'Для failed update должна быть кнопка resend');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setWebhook', formBody([
+        'url' => 'http://127.0.0.1:' . $receiverPort . '/receiver.php?status=202',
+        'secret_token' => 'test-secret',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue('Webhook was set', $json['description'], 'setWebhook должен обновить URL перед resend');
+
+    $response = httpRequest('POST', $baseUrl . '/updates/1/resend');
+    assertSameValue(303, $response['status'], 'Resend failed webhook должен редиректить обратно в чат');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Чат после resend должен открываться');
+    assertTrueValue(str_contains($chat['body'], '>delivered<'), 'Успешный resend должен перевести update в delivered');
+    assertTrueValue(!str_contains($chat['body'], '/updates/1/resend'), 'После successful resend кнопка resend должна исчезнуть');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteWebhook', formBody([
         'drop_pending_updates' => 'true',
@@ -335,7 +417,7 @@ function runHttpTests(string $baseUrl): void {
         'text' => 'Inline buttons',
         'reply_markup' => $inlineMarkup,
     ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
-    assertSameValue(3, $json['result']['message_id'], 'sendMessage с inline keyboard возвращает следующий message_id');
+    assertSameValue(4, $json['result']['message_id'], 'sendMessage с inline keyboard возвращает следующий message_id');
     assertSameValue($inlineMarkup, $json['result']['reply_markup'], 'sendMessage возвращает inline reply_markup');
 
     $replyMarkup = [
@@ -356,7 +438,7 @@ function runHttpTests(string $baseUrl): void {
         'text' => 'Reply keyboard',
         'reply_markup' => $replyMarkup,
     ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
-    assertSameValue(4, $json['result']['message_id'], 'sendMessage с reply keyboard возвращает следующий message_id');
+    assertSameValue(5, $json['result']['message_id'], 'sendMessage с reply keyboard возвращает следующий message_id');
     assertSameValue($replyMarkup, $json['result']['reply_markup'], 'sendMessage возвращает reply keyboard');
 
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
@@ -420,7 +502,7 @@ function runHttpTests(string $baseUrl): void {
     $response = httpRequest('POST', $baseUrl . '/chat/callback', formBody([
         'profile_id' => '1',
         'bot_id' => '1',
-        'message_id' => '3',
+        'message_id' => '4',
         'callback_data' => 'inline-action',
     ]), ['Content-Type: application/x-www-form-urlencoded']);
     assertSameValue(303, $response['status'], 'Inline keyboard callback должен редиректить обратно в чат');
@@ -429,7 +511,7 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue(1, count($json['result']), 'Inline callback создает callback_query update');
     assertSameValue('inline-action', $json['result'][0]['callback_query']['data'], 'callback_query содержит callback_data');
     assertSameValue(false, $json['result'][0]['callback_query']['from']['is_bot'], 'callback_query.from описывает пользователя');
-    assertSameValue(3, $json['result'][0]['callback_query']['message']['message_id'], 'callback_query.message ссылается на сообщение с кнопкой');
+    assertSameValue(4, $json['result'][0]['callback_query']['message']['message_id'], 'callback_query.message ссылается на сообщение с кнопкой');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([
         'callback_query_id' => $json['result'][0]['callback_query']['id'],
@@ -461,6 +543,7 @@ function main(): int {
     mkdir($logDir, 0777, true);
 
     $port = 18082;
+    $receiverPort = 18083;
     $baseUrl = 'http://127.0.0.1:' . $port;
     $command = PHP_BINARY . ' -c ' . escapeshellarg($root . '/php.ini')
         . ' -S 127.0.0.1:' . $port
@@ -484,11 +567,15 @@ function main(): int {
         throw new TestFailure('Не удалось запустить тестовый HTTP server');
     }
 
+    $receiverProcess = startWebhookReceiver($runtime, $receiverPort);
+
     try {
         runUnitTests();
         waitForServer($baseUrl);
-        runHttpTests($baseUrl);
+        runHttpTests($baseUrl, $receiverPort);
     } finally {
+        proc_terminate($receiverProcess);
+        proc_close($receiverProcess);
         proc_terminate($process);
         proc_close($process);
         removeDirectory($runtime);

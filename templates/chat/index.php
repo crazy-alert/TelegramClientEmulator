@@ -271,6 +271,11 @@
                     <summary>Webhook response body</summary>
                     <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($latestDeliveryAttempt['response_body'] ?? '') ?></code></pre>
                 </details>
+                <?php if (($latestUpdate['queue_state'] ?? '') === 'failed'): ?>
+                    <form method="post" action="/updates/<?= e($latestUpdate['id']) ?>/resend" style="margin-top: 12px;">
+                        <button type="submit" class="secondary">Повторить webhook-доставку</button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </section>
     <?php endif; ?>

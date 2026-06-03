@@ -184,6 +184,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/updates/(\d+)/resend$#', $path, $matches) === 1) {
+            $this->resendWebhookUpdate((int) $matches[1]);
+            return;
+        }
+
         // --- Панель и health ---
 
         if ($method === 'GET' && in_array($path, ['/', '/index.php'], true)) {
@@ -479,6 +484,43 @@ final class Application {
         }
 
         Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
+    }
+
+    private function resendWebhookUpdate(int $updateRowId): void {
+        $update = $this->updates->find($updateRowId);
+
+        if ($update === null) {
+            Response::json([
+                'ok' => false,
+                'error' => 'Update не найден',
+            ], 404);
+            return;
+        }
+
+        if ((string) ($update['queue_state'] ?? '') !== 'failed') {
+            Response::json([
+                'ok' => false,
+                'error' => 'Повторная отправка доступна только для failed updates',
+            ], 400);
+            return;
+        }
+
+        $bot = $this->bots->find((int) $update['bot_id']);
+        if ($bot === null || trim((string) ($bot['webhook_url'] ?? '')) === '') {
+            Response::json([
+                'ok' => false,
+                'error' => 'У бота не настроен webhook URL',
+            ], 400);
+            return;
+        }
+
+        $this->deliverWebhookUpdate([
+            'id' => (int) $update['id'],
+            'update_id' => (int) $update['update_id'],
+            'payload' => (string) $update['payload'],
+        ], $bot);
+
+        Response::redirect('/chat?profile_id=' . (int) $update['profile_id'] . '&bot_id=' . (int) $bot['id']);
     }
 
     /**

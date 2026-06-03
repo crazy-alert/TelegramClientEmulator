@@ -75,6 +75,19 @@ final readonly class UpdateRepository {
     }
 
     /**
+     * Возвращает update по внутреннему идентификатору строки.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function find(int $id): ?array {
+        $statement = $this->pdo->prepare('SELECT * FROM updates WHERE id = :id');
+        $statement->execute(['id' => $id]);
+        $update = $statement->fetch();
+
+        return $update === false ? null : $update;
+    }
+
+    /**
      * Возвращает неподтверждённые updates для бота.
      *
      * @return list<array<string, mixed>>

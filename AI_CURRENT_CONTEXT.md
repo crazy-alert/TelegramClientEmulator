@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task01.md` — добавлен ручной resend failed webhook delivery. Новый маршрут `POST /updates/<id>/resend` повторяет доставку только для `failed` update, использует сохраненный payload и текущие webhook-настройки бота, создает новую запись `delivery_attempts` и обновляет `queue_state` на `delivered` или `failed`. В inspector последнего update появилась кнопка resend для failed webhook. `tests/bot_api_test.php` поднимает локальный webhook receiver и проверяет failed delivery, кнопку resend и successful resend. Обновлены `README.md` и `ROADMAP.md`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: после проверки очереди `.aitasks` активных задач не найдено. README уже содержит раздел `Bot API и тесты` с командами запуска `tests/bot_api_test.php` и PHP lint. Обновлен `ROADMAP.md`, чтобы он отражал реализованные команды бота, inline/reply keyboard, callback query и начатые тесты. Создан `AI_PROPOSALS.md` с предложениями модернизации: декомпозиция `Application`, отдельный parser Bot API request parameters, `editMessageText`, экраны updates/delivery attempts, структурирование тестов, import/export и групповые чаты. Обновлена `AI_PROJECT_MAP.md`.
 
 2026-06-03: исправлен лишний вертикальный отступ вокруг кликабельных команд в истории чата. Причина: многострочная HTML-форма команды попадала внутрь блока с `white-space: pre-wrap`, и браузер отображал шаблонные переносы/отступы как часть сообщения. Теперь форма `.message-command` выводится компактной строкой без промежуточных переносов; `pre-wrap` сохранен для пользовательского текста.

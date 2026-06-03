@@ -151,6 +151,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
 - Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
+- Failed webhook delivery можно повторить вручную из inspector последнего update.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
 - HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
 - Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.

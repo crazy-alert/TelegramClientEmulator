@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Ручной resend failed webhook delivery (2026-06-03)
+
+- [x] Изучить текущую webhook-доставку, repositories и UI inspector.
+- [x] Добавить поиск update по id и маршрут `/updates/{id}/resend`.
+- [x] Добавить кнопку resend в chat inspector только для failed webhook update.
+- [x] Расширить тесты на failed resend и successful resend.
+- [x] Обновить документацию/контекст, удалить `task01.md`, сделать коммит и push.
+
 ## Анализ после пустой очереди задач (2026-06-03)
 
 - [x] Сверить README, ROADMAP и текущую кодовую базу.
