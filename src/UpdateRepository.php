@@ -243,6 +243,28 @@ final readonly class UpdateRepository {
         $statement->execute(['bot_id' => $botId]);
     }
 
+    public function deleteByDialog(int $botId, int $profileId): int {
+        $statement = $this->pdo->prepare(
+            'DELETE FROM updates WHERE bot_id = :bot_id AND profile_id = :profile_id'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'profile_id' => $profileId,
+        ]);
+
+        return $statement->rowCount();
+    }
+
+    public function deletePendingAndConfirmedByBot(int $botId): int {
+        $statement = $this->pdo->prepare(
+            'DELETE FROM updates
+            WHERE bot_id = :bot_id AND queue_state IN (\'pending\', \'confirmed\')'
+        );
+        $statement->execute(['bot_id' => $botId]);
+
+        return $statement->rowCount();
+    }
+
     private function payloadWithUpdateId(string $payload, int $updateId): string {
         $decoded = json_decode($payload, true);
 

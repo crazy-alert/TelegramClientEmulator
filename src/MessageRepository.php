@@ -91,6 +91,20 @@ final readonly class MessageRepository {
         return $message === false ? null : $message;
     }
 
+    public function deleteByDialog(int $botId, int $profileId, int $chatId): int {
+        $statement = $this->pdo->prepare(
+            'DELETE FROM messages
+            WHERE bot_id = :bot_id AND profile_id = :profile_id AND chat_id = :chat_id'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'profile_id' => $profileId,
+            'chat_id' => $chatId,
+        ]);
+
+        return $statement->rowCount();
+    }
+
     /**
      * Вычисляет следующий telegram_message_id для пары бот-чат.
      */

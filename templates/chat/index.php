@@ -100,6 +100,12 @@
         (@<?= e($bot['username']) ?>,
         режим: <?= e($bot['delivery_mode']) ?>,
         очередь Long Polling: <?= e($pendingUpdateCount ?? 0) ?>)
+        <form method="post" action="/chat/clear" onsubmit="return confirm('Очистить историю и updates только этого диалога?');" style="margin-top: 12px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <input type="hidden" name="confirm_clear" value="1">
+            <button type="submit" class="danger">Очистить диалог</button>
+        </form>
     </div>
 
     <?php if (($botCommands ?? []) !== []): ?>

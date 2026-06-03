@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task09.md` — добавлена безопасная очистка истории. `POST /chat/clear` очищает messages и updates только выбранной пары `profile_id`/`bot_id`, требует `confirm_clear=1` и доступен из чата через кнопку с browser confirm. `POST /updates/clear` удаляет pending/confirmed updates выбранного бота, не трогая delivered/failed и updates других ботов; доступен на `/updates?bot_id=<id>` с явным подтверждением. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task08.md` — добавлен `/import-export` и JSON endpoints `/export/bots`, `/export/profiles`, `/import/bots`, `/import/profiles`. Экспорт включает только bots/profiles без messages, updates и delivery attempts. Импорт валидирует payload до записи и отклоняет конфликты `token`, `user_id`, `chat_id`; UI содержит ссылки export и textarea-формы import. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -117,6 +124,7 @@
 - `/updates` показывает updates без чтения SQLite вручную: фильтры по боту, пользователю, `queue_state`, `update_id`, payload details и переходы в чат/attempts.
 - `/request-inspector` показывает Bot API request/response из HTTP-логов и webhook request/response из delivery attempts; UI маскирует bot token и secret token.
 - `/import-export` экспортирует и импортирует JSON для bots/profiles без истории; импорт отклоняет конфликты `token`, `user_id`, `chat_id`.
+- Чат умеет очищать историю и updates выбранного диалога; `/updates` умеет очищать pending/confirmed updates выбранного бота.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
 - UI-формы ботов и пользователей показывают основные ошибки рядом с полями и не записывают некорректные данные.
 

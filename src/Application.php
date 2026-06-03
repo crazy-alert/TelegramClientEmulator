@@ -198,6 +198,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && $path === '/chat/clear') {
+            $this->chatClear();
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/updates/(\d+)/resend$#', $path, $matches) === 1) {
             $this->resendWebhookUpdate((int) $matches[1]);
             return;
@@ -227,6 +232,11 @@ final class Application {
 
         if ($method === 'GET' && $path === '/updates') {
             $this->updatesIndex();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/updates/clear') {
+            $this->updatesClear();
             return;
         }
 
@@ -555,6 +565,26 @@ final class Application {
         Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
     }
 
+    private function chatClear(): void {
+        $profileId = (int) ($_POST['profile_id'] ?? 0);
+        $botId = (int) ($_POST['bot_id'] ?? 0);
+        $profile = $this->enabledUserById($profileId);
+        $bot = $this->enabledBotById($botId);
+
+        if ($profile === null || $bot === null || (string) ($_POST['confirm_clear'] ?? '') !== '1') {
+            Response::json([
+                'ok' => false,
+                'error' => 'Для очистки диалога нужно выбрать пользователя, бота и подтвердить действие',
+            ], 400);
+            return;
+        }
+
+        $this->messages->deleteByDialog((int) $bot['id'], (int) $profile['id'], (int) $profile['chat_id']);
+        $this->updates->deleteByDialog((int) $bot['id'], (int) $profile['id']);
+
+        Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
+    }
+
     private function resendWebhookUpdate(int $updateRowId): void {
         $update = $this->updates->find($updateRowId);
 
@@ -817,6 +847,22 @@ final class Application {
             'selectedUpdateId' => $updateId,
             'selectedQueueState' => $queueState,
         ]);
+    }
+
+    private function updatesClear(): void {
+        $botId = (int) ($_POST['bot_id'] ?? 0);
+        $bot = $this->bots->find($botId);
+
+        if ($bot === null || (string) ($_POST['confirm_clear'] ?? '') !== '1') {
+            Response::json([
+                'ok' => false,
+                'error' => 'Для очистки updates нужно выбрать бота и подтвердить действие',
+            ], 400);
+            return;
+        }
+
+        $this->updates->deletePendingAndConfirmedByBot((int) $bot['id']);
+        Response::redirect('/updates?bot_id=' . (int) $bot['id']);
     }
 
     private function requestInspector(): void {

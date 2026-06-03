@@ -155,7 +155,9 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
 - Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
 - Чат на `/chat` периодически обновляет историю, клавиатуры и inspector через HTMX-фрагмент `/chat/fragment?profile_id=<ID>&bot_id=<ID>`.
+- В чате можно очистить историю и updates только выбранной пары пользователь-бот после явного подтверждения.
 - Экран `/updates` показывает список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
+- Экран `/updates` позволяет очистить pending/confirmed updates выбранного бота после явного подтверждения.
 - Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; bot token и secret token маскируются в HTML-выводе.
 - Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; импорт отклоняет конфликты `token`, `user_id` и `chat_id`.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.

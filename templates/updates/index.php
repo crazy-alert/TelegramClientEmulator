@@ -49,6 +49,16 @@
     </div>
 </form>
 
+<?php if ((int) ($selectedBotId ?? 0) > 0): ?>
+    <form class="editor" method="post" action="/updates/clear" onsubmit="return confirm('Удалить pending и confirmed updates выбранного бота?');" style="margin-bottom: 18px;">
+        <input type="hidden" name="bot_id" value="<?= e($selectedBotId) ?>">
+        <input type="hidden" name="confirm_clear" value="1">
+        <div class="actions">
+            <button type="submit" class="danger">Очистить pending/confirmed updates выбранного бота</button>
+        </div>
+    </form>
+<?php endif; ?>
+
 <?php if ($updates === []): ?>
     <div class="empty">Updates пока нет.</div>
 <?php else: ?>

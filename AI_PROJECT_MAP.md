@@ -20,7 +20,8 @@
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
-- `src/UpdateRepository.php` — очередь updates, выборка pending updates и UI-список updates с context.
+- `src/UpdateRepository.php` — очередь updates, выборка pending updates, UI-список updates с context и очистка updates.
+- `src/MessageRepository.php` — история сообщений диалогов и очистка сообщений выбранного диалога.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/DeliveryAttemptRepository.php` — webhook delivery attempts и UI-выборки с context.
 - `src/HttpLogger.php` — запись HTTP request/response событий в JSONL.
