@@ -20,6 +20,7 @@
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
+- `src/UpdateRepository.php` — очередь updates, выборка pending updates и UI-список updates с context.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/Response.php` — HTTP response helpers.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
@@ -30,6 +31,7 @@
 - `templates/layout.php` — общий HTML layout и базовые стили.
 - `templates/dashboard.php` — панель состояния.
 - `templates/chat/index.php` — чат пользователя с ботом, история сообщений, keyboards и inspector последнего update; в режиме `chatFragment` рендерит HTMX-фрагмент без формы выбора.
+- `templates/updates/` — список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
 - `templates/bots/` — список и форма ботов.
 - `templates/profiles/` — список и форма пользователей (исторически путь `/profiles`).
 - `templates/delivery-attempts/` — список webhook delivery attempts с фильтрами.

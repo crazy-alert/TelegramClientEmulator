@@ -223,6 +223,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && $path === '/updates') {
+            $this->updatesIndex();
+            return;
+        }
+
         // --- Боты ---
 
         if ($method === 'GET' && $path === '/bots') {
@@ -755,6 +760,30 @@ final class Application {
             ),
             'selectedBotId' => $botId,
             'selectedUpdateId' => $updateId,
+        ]);
+    }
+
+    private function updatesIndex(): void {
+        $botId = $this->intParam($_GET['bot_id'] ?? 0, 0);
+        $profileId = $this->intParam($_GET['profile_id'] ?? 0, 0);
+        $updateId = $this->intParam($_GET['update_id'] ?? 0, 0);
+        $queueState = (string) ($_GET['queue_state'] ?? '');
+        $queueState = in_array($queueState, ['pending', 'delivered', 'confirmed', 'failed'], true)
+            ? $queueState
+            : '';
+
+        $this->render('updates/index', [
+            'title' => 'Updates',
+            'updates' => $this->updates->allWithContext(
+                $botId > 0 ? $botId : null,
+                $profileId > 0 ? $profileId : null,
+                $updateId > 0 ? $updateId : null,
+                $queueState === '' ? null : $queueState,
+            ),
+            'selectedBotId' => $botId,
+            'selectedProfileId' => $profileId,
+            'selectedUpdateId' => $updateId,
+            'selectedQueueState' => $queueState,
         ]);
     }
 

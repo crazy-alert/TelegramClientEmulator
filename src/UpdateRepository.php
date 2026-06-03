@@ -88,6 +88,63 @@ final readonly class UpdateRepository {
     }
 
     /**
+     * Возвращает updates с данными бота и пользователя для UI-списка.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function allWithContext(?int $botId = null, ?int $profileId = null, ?int $updateId = null, ?string $queueState = null, int $limit = 100): array {
+        $conditions = [];
+        $params = [];
+
+        if ($botId !== null) {
+            $conditions[] = 'u.bot_id = :bot_id';
+            $params['bot_id'] = $botId;
+        }
+
+        if ($profileId !== null) {
+            $conditions[] = 'u.profile_id = :profile_id';
+            $params['profile_id'] = $profileId;
+        }
+
+        if ($updateId !== null) {
+            $conditions[] = 'u.update_id = :update_id';
+            $params['update_id'] = $updateId;
+        }
+
+        if ($queueState !== null) {
+            $conditions[] = 'u.queue_state = :queue_state';
+            $params['queue_state'] = $queueState;
+        }
+
+        $where = $conditions === [] ? '' : 'WHERE ' . implode(' AND ', $conditions);
+        $statement = $this->pdo->prepare(
+            'SELECT
+                u.*,
+                b.username AS bot_username,
+                b.display_name AS bot_display_name,
+                p.username AS profile_username,
+                p.first_name AS profile_first_name,
+                p.last_name AS profile_last_name,
+                p.chat_id AS profile_chat_id,
+                p.chat_type AS profile_chat_type
+            FROM updates u
+            INNER JOIN bots b ON b.id = u.bot_id
+            INNER JOIN profiles p ON p.id = u.profile_id
+            ' . $where . '
+            ORDER BY u.id DESC
+            LIMIT :limit'
+        );
+
+        foreach ($params as $name => $value) {
+            $statement->bindValue(':' . $name, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', max(1, min(500, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /**
      * Возвращает неподтверждённые updates для бота.
      *
      * @return list<array<string, mixed>>

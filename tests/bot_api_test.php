@@ -466,6 +466,19 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($attempts['body'], 'value="100000001"'), 'Фильтр update_id должен сохранять значение');
     assertTrueValue(str_contains($attempts['body'], 'selected'), 'Фильтр bot_id должен сохранять выбранного бота');
 
+    $updatesPage = httpRequest('GET', $baseUrl . '/updates');
+    assertSameValue(200, $updatesPage['status'], 'Экран updates должен открываться');
+    assertTrueValue(str_contains($updatesPage['body'], '<h1>Updates</h1>'), 'Экран updates должен иметь заголовок');
+    assertTrueValue(str_contains($updatesPage['body'], '100000001'), 'Экран updates должен показывать update_id');
+    assertTrueValue(str_contains($updatesPage['body'], '>delivered<'), 'Экран updates должен показывать queue_state');
+    assertTrueValue(str_contains($updatesPage['body'], '/chat?profile_id=1&amp;bot_id=1'), 'Экран updates должен содержать ссылку в чат');
+    assertTrueValue(str_contains($updatesPage['body'], '/delivery-attempts?bot_id=1&amp;update_id=100000001'), 'Экран updates должен содержать ссылку на delivery attempts');
+
+    $updatesPage = httpRequest('GET', $baseUrl . '/updates?bot_id=1&profile_id=1&queue_state=delivered&update_id=100000001');
+    assertSameValue(200, $updatesPage['status'], 'Экран updates с фильтрами должен открываться');
+    assertTrueValue(str_contains($updatesPage['body'], 'value="100000001"'), 'Фильтр updates update_id должен сохранять значение');
+    assertTrueValue(str_contains($updatesPage['body'], 'delivered'), 'Фильтр updates queue_state должен сохранять значение');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteWebhook', formBody([
         'drop_pending_updates' => 'true',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);

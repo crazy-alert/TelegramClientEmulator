@@ -288,7 +288,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 - HTMX polling для обновления чата — реализовано через `/chat/fragment`;
 - inline validation форм ботов и пользователей — реализовано для основных ошибок;
-- вкладки: чат, боты, пользователи, updates, delivery attempts;
+- вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
 - inspector request/response;
 - import/export ботов и пользователей;
 - очистка истории по пользователю или боту.
