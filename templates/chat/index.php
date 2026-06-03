@@ -66,16 +66,12 @@
         foreach ($matches[1] as $match) {
             [$command, $position] = $match;
             echo e(substr($text, $offset, $position - $offset));
-            ?>
-            <form class="message-command" method="post" action="/chat/send" style="display: inline;">
-                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-                <input type="hidden" name="text" value="<?= e($command) ?>">
-                <button type="submit" class="secondary" style="display: inline; min-height: 0; padding: 0; border: 0; background: transparent; color: #2481cc; vertical-align: baseline;">
-                    <?= e($command) ?>
-                </button>
-            </form>
-            <?php
+            echo '<form class="message-command" method="post" action="/chat/send" style="display: inline;">';
+            echo '<input type="hidden" name="profile_id" value="' . e($profile['id']) . '">';
+            echo '<input type="hidden" name="bot_id" value="' . e($bot['id']) . '">';
+            echo '<input type="hidden" name="text" value="' . e($command) . '">';
+            echo '<button type="submit" class="secondary" style="display: inline; min-height: 0; padding: 0; border: 0; background: transparent; color: #2481cc; vertical-align: baseline;">' . e($command) . '</button>';
+            echo '</form>';
             $offset = $position + strlen($command);
         }
 
