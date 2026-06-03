@@ -22,6 +22,7 @@
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/Response.php` — HTTP response helpers.
+- `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
 - `src/View.php` — рендеринг шаблонов.
 
 ## Шаблоны

@@ -90,6 +90,7 @@ services:
       APP_PORT: "8080"
       DATA_DIR: "/app/data"
       LOG_DIR: "/app/var/logs"
+      WEBHOOK_TIMEOUT_MS: "10000"
     expose:
       - "8080"
     ports:
@@ -113,6 +114,8 @@ networks:
 Token, bot id, username бота, transport mode и webhook URL настраиваются в интерфейсе эмулятора для каждого бота. В контейнер бота не нужно зашивать один общий token проекта: бот должен использовать тот token, который разработчик выбрал в конкретном тестовом сценарии.
 
 Точные имена переменных окружения зависят от bot framework. Если библиотека сама добавляет `/bot<TOKEN>/<METHOD>` к API root, используйте `http://telegram-emulator:8080`. Если библиотека ожидает Telegram-style base URL до token и сама дописывает token без дополнительного `/`, используйте `http://telegram-emulator:8080/bot`. Не передавайте в HTTP-клиент URL с буквальными `{token}` или `{method}`: многие клиенты отклоняют такие строки как malformed URL.
+
+`WEBHOOK_TIMEOUT_MS` задает начальный timeout webhook-доставки в миллисекундах. Если переменная не задана, используется `10000`. На панели `/` timeout можно переопределить через UI без изменения файлов; значение хранится в SQLite и должно быть в диапазоне `1000`–`60000` мс.
 
 В режиме разработки весь проект монтируется в контейнер как `/app`. Поэтому изменения в `public`, `src`, `templates`, `migrations` и других директориях применяются без пересборки образа. SQLite-файл по умолчанию создается в локальной директории `data/`, которая игнорируется git.
 
@@ -151,6 +154,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
 - Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
+- Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
 - Failed webhook delivery можно повторить вручную из inspector последнего update.
 - Отдельный экран `/delivery-attempts` показывает webhook delivery attempts с фильтрами по боту и `update_id`.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.

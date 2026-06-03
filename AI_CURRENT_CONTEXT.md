@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task03.md` — timeout webhook-доставки теперь виден и настраивается на панели `/`. Добавлен `SettingsRepository` для таблицы `settings`, маршрут `POST /settings/webhook-timeout`, валидация диапазона 1000–60000 мс и использование сохраненного значения в webhook-доставке. `WEBHOOK_TIMEOUT_MS` остается env/default, UI-настройка переопределяет его в SQLite. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task02.md` — добавлен экран `/delivery-attempts` для webhook delivery attempts. `DeliveryAttemptRepository::allWithContext()` возвращает attempts с update, bot и profile context, поддержаны фильтры `bot_id` и `update_id`. В навигацию добавлена ссылка `Webhook attempts`, шаблон `templates/delivery-attempts/index.php` показывает URL, HTTP status, duration, error, request/response body и ссылку назад в чат. `tests/bot_api_test.php` расширен smoke-проверкой списка и фильтров. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md`; будущая `.aitasks/task06.md` сужена до `/updates`, так как `/delivery-attempts` уже реализован.
 
 Проверки:
@@ -67,6 +74,7 @@
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
 - Webhook delivery loop: при `delivery_mode=webhook` и настроенном `webhook_url` созданный update отправляется POST-запросом с JSON body, `Content-Type: application/json` и optional `X-Telegram-Bot-Api-Secret-Token`; попытка сохраняется в `delivery_attempts`, update получает `queue_state=delivered` или `failed`.
+- Timeout webhook-доставки настраивается на панели `/` в диапазоне 1000–60000 мс; значение хранится в SQLite `settings`, а `WEBHOOK_TIMEOUT_MS` задает только начальный default.
 - HTTP-логирование: каждый запрос пишет JSONL-событие в `LOG_DIR` или `var/logs/http-YYYY-MM-DD.jsonl` с request headers/body, response status/headers/body, duration и error; файлы `http-*.jsonl` старше 5 дней удаляются автоматически при запросах.
 - Chat UI показывает размер pending-очереди Long Polling для активного бота.
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
@@ -85,7 +93,7 @@
 - `php.ini` отключает автоматическое чтение POST-данных (`enable_post_data_reading = Off`), а приложение вручную парсит JSON и form-urlencoded body. Это устраняет warning встроенного PHP-сервера без reverse proxy.
 - В документации не использовать буквальную запись `{token}` в URL: некоторые HTTP-клиенты считают `{}` malformed URL. Эмулятор повторяет форму настоящего Telegram Bot API: `/bot<TOKEN>/<METHOD>`, без дополнительного `/` между `bot` и token.
 - `getUpdates.timeout` в MVP ограничен коротким ожиданием до 3 секунд, чтобы не блокировать single-process встроенный PHP server надолго.
-- Webhook delivery в MVP делает одну попытку без retry; `WEBHOOK_TIMEOUT_MS` читается из окружения и ограничивается 1-60 секундами.
+- Webhook delivery в MVP делает одну попытку без retry; timeout берется из UI-настройки `webhook_timeout_ms`, если она сохранена, иначе из `WEBHOOK_TIMEOUT_MS`, и ограничивается диапазоном 1000–60000 мс.
 - Логи находятся в runtime-директории `var/logs/` и исключены из git.
 - Групповой сценарий запланирован как несколько сохраненных пользователей с одним `chat_id`, выбор отправителя в group chat и доставка updates выбранному боту; отдельная сущность группы пока не введена.
 

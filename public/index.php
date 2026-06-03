@@ -34,6 +34,7 @@ require dirname(__DIR__) . '/src/MessageRepository.php';
 require dirname(__DIR__) . '/src/MigrationRunner.php';
 require dirname(__DIR__) . '/src/ProfileRepository.php';
 require dirname(__DIR__) . '/src/Response.php';
+require dirname(__DIR__) . '/src/SettingsRepository.php';
 require dirname(__DIR__) . '/src/UpdateGenerator.php';
 require dirname(__DIR__) . '/src/UpdateRepository.php';
 require dirname(__DIR__) . '/src/View.php';

@@ -254,6 +254,30 @@ function runUnitTests(): void {
 function runHttpTests(string $baseUrl, int $receiverPort): void {
     $token = '123456:local-dev-token-test';
 
+    $dashboard = httpRequest('GET', $baseUrl . '/');
+    assertSameValue(200, $dashboard['status'], 'Панель должна открываться');
+    assertTrueValue(str_contains($dashboard['body'], 'Webhook delivery'), 'Панель должна показывать настройку webhook delivery');
+    assertTrueValue(str_contains($dashboard['body'], 'value="10000"'), 'Панель должна показывать дефолтный webhook timeout');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/settings/webhook-timeout', formBody([
+        'webhook_timeout_ms' => '999',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertTrueValue(str_contains((string) ($json['error'] ?? ''), 'от 1000 до 60000 мс'), 'Webhook timeout валидирует нижнюю границу');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/settings/webhook-timeout', formBody([
+        'webhook_timeout_ms' => '60001',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertTrueValue(str_contains((string) ($json['error'] ?? ''), 'от 1000 до 60000 мс'), 'Webhook timeout валидирует верхнюю границу');
+
+    $response = httpRequest('POST', $baseUrl . '/settings/webhook-timeout', formBody([
+        'webhook_timeout_ms' => '1500',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Сохранение webhook timeout должно редиректить на панель');
+
+    $dashboard = httpRequest('GET', $baseUrl . '/');
+    assertSameValue(200, $dashboard['status'], 'Панель после настройки timeout должна открываться');
+    assertTrueValue(str_contains($dashboard['body'], 'value="1500"'), 'Панель должна показывать сохраненный webhook timeout');
+
     $response = httpRequest('POST', $baseUrl . '/bots', formBody([
         'token' => $token,
         'bot_id' => '123456',

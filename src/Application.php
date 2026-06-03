@@ -8,6 +8,11 @@ use Throwable;
 
 final class Application {
 
+    private const WEBHOOK_TIMEOUT_SETTING = 'webhook_timeout_ms';
+    private const DEFAULT_WEBHOOK_TIMEOUT_MS = 10000;
+    private const MIN_WEBHOOK_TIMEOUT_MS = 1000;
+    private const MAX_WEBHOOK_TIMEOUT_MS = 60000;
+
     private Database $database;
     private BotRepository $bots;
     private BotCommandRepository $botCommands;
@@ -15,6 +20,7 @@ final class Application {
     private MessageRepository $messages;
     private UpdateRepository $updates;
     private DeliveryAttemptRepository $deliveryAttempts;
+    private SettingsRepository $settings;
     private UpdateGenerator $updateGenerator;
     private HttpLogger $httpLogger;
     private View $view;
@@ -32,6 +38,7 @@ final class Application {
         $this->messages = new MessageRepository($this->database->pdo());
         $this->updates = new UpdateRepository($this->database->pdo());
         $this->deliveryAttempts = new DeliveryAttemptRepository($this->database->pdo());
+        $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
         $this->httpLogger = new HttpLogger($this->logDir);
         $this->view = new View($this->rootPath . '/templates');
@@ -193,6 +200,11 @@ final class Application {
 
         if ($method === 'GET' && in_array($path, ['/', '/index.php'], true)) {
             $this->dashboard();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/settings/webhook-timeout') {
+            $this->updateWebhookTimeout();
             return;
         }
 
@@ -610,7 +622,29 @@ final class Application {
             'bots' => $this->bots->all(),
             'users' => $this->profiles->all(),
             'databasePath' => $this->database->path(),
+            'webhookTimeoutMs' => $this->webhookTimeoutMs(),
+            'webhookTimeoutDefaultMs' => $this->webhookTimeoutDefaultMs(),
+            'webhookTimeoutMinMs' => self::MIN_WEBHOOK_TIMEOUT_MS,
+            'webhookTimeoutMaxMs' => self::MAX_WEBHOOK_TIMEOUT_MS,
         ]);
+    }
+
+    private function updateWebhookTimeout(): void {
+        $rawValue = $_POST['webhook_timeout_ms'] ?? null;
+        $timeoutMs = $this->intParam($rawValue, 0);
+
+        if ($timeoutMs < self::MIN_WEBHOOK_TIMEOUT_MS || $timeoutMs > self::MAX_WEBHOOK_TIMEOUT_MS) {
+            Response::json([
+                'ok' => false,
+                'error' => 'Webhook timeout должен быть целым числом от '
+                    . self::MIN_WEBHOOK_TIMEOUT_MS . ' до '
+                    . self::MAX_WEBHOOK_TIMEOUT_MS . ' мс',
+            ], 400);
+            return;
+        }
+
+        $this->settings->set(self::WEBHOOK_TIMEOUT_SETTING, (string) $timeoutMs);
+        Response::redirect('/');
     }
 
     private function botsIndex(): void {
@@ -1328,9 +1362,24 @@ final class Application {
     }
 
     private function webhookTimeoutSeconds(): int {
-        $timeoutMs = $this->intParam(getenv('WEBHOOK_TIMEOUT_MS') ?: 10000, 10000);
+        $timeoutMs = $this->webhookTimeoutMs();
 
-        return max(1, min(60, (int) ceil($timeoutMs / 1000)));
+        return (int) ceil($timeoutMs / 1000);
+    }
+
+    private function webhookTimeoutMs(): int {
+        $stored = $this->settings->get(self::WEBHOOK_TIMEOUT_SETTING);
+        $timeoutMs = $stored === null
+            ? $this->webhookTimeoutDefaultMs()
+            : $this->intParam($stored, self::DEFAULT_WEBHOOK_TIMEOUT_MS);
+
+        return max(self::MIN_WEBHOOK_TIMEOUT_MS, min(self::MAX_WEBHOOK_TIMEOUT_MS, $timeoutMs));
+    }
+
+    private function webhookTimeoutDefaultMs(): int {
+        $timeoutMs = $this->intParam(getenv('WEBHOOK_TIMEOUT_MS') ?: self::DEFAULT_WEBHOOK_TIMEOUT_MS, self::DEFAULT_WEBHOOK_TIMEOUT_MS);
+
+        return max(self::MIN_WEBHOOK_TIMEOUT_MS, min(self::MAX_WEBHOOK_TIMEOUT_MS, $timeoutMs));
     }
 
     /**

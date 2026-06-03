@@ -23,6 +23,30 @@
 </div>
 
 <section class="panel" style="margin-top: 18px;">
+    <h2>Webhook delivery</h2>
+    <p class="muted">
+        Текущий timeout: <strong><?= e($webhookTimeoutMs) ?> мс</strong>.
+        Значение по умолчанию из окружения: <?= e($webhookTimeoutDefaultMs) ?> мс.
+    </p>
+    <form method="post" action="/settings/webhook-timeout" class="form-inline">
+        <label>
+            Timeout, мс
+            <input
+                type="number"
+                name="webhook_timeout_ms"
+                value="<?= e($webhookTimeoutMs) ?>"
+                min="<?= e($webhookTimeoutMinMs) ?>"
+                max="<?= e($webhookTimeoutMaxMs) ?>"
+                step="100"
+                required
+            >
+        </label>
+        <button type="submit">Сохранить</button>
+    </form>
+    <p class="muted">Допустимый диапазон: <?= e($webhookTimeoutMinMs) ?>–<?= e($webhookTimeoutMaxMs) ?> мс.</p>
+</section>
+
+<section class="panel" style="margin-top: 18px;">
     <h2>Состояние Этапа 1</h2>
     <p>
         CRUD для ботов и пользователей работает через SQLite. Чат открывается для выбранной пары пользователь-бот.
