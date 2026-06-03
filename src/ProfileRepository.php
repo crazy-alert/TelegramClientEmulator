@@ -62,6 +62,20 @@ final readonly class ProfileRepository {
         return $profile === false ? null : $profile;
     }
 
+    public function hasUserId(int $userId): bool {
+        $statement = $this->pdo->prepare('SELECT 1 FROM profiles WHERE user_id = :user_id LIMIT 1');
+        $statement->execute(['user_id' => $userId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    public function hasChatId(int $chatId): bool {
+        $statement = $this->pdo->prepare('SELECT 1 FROM profiles WHERE chat_id = :chat_id LIMIT 1');
+        $statement->execute(['chat_id' => $chatId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
     /**
      * Создаёт нового пользователя.
      *

@@ -107,6 +107,10 @@ final readonly class BotRepository {
         return $bot === false ? null : $bot;
     }
 
+    public function hasToken(string $token): bool {
+        return $this->existsByToken($token);
+    }
+
     public function setWebhook(int $id, ?string $webhookUrl, ?string $secretToken): void {
         $deliveryMode = $webhookUrl === null ? 'long_polling' : 'webhook';
 

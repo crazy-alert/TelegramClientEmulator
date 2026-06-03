@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task08.md` — добавлен `/import-export` и JSON endpoints `/export/bots`, `/export/profiles`, `/import/bots`, `/import/profiles`. Экспорт включает только bots/profiles без messages, updates и delivery attempts. Импорт валидирует payload до записи и отклоняет конфликты `token`, `user_id`, `chat_id`; UI содержит ссылки export и textarea-формы import. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task07.md` — добавлен `/request-inspector`. Экран показывает последние Bot API request/response из HTTP JSONL-логов через новый `HttpLogRepository` и webhook request/response из `delivery_attempts`; поддержаны фильтры по raw token и Bot API method, но в HTML выводятся только замаскированные bot token и secret token. В layout добавлена ссылка `Inspector`. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -109,6 +116,7 @@
 - Chat UI периодически обновляет выбранную пару пользователь-бот через HTMX-фрагмент `/chat/fragment`.
 - `/updates` показывает updates без чтения SQLite вручную: фильтры по боту, пользователю, `queue_state`, `update_id`, payload details и переходы в чат/attempts.
 - `/request-inspector` показывает Bot API request/response из HTTP-логов и webhook request/response из delivery attempts; UI маскирует bot token и secret token.
+- `/import-export` экспортирует и импортирует JSON для bots/profiles без истории; импорт отклоняет конфликты `token`, `user_id`, `chat_id`.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
 - UI-формы ботов и пользователей показывают основные ошибки рядом с полями и не записывают некорректные данные.
 

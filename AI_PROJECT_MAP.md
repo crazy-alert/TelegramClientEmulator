@@ -36,6 +36,7 @@
 - `templates/chat/index.php` — чат пользователя с ботом, история сообщений, keyboards и inspector последнего update; в режиме `chatFragment` рендерит HTMX-фрагмент без формы выбора.
 - `templates/updates/` — список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
 - `templates/request-inspector/` — inspector Bot API HTTP logs и webhook delivery request/response с маскированием секретов.
+- `templates/import-export/` — экран JSON export/import для bots и profiles без истории.
 - `templates/bots/` — список и форма ботов.
 - `templates/profiles/` — список и форма пользователей (исторически путь `/profiles`).
 - `templates/delivery-attempts/` — список webhook delivery attempts с фильтрами.

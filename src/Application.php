@@ -235,6 +235,31 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && $path === '/import-export') {
+            $this->importExportIndex();
+            return;
+        }
+
+        if ($method === 'GET' && $path === '/export/bots') {
+            $this->exportBots();
+            return;
+        }
+
+        if ($method === 'GET' && $path === '/export/profiles') {
+            $this->exportProfiles();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/import/bots') {
+            $this->importBots();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/import/profiles') {
+            $this->importProfiles();
+            return;
+        }
+
         // --- Боты ---
 
         if ($method === 'GET' && $path === '/bots') {
@@ -812,6 +837,196 @@ final class Application {
             'selectedMethod' => $methodFilter,
             'hasTokenFilter' => $tokenFilter !== '',
         ]);
+    }
+
+    private function importExportIndex(): void {
+        $this->render('import-export/index', [
+            'title' => 'Import/export',
+        ]);
+    }
+
+    private function exportBots(): void {
+        Response::json([
+            'ok' => true,
+            'version' => 1,
+            'exported_at' => date('c'),
+            'bots' => array_map(
+                fn(array $bot): array => $this->exportBotPayload($bot),
+                $this->bots->all(),
+            ),
+        ]);
+    }
+
+    private function exportProfiles(): void {
+        Response::json([
+            'ok' => true,
+            'version' => 1,
+            'exported_at' => date('c'),
+            'profiles' => array_map(
+                fn(array $profile): array => $this->exportProfilePayload($profile),
+                $this->profiles->all(),
+            ),
+        ]);
+    }
+
+    private function importBots(): void {
+        $payload = $this->importPayload('bots');
+        if (!is_array($payload)) {
+            return;
+        }
+
+        $botsToCreate = [];
+        $seenTokens = [];
+        foreach ($payload as $index => $bot) {
+            if (!is_array($bot)) {
+                Response::json(['ok' => false, 'error' => 'bots[' . $index . '] должен быть объектом'], 400);
+                return;
+            }
+
+            $bot = $this->normalizedImportEnabled($bot);
+            $errors = $this->validateBotForm($bot);
+            if ($errors !== []) {
+                Response::json(['ok' => false, 'error' => 'Некорректный bot payload', 'details' => $errors], 400);
+                return;
+            }
+
+            $token = trim((string) ($bot['token'] ?? ''));
+            if ($token === '' || isset($seenTokens[$token]) || $this->bots->hasToken($token)) {
+                Response::json(['ok' => false, 'error' => 'Конфликт token при импорте бота'], 409);
+                return;
+            }
+
+            $seenTokens[$token] = true;
+            $botsToCreate[] = $bot;
+        }
+
+        foreach ($botsToCreate as $bot) {
+            $this->bots->create($bot);
+        }
+
+        Response::json(['ok' => true, 'created' => count($botsToCreate)]);
+    }
+
+    private function importProfiles(): void {
+        $payload = $this->importPayload('profiles');
+        if (!is_array($payload)) {
+            return;
+        }
+
+        $profilesToCreate = [];
+        $seenUserIds = [];
+        $seenChatIds = [];
+        foreach ($payload as $index => $profile) {
+            if (!is_array($profile)) {
+                Response::json(['ok' => false, 'error' => 'profiles[' . $index . '] должен быть объектом'], 400);
+                return;
+            }
+
+            $profile = $this->normalizedImportEnabled($profile);
+            $errors = $this->validateProfileForm($profile);
+            if ($errors !== []) {
+                Response::json(['ok' => false, 'error' => 'Некорректный profile payload', 'details' => $errors], 400);
+                return;
+            }
+
+            $userId = (int) $profile['user_id'];
+            $chatId = (int) $profile['chat_id'];
+            if (isset($seenUserIds[$userId]) || $this->profiles->hasUserId($userId)) {
+                Response::json(['ok' => false, 'error' => 'Конфликт user_id при импорте пользователя'], 409);
+                return;
+            }
+
+            if (isset($seenChatIds[$chatId]) || $this->profiles->hasChatId($chatId)) {
+                Response::json(['ok' => false, 'error' => 'Конфликт chat_id при импорте пользователя'], 409);
+                return;
+            }
+
+            $seenUserIds[$userId] = true;
+            $seenChatIds[$chatId] = true;
+            $profilesToCreate[] = $profile;
+        }
+
+        foreach ($profilesToCreate as $profile) {
+            $this->profiles->create($profile);
+        }
+
+        Response::json(['ok' => true, 'created' => count($profilesToCreate)]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>|null
+     */
+    private function importPayload(string $rootKey): ?array {
+        $raw = trim((string) ($_POST['payload'] ?? ''));
+        if ($raw === '') {
+            $raw = $this->rawBody();
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался JSON payload'], 400);
+            return null;
+        }
+
+        $items = isset($decoded[$rootKey]) && is_array($decoded[$rootKey])
+            ? $decoded[$rootKey]
+            : $decoded;
+
+        if (!array_is_list($items)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался массив ' . $rootKey], 400);
+            return null;
+        }
+
+        return $items;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function normalizedImportEnabled(array $data): array {
+        $enabled = $this->isTruthyBotApiParam($data['enabled'] ?? true);
+        if ($enabled) {
+            $data['enabled'] = '1';
+        } else {
+            unset($data['enabled']);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $bot
+     * @return array<string, mixed>
+     */
+    private function exportBotPayload(array $bot): array {
+        return [
+            'token' => $bot['token'],
+            'bot_id' => (int) ($bot['bot_id'] ?? 0),
+            'username' => $bot['username'],
+            'display_name' => $bot['display_name'],
+            'delivery_mode' => $bot['delivery_mode'],
+            'webhook_url' => $bot['webhook_url'],
+            'webhook_secret_token' => $bot['webhook_secret_token'],
+            'enabled' => ((int) $bot['enabled']) === 1,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>
+     */
+    private function exportProfilePayload(array $profile): array {
+        return [
+            'user_id' => (int) $profile['user_id'],
+            'username' => $profile['username'],
+            'first_name' => $profile['first_name'],
+            'last_name' => $profile['last_name'],
+            'chat_id' => (int) $profile['chat_id'],
+            'chat_type' => $profile['chat_type'],
+            'language_code' => $profile['language_code'],
+            'enabled' => ((int) $profile['enabled']) === 1,
+        ];
     }
 
     /**
