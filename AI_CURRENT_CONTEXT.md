@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task07.md` — добавлен `/request-inspector`. Экран показывает последние Bot API request/response из HTTP JSONL-логов через новый `HttpLogRepository` и webhook request/response из `delivery_attempts`; поддержаны фильтры по raw token и Bot API method, но в HTML выводятся только замаскированные bot token и secret token. В layout добавлена ссылка `Inspector`. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task06.md` — добавлен раздел `/updates`. `UpdateRepository::allWithContext()` возвращает updates с context бота и пользователя, поддержаны фильтры `bot_id`, `profile_id`, `queue_state`, `update_id`. В layout добавлена ссылка `Updates`, создан `templates/updates/index.php` со списком, payload details, ссылкой в чат и ссылкой на delivery attempts. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -101,6 +108,7 @@
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
 - Chat UI периодически обновляет выбранную пару пользователь-бот через HTMX-фрагмент `/chat/fragment`.
 - `/updates` показывает updates без чтения SQLite вручную: фильтры по боту, пользователю, `queue_state`, `update_id`, payload details и переходы в чат/attempts.
+- `/request-inspector` показывает Bot API request/response из HTTP-логов и webhook request/response из delivery attempts; UI маскирует bot token и secret token.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
 - UI-формы ботов и пользователей показывают основные ошибки рядом с полями и не записывают некорректные данные.
 

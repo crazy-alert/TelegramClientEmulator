@@ -22,6 +22,7 @@ final class Application {
     private DeliveryAttemptRepository $deliveryAttempts;
     private SettingsRepository $settings;
     private UpdateGenerator $updateGenerator;
+    private HttpLogRepository $httpLogs;
     private HttpLogger $httpLogger;
     private View $view;
     private ?string $rawBody = null;
@@ -40,6 +41,7 @@ final class Application {
         $this->deliveryAttempts = new DeliveryAttemptRepository($this->database->pdo());
         $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
+        $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);
         $this->view = new View($this->rootPath . '/templates');
     }
@@ -225,6 +227,11 @@ final class Application {
 
         if ($method === 'GET' && $path === '/updates') {
             $this->updatesIndex();
+            return;
+        }
+
+        if ($method === 'GET' && $path === '/request-inspector') {
+            $this->requestInspector();
             return;
         }
 
@@ -785,6 +792,52 @@ final class Application {
             'selectedUpdateId' => $updateId,
             'selectedQueueState' => $queueState,
         ]);
+    }
+
+    private function requestInspector(): void {
+        $tokenFilter = trim((string) ($_GET['token'] ?? ''));
+        $methodFilter = trim((string) ($_GET['method'] ?? ''));
+
+        $this->render('request-inspector/index', [
+            'title' => 'Request inspector',
+            'botApiEvents' => $this->httpLogs->botApiEvents(
+                $tokenFilter === '' ? null : $tokenFilter,
+                $methodFilter === '' ? null : $methodFilter,
+                100,
+            ),
+            'webhookAttempts' => array_map(
+                fn(array $attempt): array => $this->maskedWebhookAttempt($attempt),
+                $this->deliveryAttempts->allWithContext(null, null, 50),
+            ),
+            'selectedMethod' => $methodFilter,
+            'hasTokenFilter' => $tokenFilter !== '',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $attempt
+     * @return array<string, mixed>
+     */
+    private function maskedWebhookAttempt(array $attempt): array {
+        foreach (['webhook_url', 'request_headers', 'request_body', 'response_headers', 'response_body', 'error'] as $field) {
+            if (array_key_exists($field, $attempt) && $attempt[$field] !== null) {
+                $attempt[$field] = $this->maskSecrets((string) $attempt[$field]);
+            }
+        }
+
+        return $attempt;
+    }
+
+    private function maskSecrets(string $value): string {
+        $masked = preg_replace_callback(
+            '/(\d{5,10}):[a-zA-Z0-9_.+-]{15,}/',
+            fn(array $matches): string => $matches[1] . ':***',
+            $value,
+        ) ?? $value;
+
+        $masked = preg_replace('/(X-Telegram-Bot-Api-Secret-Token:\s*)[^\r\n",]+/i', '$1***', $masked) ?? $masked;
+
+        return preg_replace('/("(?:webhook_)?secret_token"\s*:\s*")[^"]+(")/i', '$1***$2', $masked) ?? $masked;
     }
 
     private function profileForm(?int $id = null): void {

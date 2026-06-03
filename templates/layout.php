@@ -211,6 +211,7 @@
         <a href="/">Панель</a>
         <a href="/chat">Чат</a>
         <a href="/updates">Updates</a>
+        <a href="/request-inspector">Inspector</a>
         <a href="/bots">Боты</a>
         <a href="/profiles">Пользователи</a>
         <a href="/delivery-attempts">Webhook attempts</a>

@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Inspector request/response (2026-06-03)
+
+- [x] Проверить формат `HttpLogger`, текущие delivery attempts и документацию.
+- [x] Добавить read-only чтение Bot API событий из HTTP JSONL-логов с маскированием секретов.
+- [x] Добавить route, nav-ссылку и шаблон request/response inspector.
+- [x] Добавить тесты фильтра и маскирования token.
+- [x] Обновить документацию/контекст, прогнать проверки, удалить задачу, сделать коммит и push.
+
 ## Вкладка updates в интерфейсе (2026-06-03)
 
 - [x] Проверить `UpdateRepository`, routes, layout и экран delivery attempts.

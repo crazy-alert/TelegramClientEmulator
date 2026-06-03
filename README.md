@@ -156,6 +156,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
 - Чат на `/chat` периодически обновляет историю, клавиатуры и inspector через HTMX-фрагмент `/chat/fragment?profile_id=<ID>&bot_id=<ID>`.
 - Экран `/updates` показывает список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
+- Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; bot token и secret token маскируются в HTML-выводе.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
 - Failed webhook delivery можно повторить вручную из inspector последнего update.
@@ -163,6 +164,8 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
 - HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
 - Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.
+
+Ограничение inspector: `/request-inspector` читает последние локальные HTTP JSONL-логи и не является security boundary. Секреты маскируются в HTML-выводе, но сами runtime-логи остаются файлами разработки в `LOG_DIR`.
 
 ## Bot API и тесты
 

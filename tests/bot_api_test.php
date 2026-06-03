@@ -479,6 +479,16 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($updatesPage['body'], 'value="100000001"'), 'Фильтр updates update_id должен сохранять значение');
     assertTrueValue(str_contains($updatesPage['body'], 'delivered'), 'Фильтр updates queue_state должен сохранять значение');
 
+    $inspector = httpRequest('GET', $baseUrl . '/request-inspector?token=' . rawurlencode($token) . '&method=sendMessage');
+    assertSameValue(200, $inspector['status'], 'Request inspector должен открываться');
+    assertTrueValue(str_contains($inspector['body'], 'Bot API request/response'), 'Inspector должен показывать Bot API секцию');
+    assertTrueValue(str_contains($inspector['body'], 'Webhook delivery request/response'), 'Inspector должен показывать webhook секцию');
+    assertTrueValue(str_contains($inspector['body'], 'sendMessage'), 'Inspector должен фильтровать Bot API method');
+    assertTrueValue(str_contains($inspector['body'], '123456:***'), 'Inspector должен показывать замаскированный bot token');
+    assertTrueValue(!str_contains($inspector['body'], $token), 'Inspector не должен раскрывать raw bot token');
+    assertTrueValue(!str_contains($inspector['body'], 'test-secret'), 'Inspector не должен раскрывать webhook secret token');
+    assertTrueValue(str_contains($inspector['body'], 'HTTP 200'), 'Inspector должен показывать response status');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteWebhook', formBody([
         'drop_pending_updates' => 'true',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);

@@ -22,6 +22,9 @@
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
 - `src/UpdateRepository.php` — очередь updates, выборка pending updates и UI-список updates с context.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
+- `src/DeliveryAttemptRepository.php` — webhook delivery attempts и UI-выборки с context.
+- `src/HttpLogger.php` — запись HTTP request/response событий в JSONL.
+- `src/HttpLogRepository.php` — read-only выборка Bot API request/response из HTTP JSONL-логов для inspector.
 - `src/Response.php` — HTTP response helpers.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
 - `src/View.php` — рендеринг полных шаблонов и partial-шаблонов без layout для HTMX.
@@ -32,6 +35,7 @@
 - `templates/dashboard.php` — панель состояния.
 - `templates/chat/index.php` — чат пользователя с ботом, история сообщений, keyboards и inspector последнего update; в режиме `chatFragment` рендерит HTMX-фрагмент без формы выбора.
 - `templates/updates/` — список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
+- `templates/request-inspector/` — inspector Bot API HTTP logs и webhook delivery request/response с маскированием секретов.
 - `templates/bots/` — список и форма ботов.
 - `templates/profiles/` — список и форма пользователей (исторически путь `/profiles`).
 - `templates/delivery-attempts/` — список webhook delivery attempts с фильтрами.

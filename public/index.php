@@ -29,6 +29,7 @@ require dirname(__DIR__) . '/src/BotCommandRepository.php';
 require dirname(__DIR__) . '/src/BotRepository.php';
 require dirname(__DIR__) . '/src/Database.php';
 require dirname(__DIR__) . '/src/DeliveryAttemptRepository.php';
+require dirname(__DIR__) . '/src/HttpLogRepository.php';
 require dirname(__DIR__) . '/src/HttpLogger.php';
 require dirname(__DIR__) . '/src/MessageRepository.php';
 require dirname(__DIR__) . '/src/MigrationRunner.php';
