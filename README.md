@@ -177,6 +177,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - `GET|POST /bot<TOKEN>/getMe`;
 - `GET|POST /bot<TOKEN>/getUpdates`;
 - `POST /bot<TOKEN>/sendMessage`;
+- `POST /bot<TOKEN>/editMessageText`;
 - `GET|POST /bot<TOKEN>/getWebhookInfo`;
 - `POST /bot<TOKEN>/setWebhook`;
 - `POST /bot<TOKEN>/deleteWebhook`;
@@ -187,7 +188,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Файловые части multipart-запросов пока игнорируются, потому что методы загрузки файлов в эмуляторе не реализованы.
 
-`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности, включая запланированный `editMessageText`, сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
+`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
 
 Проверки Bot API запускаются в контейнере:
 

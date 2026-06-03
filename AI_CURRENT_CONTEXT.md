@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task10.md` — реализован Bot API `POST /bot<TOKEN>/editMessageText`. Метод принимает JSON/form-urlencoded, требует `chat_id`, `message_id`, `text`, поддерживает optional `reply_markup`, редактирует только сообщения бота и возвращает Telegram-like `Message`. Ошибки неизвестного чата или сообщения возвращают Telegram-like HTTP 400. Обновлены `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task09.md` — добавлена безопасная очистка истории. `POST /chat/clear` очищает messages и updates только выбранной пары `profile_id`/`bot_id`, требует `confirm_clear=1` и доступен из чата через кнопку с browser confirm. `POST /updates/clear` удаляет pending/confirmed updates выбранного бота, не трогая delivered/failed и updates других ботов; доступен на `/updates?bot_id=<id>` с явным подтверждением. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -113,6 +120,7 @@
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` отдаёт pending updates Long Polling, поддерживает `offset`, `limit`, `timeout`, `allowed_updates`, подтверждает updates с `update_id < offset`, возвращает 409 при активном webhook.
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo` возвращает `url`, `has_custom_certificate=false`, `pending_update_count` и `max_connections=40`.
 - Bot API: `POST /bot<TOKEN>/sendMessage` принимает JSON и form-urlencoded body, требует `chat_id` и `text`, ищет включенного пользователя по `chat_id`, сохраняет сообщение направления `bot` в историю и возвращает Telegram-like `Message`.
+- Bot API: `POST /bot<TOKEN>/editMessageText` редактирует только сообщения бота по `chat_id`/`message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` сохраняет webhook URL, optional `secret_token` и переключает бота в `delivery_mode=webhook`; пустой `url` очищает webhook и возвращает `long_polling`.
 - Bot API: `POST /bot<TOKEN>/deleteWebhook` очищает webhook, переключает бота в `delivery_mode=long_polling`; при `drop_pending_updates=true` удаляет pending updates бота.
 - Webhook delivery loop: при `delivery_mode=webhook` и настроенном `webhook_url` созданный update отправляется POST-запросом с JSON body, `Content-Type: application/json` и optional `X-Telegram-Bot-Api-Secret-Token`; попытка сохраняется в `delivery_attempts`, update получает `queue_state=delivered` или `failed`.

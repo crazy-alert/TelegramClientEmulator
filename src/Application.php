@@ -353,6 +353,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/editMessageText$#i', $path, $matches) === 1) {
+            $this->editMessageText($matches[1]);
+            return;
+        }
+
         if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getWebhookInfo$#i', $path, $matches) === 1) {
             $this->getWebhookInfo($matches[1]);
             return;
@@ -1410,6 +1415,110 @@ final class Application {
         Response::json([
             'ok' => true,
             'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
+    }
+
+    private function editMessageText(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!array_key_exists('chat_id', $params) || trim((string) $params['chat_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "chat_id" is required',
+            ], 400);
+            return;
+        }
+
+        if (!array_key_exists('message_id', $params) || trim((string) $params['message_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "message_id" is required',
+            ], 400);
+            return;
+        }
+
+        if (!array_key_exists('text', $params) || trim((string) $params['text']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "text" is required',
+            ], 400);
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $messageId = $this->intParam($params['message_id'], 0);
+        if ($chatId === 0) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        if ($messageId <= 0) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: message to edit not found',
+            ], 400);
+            return;
+        }
+
+        $profile = $this->profiles->findEnabledByChat($chatId);
+        if ($profile === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $message = $this->messages->findBotMessageByTelegramId((int) $bot['id'], $chatId, $messageId);
+        if ($message === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: message to edit not found',
+            ], 400);
+            return;
+        }
+
+        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: object expected as reply markup',
+            ], 400);
+            return;
+        }
+
+        $updatedMessage = $this->messages->updateBotMessage(
+            (int) $message['id'],
+            trim((string) $params['text']),
+            $replyMarkup === null
+                ? null
+                : json_encode(['reply_markup' => $replyMarkup], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        );
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botMessagePayload($updatedMessage, $profile, $bot),
         ]);
     }
 

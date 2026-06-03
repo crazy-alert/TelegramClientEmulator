@@ -134,7 +134,6 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 ### Следующие методы
 
-- `POST /bot{token}/editMessageText`
 - `POST /bot{token}/sendPhoto`
 - `POST /bot{token}/sendDocument`
 
@@ -307,7 +306,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - callback query generation — реализовано для inline-кнопок с `callback_data`;
 - `answerCallbackQuery` — реализовано в минимальном виде;
 - reply keyboard — реализовано для отправки текстовых кнопок;
-- `editMessageText`;
+- `editMessageText` — реализовано для текстовых сообщений бота и optional `reply_markup`;
 - базовые attachments: photo, document.
 
 Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.

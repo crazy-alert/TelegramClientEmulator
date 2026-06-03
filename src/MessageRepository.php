@@ -91,6 +91,55 @@ final readonly class MessageRepository {
         return $message === false ? null : $message;
     }
 
+    /**
+     * Находит сообщение бота по Telegram-like message_id в чате.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findBotMessageByTelegramId(int $botId, int $chatId, int $messageId): ?array {
+        $statement = $this->pdo->prepare(
+            'SELECT * FROM messages
+            WHERE bot_id = :bot_id
+                AND chat_id = :chat_id
+                AND telegram_message_id = :message_id
+                AND direction = \'bot\'
+            LIMIT 1'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+        ]);
+        $message = $statement->fetch();
+
+        return $message === false ? null : $message;
+    }
+
+    /**
+     * Обновляет текст и optional raw_payload сообщения бота.
+     *
+     * @return array<string, mixed>
+     */
+    public function updateBotMessage(int $id, string $text, ?string $rawPayload): array {
+        $statement = $this->pdo->prepare(
+            'UPDATE messages
+            SET text = :text,
+                raw_payload = :raw_payload
+            WHERE id = :id AND direction = \'bot\''
+        );
+        $statement->execute([
+            'id' => $id,
+            'text' => $text,
+            'raw_payload' => $rawPayload,
+        ]);
+
+        return $this->find($id) ?? [
+            'id' => $id,
+            'text' => $text,
+            'raw_payload' => $rawPayload,
+        ];
+    }
+
     public function deleteByDialog(int $botId, int $profileId, int $chatId): int {
         $statement = $this->pdo->prepare(
             'DELETE FROM messages

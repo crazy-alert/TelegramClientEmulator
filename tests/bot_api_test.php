@@ -598,10 +598,48 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue(5, $json['result']['message_id'], 'sendMessage с reply keyboard возвращает следующий message_id');
     assertSameValue($replyMarkup, $json['result']['reply_markup'], 'sendMessage возвращает reply keyboard');
 
+    $editedMarkup = [
+        'keyboard' => [
+            [
+                [
+                    'text' => 'Reply A',
+                ],
+                [
+                    'text' => 'Reply C',
+                ],
+            ],
+        ],
+        'resize_keyboard' => true,
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/editMessageText', json_encode([
+        'chat_id' => 1001,
+        'message_id' => 5,
+        'text' => 'Edited reply keyboard',
+        'reply_markup' => $editedMarkup,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(5, $json['result']['message_id'], 'editMessageText возвращает исходный message_id');
+    assertSameValue('Edited reply keyboard', $json['result']['text'], 'editMessageText возвращает обновленный текст');
+    assertSameValue($editedMarkup, $json['result']['reply_markup'], 'editMessageText возвращает обновленный reply_markup');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/editMessageText', formBody([
+        'chat_id' => '1001',
+        'message_id' => '3',
+        'text' => 'Cannot edit user message',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: message to edit not found', $json['description'], 'editMessageText не редактирует сообщения пользователя');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/editMessageText', formBody([
+        'chat_id' => '9999',
+        'message_id' => '5',
+        'text' => 'No chat',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: chat not found', $json['description'], 'editMessageText проверяет существование чата');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
     assertTrueValue(str_contains($chat['body'], 'Inline action'), 'Чат показывает inline keyboard');
+    assertTrueValue(str_contains($chat['body'], 'Edited reply keyboard'), 'Чат показывает отредактированное сообщение бота');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
@@ -707,7 +745,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
 
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Основной диалог после очистки другого диалога должен открываться');
-    assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Очистка импортированного диалога не должна удалить основной диалог');
+    assertTrueValue(str_contains($chat['body'], 'Edited reply keyboard'), 'Очистка импортированного диалога не должна удалить основной диалог');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '2',
@@ -762,10 +800,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
     assertSameValue([], $json['result'], 'deleteMyCommands очищает команды');
 
-    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/editMessageText', formBody([
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', formBody([
         'chat_id' => '1001',
-        'message_id' => '1',
-        'text' => 'Edited',
+        'photo' => 'file-id',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
     assertSameValue(501, $json['error_code'], 'Неподдерживаемый Bot API метод возвращает 501');
 
