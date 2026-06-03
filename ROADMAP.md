@@ -127,11 +127,14 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `POST /bot{token}/setWebhook`
 - `POST /bot{token}/deleteWebhook`
 - `GET|POST /bot{token}/getWebhookInfo`
+- `POST /bot{token}/setMyCommands`
+- `GET|POST /bot{token}/getMyCommands`
+- `POST /bot{token}/deleteMyCommands`
+- `POST /bot{token}/answerCallbackQuery`
 
 ### Следующие методы
 
 - `POST /bot{token}/editMessageText`
-- `POST /bot{token}/answerCallbackQuery`
 - `POST /bot{token}/sendPhoto`
 - `POST /bot{token}/sendDocument`
 
@@ -262,11 +265,19 @@ Update хранит Telegram-like событие, созданное эмуля�
 - отображение ответов в чате;
 - Telegram-like response body;
 - поддержка JSON и form-encoded request body.
+- поддержка `reply_markup` для `inline_keyboard` и `keyboard`;
+- отображение inline/reply-кнопок в чате;
+- клики по reply-кнопкам создают обычные message updates;
+- клики по inline-кнопкам с `callback_data` создают `callback_query` updates;
+- сохранение и показ команд бота через `setMyCommands`/`getMyCommands`/`deleteMyCommands`;
+- кликабельные команды в панели команд и в истории сообщений.
 
 Принятые ограничения:
 
 - реализованы только текстовые сообщения;
-- keyboards, attachments и остальные параметры `sendMessage` будут добавляться по мере появления сценариев.
+- attachments и остальные параметры `sendMessage` будут добавляться по мере появления сценариев.
+- command scopes и language-specific команды пока не разделяются.
+- URL inline-кнопки открываются ссылкой в UI, но не создают update.
 
 Критерий готовности: бот получает сообщение от пользователя и через `/sendMessage` добавляет ответ в видимый чат.
 
@@ -289,13 +300,15 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 Цель: покрыть частые возможности ботов.
 
+Статус: частично реализовано.
+
 Результат:
 
-- inline keyboard rendering;
-- callback query generation;
-- `answerCallbackQuery`;
+- inline keyboard rendering — реализовано для `callback_data` и `url`;
+- callback query generation — реализовано для inline-кнопок с `callback_data`;
+- `answerCallbackQuery` — реализовано в минимальном виде;
+- reply keyboard — реализовано для отправки текстовых кнопок;
 - `editMessageText`;
-- reply keyboard;
 - базовые attachments: photo, document.
 
 Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.
@@ -304,11 +317,14 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 Цель: подготовить проект к использованию не только автором.
 
+Статус: начато.
+
 Результат:
 
-- тесты доменной логики;
-- тесты Bot API routes;
-- тесты Long Polling offset behavior;
+- тесты доменной логики — начато через `tests/bot_api_test.php`;
+- тесты Bot API routes — начато через `tests/bot_api_test.php`;
+- тесты Long Polling offset behavior — реализованы в интеграционном тесте;
+- документация запуска тестов — добавлена в README;
 - документация Docker Compose сценариев;
 - примеры интеграции для PHP, Python и Node.js bot frameworks;
 - описание ограничений эмулятора.
@@ -327,6 +343,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 6. Webhook configuration (`setWebhook`, `deleteWebhook`, `getWebhookInfo`) — реализовано.
 7. Webhook delivery — реализовано в базовом виде.
 8. Инспектор payload и ошибок — payload inspector и последний delivery attempt реализованы частично; отдельный delivery inspector впереди.
+9. Команды бота и кнопки — реализованы в базовом виде для default-команд, inline keyboard, reply keyboard и callback query.
 
 Long Polling был реализован до webhook-доставки, потому что он не требует отдельного HTTP endpoint в контейнере бота и быстрее проверяет корректность очереди updates.
 
