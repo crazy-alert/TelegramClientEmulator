@@ -635,11 +635,45 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
     assertSameValue('Bad Request: chat not found', $json['description'], 'editMessageText проверяет существование чата');
 
+    $photoMarkup = [
+        'inline_keyboard' => [
+            [
+                [
+                    'text' => 'Open photo',
+                    'url' => 'https://example.test/photo',
+                ],
+            ],
+        ],
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', json_encode([
+        'chat_id' => 1001,
+        'photo' => 'https://example.test/photo.jpg',
+        'caption' => 'Photo caption',
+        'reply_markup' => $photoMarkup,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(6, $json['result']['message_id'], 'sendPhoto возвращает следующий message_id');
+    assertSameValue('Photo caption', $json['result']['caption'], 'sendPhoto возвращает caption');
+    assertSameValue('https://example.test/photo.jpg', $json['result']['photo'][0]['file_id'], 'sendPhoto возвращает Telegram-like photo');
+    assertSameValue($photoMarkup, $json['result']['reply_markup'], 'sendPhoto возвращает reply_markup');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', formBody([
+        'chat_id' => '1001',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "photo" is required', $json['description'], 'sendPhoto требует photo');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', formBody([
+        'chat_id' => '9999',
+        'photo' => 'file-id',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: chat not found', $json['description'], 'sendPhoto проверяет существование чата');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
     assertTrueValue(str_contains($chat['body'], 'Inline action'), 'Чат показывает inline keyboard');
     assertTrueValue(str_contains($chat['body'], 'Edited reply keyboard'), 'Чат показывает отредактированное сообщение бота');
+    assertTrueValue(str_contains($chat['body'], 'Photo caption'), 'Чат показывает caption photo-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/photo.jpg'), 'Чат показывает photo placeholder');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
@@ -800,9 +834,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
     assertSameValue([], $json['result'], 'deleteMyCommands очищает команды');
 
-    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', formBody([
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', formBody([
         'chat_id' => '1001',
-        'photo' => 'file-id',
+        'document' => 'file-id',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
     assertSameValue(501, $json['error_code'], 'Неподдерживаемый Bot API метод возвращает 501');
 

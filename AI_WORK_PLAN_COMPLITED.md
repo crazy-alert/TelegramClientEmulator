@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Базовый sendPhoto (2026-06-03)
+
+- [x] Добавить Bot API route `sendPhoto` и валидацию параметров.
+- [x] Сохранять photo metadata в сообщении и возвращать Telegram-like `Message.photo`.
+- [x] Показать photo placeholder с caption в чате.
+- [x] Обновить тесты и документацию по ограничениям upload.
+- [x] Прогнать проверки, удалить задачу, обновить контекст, сделать коммит и push.
+
 ## Реализовать editMessageText (2026-06-03)
 
 - [x] Добавить поиск и обновление bot message по `chat_id`/`message_id`.

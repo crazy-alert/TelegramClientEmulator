@@ -353,6 +353,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendPhoto$#i', $path, $matches) === 1) {
+            $this->sendPhoto($matches[1]);
+            return;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/editMessageText$#i', $path, $matches) === 1) {
             $this->editMessageText($matches[1]);
             return;
@@ -1522,6 +1527,95 @@ final class Application {
         ]);
     }
 
+    private function sendPhoto(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!array_key_exists('chat_id', $params) || trim((string) $params['chat_id']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "chat_id" is required',
+            ], 400);
+            return;
+        }
+
+        if (!array_key_exists('photo', $params) || trim((string) $params['photo']) === '') {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: parameter "photo" is required',
+            ], 400);
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        if ($chatId === 0) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $profile = $this->profiles->findEnabledByChat($chatId);
+        if ($profile === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: chat not found',
+            ], 400);
+            return;
+        }
+
+        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 400,
+                'description' => 'Bad Request: object expected as reply markup',
+            ], 400);
+            return;
+        }
+
+        $photo = trim((string) $params['photo']);
+        $caption = trim((string) ($params['caption'] ?? ''));
+        $rawPayload = [
+            'photo' => $this->photoSizesPayload($photo),
+            'photo_source' => $photo,
+        ];
+        if ($caption !== '') {
+            $rawPayload['caption'] = $caption;
+        }
+        if ($replyMarkup !== null) {
+            $rawPayload['reply_markup'] = $replyMarkup;
+        }
+
+        $message = $this->messages->create([
+            'bot_id' => (int) $bot['id'],
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'direction' => 'bot',
+            'text' => $caption,
+            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
+    }
+
     private function setMyCommands(string $token): void {
         $bot = $this->bots->findByToken($token);
 
@@ -2049,6 +2143,7 @@ final class Application {
      * @return array<string, mixed>
      */
     private function botMessagePayload(array $message, array $profile, array $bot): array {
+        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
         $payload = [
             'message_id' => (int) $message['telegram_message_id'],
             'from' => [
@@ -2065,15 +2160,36 @@ final class Application {
                 'last_name' => $profile['last_name'] ?? '',
             ],
             'date' => strtotime((string) $message['created_at']) ?: time(),
-            'text' => $message['text'],
         ];
 
-        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
+        if (is_array($rawPayload) && isset($rawPayload['photo']) && is_array($rawPayload['photo'])) {
+            $payload['photo'] = $rawPayload['photo'];
+            if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
+                $payload['caption'] = (string) $rawPayload['caption'];
+            }
+        } else {
+            $payload['text'] = $message['text'];
+        }
+
         if (is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])) {
             $payload['reply_markup'] = $rawPayload['reply_markup'];
         }
 
         return $payload;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function photoSizesPayload(string $photo): array {
+        return [
+            [
+                'file_id' => $photo,
+                'file_unique_id' => substr(sha1($photo), 0, 16),
+                'width' => 0,
+                'height' => 0,
+            ],
+        ];
     }
 
     private function health(): void {

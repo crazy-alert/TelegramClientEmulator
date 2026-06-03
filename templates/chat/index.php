@@ -152,6 +152,10 @@
                 $replyMarkup = is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])
                     ? $rawPayload['reply_markup']
                     : null;
+                $photoPayload = is_array($rawPayload) && isset($rawPayload['photo']) && is_array($rawPayload['photo'])
+                    ? $rawPayload['photo']
+                    : null;
+                $photoSource = is_array($rawPayload) ? (string) ($rawPayload['photo_source'] ?? '') : '';
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -163,7 +167,17 @@
                             · <?= e($msg['created_at']) ?>
                         </span>
                     </div>
-                    <div style="white-space: pre-wrap;"><?php $renderMessageText((string) $msg['text']); ?></div>
+                    <?php if ($photoPayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Photo</strong>
+                            <?php if ($photoSource !== ''): ?>
+                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($photoSource) ?></code></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ((string) $msg['text'] !== ''): ?>
+                        <div style="white-space: pre-wrap;"><?php $renderMessageText((string) $msg['text']); ?></div>
+                    <?php endif; ?>
                     <?php if ($msg['direction'] === 'bot' && $replyMarkup !== null && isset($replyMarkup['inline_keyboard']) && is_array($replyMarkup['inline_keyboard'])): ?>
                         <div style="display: grid; gap: 6px; margin-top: 10px; max-width: 420px;">
                             <?php foreach ($replyMarkup['inline_keyboard'] as $row): ?>
