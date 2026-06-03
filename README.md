@@ -144,6 +144,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Панель состояния: `/`.
 - Управление ботами: `/bots`.
 - Управление пользователями: `/profiles`.
+- Формы ботов и пользователей показывают основные ошибки рядом с полями и возвращают HTTP 422 без записи некорректных данных.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`.
 - Bot API: `POST /bot<TOKEN>/sendMessage` сохраняет текстовый ответ бота в историю локального чата.

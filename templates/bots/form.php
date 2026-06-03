@@ -3,6 +3,7 @@ $isEdit = $bot !== null;
 $action = $isEdit ? '/bots/' . $bot['id'] : '/bots';
 $tokenPlaceholder = $bot['token'] ?? $generatedCredentials['token'] ?? '100001:local-dev-token-000000';
 $botIdPlaceholder = $bot['bot_id'] ?? $generatedCredentials['bot_id'] ?? '100001';
+$errors = $errors ?? [];
 ?>
 
 <div class="toolbar">
@@ -18,21 +19,33 @@ $botIdPlaceholder = $bot['bot_id'] ?? $generatedCredentials['bot_id'] ?? '100001
     <label>
         Название
         <input name="display_name" required value="<?= e($bot['display_name'] ?? '') ?>" placeholder="Локальный тестовый бот">
+        <?php if (isset($errors['display_name'])): ?>
+            <span class="field-error"><?= e($errors['display_name']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>
         Token
         <input name="token" value="<?= e($bot['token'] ?? '') ?>" placeholder="<?= e((string) $tokenPlaceholder) ?>">
+        <?php if (isset($errors['token'])): ?>
+            <span class="field-error"><?= e($errors['token']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>
         Bot ID
         <input name="bot_id" inputmode="numeric" value="<?= e($bot['bot_id'] ?? '') ?>" placeholder="<?= e((string) $botIdPlaceholder) ?>">
+        <?php if (isset($errors['bot_id'])): ?>
+            <span class="field-error"><?= e($errors['bot_id']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>
         Username
         <input name="username" required value="<?= e($bot['username'] ?? '') ?>" placeholder="local_test_bot">
+        <?php if (isset($errors['username'])): ?>
+            <span class="field-error"><?= e($errors['username']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>
@@ -42,11 +55,17 @@ $botIdPlaceholder = $bot['bot_id'] ?? $generatedCredentials['bot_id'] ?? '100001
             <option value="long_polling" <?= $deliveryMode === 'long_polling' ? 'selected' : '' ?>>Long Polling</option>
             <option value="webhook" <?= $deliveryMode === 'webhook' ? 'selected' : '' ?>>Webhook</option>
         </select>
+        <?php if (isset($errors['delivery_mode'])): ?>
+            <span class="field-error"><?= e($errors['delivery_mode']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>
         Webhook URL
         <input name="webhook_url" value="<?= e($bot['webhook_url'] ?? '') ?>" placeholder="http://bot:3000/telegram/webhook">
+        <?php if (isset($errors['webhook_url'])): ?>
+            <span class="field-error"><?= e($errors['webhook_url']) ?></span>
+        <?php endif; ?>
     </label>
 
     <label>

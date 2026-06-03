@@ -236,8 +236,7 @@ final class Application {
         }
 
         if ($method === 'POST' && $path === '/bots') {
-            $this->bots->create($_POST);
-            Response::redirect('/bots');
+            $this->botCreate();
             return;
         }
 
@@ -247,8 +246,7 @@ final class Application {
         }
 
         if ($method === 'POST' && preg_match('#^/bots/(\d+)$#', $path, $matches) === 1) {
-            $this->bots->update((int) $matches[1], $_POST);
-            Response::redirect('/bots');
+            $this->botUpdate((int) $matches[1]);
             return;
         }
 
@@ -271,8 +269,7 @@ final class Application {
         }
 
         if ($method === 'POST' && $path === '/profiles') {
-            $this->profiles->create($_POST);
-            Response::redirect('/profiles');
+            $this->profileCreate();
             return;
         }
 
@@ -282,8 +279,7 @@ final class Application {
         }
 
         if ($method === 'POST' && preg_match('#^/profiles/(\d+)$#', $path, $matches) === 1) {
-            $this->profiles->update((int) $matches[1], $_POST);
-            Response::redirect('/profiles');
+            $this->profileUpdate((int) $matches[1]);
             return;
         }
 
@@ -694,7 +690,50 @@ final class Application {
             'title' => $bot === null ? 'Новый бот' : 'Редактирование бота',
             'bot' => $bot,
             'generatedCredentials' => $bot === null ? $this->bots->generateCredentials() : null,
+            'errors' => [],
         ]);
+    }
+
+    private function botCreate(): void {
+        $errors = $this->validateBotForm($_POST);
+
+        if ($errors !== []) {
+            http_response_code(422);
+            $this->render('bots/form', [
+                'title' => 'Новый бот',
+                'bot' => $_POST,
+                'generatedCredentials' => $this->generatedCredentialsFromPost($_POST) ?? $this->bots->generateCredentials(),
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->bots->create($_POST);
+        Response::redirect('/bots');
+    }
+
+    private function botUpdate(int $id): void {
+        $bot = $this->bots->find($id);
+
+        if ($bot === null) {
+            Response::json(['ok' => false, 'error' => 'Бот не найден'], 404);
+            return;
+        }
+
+        $errors = $this->validateBotForm($_POST);
+        if ($errors !== []) {
+            http_response_code(422);
+            $this->render('bots/form', [
+                'title' => 'Редактирование бота',
+                'bot' => array_replace($bot, $_POST, ['id' => $id]),
+                'generatedCredentials' => null,
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->bots->update($id, $_POST);
+        Response::redirect('/bots');
     }
 
     private function profilesIndex(): void {
@@ -730,7 +769,148 @@ final class Application {
         $this->render('profiles/form', [
             'title' => $profile === null ? 'Новый пользователь' : 'Редактирование пользователя',
             'profile' => $profile,
+            'errors' => [],
         ]);
+    }
+
+    private function profileCreate(): void {
+        $errors = $this->validateProfileForm($_POST);
+
+        if ($errors !== []) {
+            http_response_code(422);
+            $this->render('profiles/form', [
+                'title' => 'Новый пользователь',
+                'profile' => $_POST,
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->profiles->create($_POST);
+        Response::redirect('/profiles');
+    }
+
+    private function profileUpdate(int $id): void {
+        $profile = $this->profiles->find($id);
+
+        if ($profile === null) {
+            Response::json(['ok' => false, 'error' => 'Пользователь не найден'], 404);
+            return;
+        }
+
+        $errors = $this->validateProfileForm($_POST);
+        if ($errors !== []) {
+            http_response_code(422);
+            $this->render('profiles/form', [
+                'title' => 'Редактирование пользователя',
+                'profile' => array_replace($profile, $_POST, ['id' => $id]),
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->profiles->update($id, $_POST);
+        Response::redirect('/profiles');
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    private function validateBotForm(array $data): array {
+        $errors = [];
+        $displayName = trim((string) ($data['display_name'] ?? ''));
+        $username = ltrim(trim((string) ($data['username'] ?? '')), '@');
+        $token = trim((string) ($data['token'] ?? ''));
+        $botId = trim((string) ($data['bot_id'] ?? ''));
+        $deliveryMode = (string) ($data['delivery_mode'] ?? '');
+        $webhookUrl = trim((string) ($data['webhook_url'] ?? ''));
+
+        if ($displayName === '') {
+            $errors['display_name'] = 'Укажите название бота.';
+        }
+
+        if ($username === '') {
+            $errors['username'] = 'Укажите username бота.';
+        } elseif (preg_match('/^[A-Za-z0-9_]{1,32}$/', $username) !== 1) {
+            $errors['username'] = 'Username может содержать латинские буквы, цифры и underscore, до 32 символов.';
+        }
+
+        if ($token !== '' && preg_match('/^\d{5,10}:[a-zA-Z0-9_.+-]{15,}$/', $token) !== 1) {
+            $errors['token'] = 'Token должен выглядеть как 123456:local-dev-token.';
+        }
+
+        if ($botId !== '' && preg_match('/^\d{5,10}$/', $botId) !== 1) {
+            $errors['bot_id'] = 'Bot ID должен быть числом от 5 до 10 цифр.';
+        }
+
+        if (!in_array($deliveryMode, ['webhook', 'long_polling'], true)) {
+            $errors['delivery_mode'] = 'Выберите допустимый режим доставки.';
+        }
+
+        if ($webhookUrl !== '' && !$this->isValidWebhookUrl($webhookUrl)) {
+            $errors['webhook_url'] = 'Webhook URL должен быть корректным http или https URL.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    private function validateProfileForm(array $data): array {
+        $errors = [];
+        $userId = trim((string) ($data['user_id'] ?? ''));
+        $username = ltrim(trim((string) ($data['username'] ?? '')), '@');
+        $firstName = trim((string) ($data['first_name'] ?? ''));
+        $chatId = trim((string) ($data['chat_id'] ?? ''));
+        $chatType = (string) ($data['chat_type'] ?? '');
+        $languageCode = trim((string) ($data['language_code'] ?? ''));
+
+        if ($userId === '' || preg_match('/^-?\d+$/', $userId) !== 1 || (int) $userId === 0) {
+            $errors['user_id'] = 'User ID должен быть ненулевым целым числом.';
+        }
+
+        if ($username === '') {
+            $errors['username'] = 'Укажите username пользователя.';
+        } elseif (preg_match('/^[A-Za-z0-9_]{1,32}$/', $username) !== 1) {
+            $errors['username'] = 'Username может содержать латинские буквы, цифры и underscore, до 32 символов.';
+        }
+
+        if ($firstName === '') {
+            $errors['first_name'] = 'Укажите имя пользователя.';
+        }
+
+        if ($chatId === '' || preg_match('/^-?\d+$/', $chatId) !== 1 || (int) $chatId === 0) {
+            $errors['chat_id'] = 'Chat ID должен быть ненулевым целым числом.';
+        }
+
+        if (!in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)) {
+            $errors['chat_type'] = 'Выберите допустимый тип чата.';
+        }
+
+        if ($languageCode !== '' && preg_match('/^[a-z]{2,8}(?:-[A-Z]{2})?$/', $languageCode) !== 1) {
+            $errors['language_code'] = 'Язык должен быть кодом вроде ru или en-US.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array{bot_id: int, token: string}|null
+     */
+    private function generatedCredentialsFromPost(array $data): ?array {
+        $token = trim((string) ($data['generated_token'] ?? ''));
+        if (preg_match('/^(\d{5,10}):[a-zA-Z0-9_.+-]{15,}$/', $token, $matches) !== 1) {
+            return null;
+        }
+
+        return [
+            'bot_id' => (int) $matches[1],
+            'token' => $token,
+        ];
     }
 
     // ----------------------------------------------------------------

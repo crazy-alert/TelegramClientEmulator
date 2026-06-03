@@ -15,7 +15,7 @@
 ## Приложение
 
 - `public/index.php` — front controller.
-- `src/Application.php` — маршрутизация и orchestration HTTP-запросов.
+- `src/Application.php` — маршрутизация, orchestration HTTP-запросов и серверная валидация UI-форм.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.

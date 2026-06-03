@@ -183,6 +183,12 @@
             color: #647482;
         }
 
+        .field-error {
+            color: #b42318;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
         code {
             font-family: "JetBrains Mono", Consolas, monospace;
             overflow-wrap: anywhere;

@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task05.md` — добавлена inline validation для UI-форм ботов и пользователей. POST `/bots`, `/bots/<id>`, `/profiles`, `/profiles/<id>` теперь валидируют основные поля перед записью и при ошибках возвращают HTML формы со статусом 422 и `field-error` рядом с конкретным полем. Bot API маршруты не менялись. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find public src tests templates -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task04.md` — добавлен HTMX polling для чата. `GET /chat/fragment?profile_id=<id>&bot_id=<id>` возвращает обновляемый фрагмент выбранной пары без формы выбора, а полная страница `/chat` содержит `hx-get`, `hx-trigger="every 3s"` и `hx-swap="innerHTML"`. Фрагмент сохраняет историю сообщений, raw inspector, resend failed webhook, inline keyboard и reply keyboard. `View` получил `renderPartial()`, layout подключает HTMX. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:
@@ -87,6 +94,7 @@
 - Chat UI показывает последнюю webhook delivery attempt для последнего update.
 - Chat UI периодически обновляет выбранную пару пользователь-бот через HTMX-фрагмент `/chat/fragment`.
 - В UI терминология `Профиль/Профили` заменена на `Пользователь/Пользователи`; у пользователя больше нет полей `Название профиля` и `Активный бот`, имя в БД заполняется из `username`.
+- UI-формы ботов и пользователей показывают основные ошибки рядом с полями и не записывают некорректные данные.
 
 ## Важные решения
 
