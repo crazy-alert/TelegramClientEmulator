@@ -58,6 +58,29 @@
             break;
         }
     }
+
+    $renderMessageText = static function (string $text) use ($profile, $bot): void {
+        $offset = 0;
+        preg_match_all('/(?<!\S)(\/[A-Za-z0-9_]{1,32}(?:@[A-Za-z0-9_]+)?)/u', $text, $matches, PREG_OFFSET_CAPTURE);
+
+        foreach ($matches[1] as $match) {
+            [$command, $position] = $match;
+            echo e(substr($text, $offset, $position - $offset));
+            ?>
+            <form class="message-command" method="post" action="/chat/send" style="display: inline;">
+                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                <input type="hidden" name="text" value="<?= e($command) ?>">
+                <button type="submit" class="secondary" style="display: inline; min-height: 0; padding: 0; border: 0; background: transparent; color: #2481cc; vertical-align: baseline;">
+                    <?= e($command) ?>
+                </button>
+            </form>
+            <?php
+            $offset = $position + strlen($command);
+        }
+
+        echo e(substr($text, $offset));
+    };
     ?>
     <div class="panel" style="margin-bottom: 18px;">
         <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
@@ -126,7 +149,7 @@
                             · <?= e($msg['created_at']) ?>
                         </span>
                     </div>
-                    <div style="white-space: pre-wrap;"><?= e($msg['text']) ?></div>
+                    <div style="white-space: pre-wrap;"><?php $renderMessageText((string) $msg['text']); ?></div>
                     <?php if ($msg['direction'] === 'bot' && $replyMarkup !== null && isset($replyMarkup['inline_keyboard']) && is_array($replyMarkup['inline_keyboard'])): ?>
                         <div style="display: grid; gap: 6px; margin-top: 10px; max-width: 420px;">
                             <?php foreach ($replyMarkup['inline_keyboard'] as $row): ?>

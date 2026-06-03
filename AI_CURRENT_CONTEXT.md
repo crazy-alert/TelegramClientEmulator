@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: исправлен рендер истории чата — команды вида `/start` и `/help` внутри текста сообщений теперь кликабельны. Команды рендерятся inline-формой `.message-command`, которая повторно отправляет команду через `/chat/send` для текущей пары пользователь-бот. `tests/bot_api_test.php` расширен проверкой HTML истории сообщений.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: добавлена поддержка команд и клавиатур Bot API. Новые методы: `setMyCommands`, `getMyCommands`, `deleteMyCommands`, минимальный `answerCallbackQuery`. Команды хранятся в `bot_commands` через миграцию `002_bot_commands.sql` и `BotCommandRepository`; `/chat` показывает выпадающий список и кликабельные команды. `sendMessage` принимает и возвращает `reply_markup`; интерфейс показывает `inline_keyboard` под сообщением бота и `keyboard` как основную клавиатуру. Reply-кнопки отправляют обычный текстовый message update, inline-кнопки с `callback_data` создают `callback_query` update. Обновлены `README.md`, `docs/technical-spec.md`, `AI_PROJECT_MAP.md` и `tests/bot_api_test.php`.
 
 Проверки:

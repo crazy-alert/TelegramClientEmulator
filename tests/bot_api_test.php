@@ -373,6 +373,11 @@ function runHttpTests(string $baseUrl): void {
     assertSameValue(303, $response['status'], '/chat/send должен редиректить обратно в чат');
     assertSameValue(null, $response['json'], 'Редирект /chat/send не обязан быть JSON');
 
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Страница чата после команды должна открываться');
+    assertTrueValue(str_contains($chat['body'], 'class="message-command"'), 'Команда в истории сообщений должна быть кликабельной');
+    assertTrueValue(str_contains($chat['body'], 'value="/help"'), 'Кликабельная команда в истории должна отправлять текст команды');
+
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?allowed_updates=' . rawurlencode('["callback_query"]')), 200, true);
     assertSameValue([], $json['result'], 'allowed_updates фильтрует message update');
 
