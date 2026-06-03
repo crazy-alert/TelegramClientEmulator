@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-03: выполнена `.aitasks/task02.md` — добавлен экран `/delivery-attempts` для webhook delivery attempts. `DeliveryAttemptRepository::allWithContext()` возвращает attempts с update, bot и profile context, поддержаны фильтры `bot_id` и `update_id`. В навигацию добавлена ссылка `Webhook attempts`, шаблон `templates/delivery-attempts/index.php` показывает URL, HTTP status, duration, error, request/response body и ссылку назад в чат. `tests/bot_api_test.php` расширен smoke-проверкой списка и фильтров. Обновлены `README.md`, `ROADMAP.md`, `AI_PROJECT_MAP.md`; будущая `.aitasks/task06.md` сужена до `/updates`, так как `/delivery-attempts` уже реализован.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-03: выполнена `.aitasks/task01.md` — добавлен ручной resend failed webhook delivery. Новый маршрут `POST /updates/<id>/resend` повторяет доставку только для `failed` update, использует сохраненный payload и текущие webhook-настройки бота, создает новую запись `delivery_attempts` и обновляет `queue_state` на `delivered` или `failed`. В inspector последнего update появилась кнопка resend для failed webhook. `tests/bot_api_test.php` поднимает локальный webhook receiver и проверяет failed delivery, кнопку resend и successful resend. Обновлены `README.md` и `ROADMAP.md`.
 
 Проверки:

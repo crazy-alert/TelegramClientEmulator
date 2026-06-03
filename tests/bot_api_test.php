@@ -392,6 +392,18 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], '>delivered<'), 'Успешный resend должен перевести update в delivered');
     assertTrueValue(!str_contains($chat['body'], '/updates/1/resend'), 'После successful resend кнопка resend должна исчезнуть');
 
+    $attempts = httpRequest('GET', $baseUrl . '/delivery-attempts');
+    assertSameValue(200, $attempts['status'], 'Экран delivery attempts должен открываться');
+    assertTrueValue(str_contains($attempts['body'], 'Webhook delivery attempts'), 'Экран delivery attempts должен иметь заголовок');
+    assertTrueValue(str_contains($attempts['body'], 'http://127.0.0.1:' . $receiverPort . '/receiver.php?status=500'), 'Список attempts показывает failed webhook URL');
+    assertTrueValue(str_contains($attempts['body'], 'http://127.0.0.1:' . $receiverPort . '/receiver.php?status=202'), 'Список attempts показывает successful resend URL');
+    assertTrueValue(str_contains($attempts['body'], '/chat?profile_id=1&bot_id=1'), 'Список attempts содержит ссылку в чат');
+
+    $attempts = httpRequest('GET', $baseUrl . '/delivery-attempts?bot_id=1&update_id=100000001');
+    assertSameValue(200, $attempts['status'], 'Экран delivery attempts с фильтром должен открываться');
+    assertTrueValue(str_contains($attempts['body'], 'value="100000001"'), 'Фильтр update_id должен сохранять значение');
+    assertTrueValue(str_contains($attempts['body'], 'selected'), 'Фильтр bot_id должен сохранять выбранного бота');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteWebhook', formBody([
         'drop_pending_updates' => 'true',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);

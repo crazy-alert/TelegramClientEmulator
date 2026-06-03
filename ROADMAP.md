@@ -244,10 +244,10 @@ Update хранит Telegram-like событие, созданное эмуля�
 - сохранение request/response;
 - отображение ошибок доставки.
 - ручной resend failed delivery из inspector последнего update.
+- отдельный список delivery attempts и фильтры по боту/update.
 
 Осталось:
 
-- отдельный список delivery attempts и фильтры по боту/update;
 - настройки webhook timeout в UI.
 
 Критерий готовности: бот-контейнер получает update через Docker service URL, а эмулятор показывает статус доставки.

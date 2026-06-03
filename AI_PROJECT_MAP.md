@@ -30,6 +30,7 @@
 - `templates/dashboard.php` — панель состояния.
 - `templates/bots/` — список и форма ботов.
 - `templates/profiles/` — список и форма пользователей (исторически путь `/profiles`).
+- `templates/delivery-attempts/` — список webhook delivery attempts с фильтрами.
 
 ## Данные
 

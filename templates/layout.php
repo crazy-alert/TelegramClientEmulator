@@ -205,6 +205,7 @@
         <a href="/chat">Чат</a>
         <a href="/bots">Боты</a>
         <a href="/profiles">Пользователи</a>
+        <a href="/delivery-attempts">Webhook attempts</a>
         <a href="/health">Health</a>
     </nav>
 </header>

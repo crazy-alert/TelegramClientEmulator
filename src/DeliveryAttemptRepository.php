@@ -45,6 +45,57 @@ final readonly class DeliveryAttemptRepository {
     }
 
     /**
+     * Возвращает список попыток доставки с данными update, бота и пользователя.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function allWithContext(?int $botId = null, ?int $updateId = null, int $limit = 100): array {
+        $where = [];
+        $params = [
+            'limit' => max(1, min(500, $limit)),
+        ];
+
+        if ($botId !== null && $botId > 0) {
+            $where[] = 'delivery_attempts.bot_id = :bot_id';
+            $params['bot_id'] = $botId;
+        }
+
+        if ($updateId !== null && $updateId > 0) {
+            $where[] = 'updates.update_id = :update_id';
+            $params['update_id'] = $updateId;
+        }
+
+        $sql = 'SELECT
+                delivery_attempts.*,
+                updates.update_id,
+                updates.profile_id,
+                updates.queue_state,
+                bots.username AS bot_username,
+                bots.display_name AS bot_display_name,
+                profiles.username AS profile_username,
+                profiles.first_name AS profile_first_name,
+                profiles.last_name AS profile_last_name
+            FROM delivery_attempts
+            INNER JOIN updates ON updates.id = delivery_attempts.update_row_id
+            INNER JOIN bots ON bots.id = delivery_attempts.bot_id
+            INNER JOIN profiles ON profiles.id = updates.profile_id';
+
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' ORDER BY delivery_attempts.id DESC LIMIT :limit';
+
+        $statement = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $statement->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /**
      * Возвращает последнюю попытку доставки для update.
      *
      * @return array<string, mixed>|null

@@ -201,6 +201,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && $path === '/delivery-attempts') {
+            $this->deliveryAttemptsIndex();
+            return;
+        }
+
         // --- Боты ---
 
         if ($method === 'GET' && $path === '/bots') {
@@ -634,6 +639,21 @@ final class Application {
         $this->render('profiles/index', [
             'title' => 'Пользователи',
             'users' => $this->profiles->all(),
+        ]);
+    }
+
+    private function deliveryAttemptsIndex(): void {
+        $botId = $this->intParam($_GET['bot_id'] ?? 0, 0);
+        $updateId = $this->intParam($_GET['update_id'] ?? 0, 0);
+
+        $this->render('delivery-attempts/index', [
+            'title' => 'Webhook delivery attempts',
+            'attempts' => $this->deliveryAttempts->allWithContext(
+                $botId > 0 ? $botId : null,
+                $updateId > 0 ? $updateId : null,
+            ),
+            'selectedBotId' => $botId,
+            'selectedUpdateId' => $updateId,
         ]);
     }
 

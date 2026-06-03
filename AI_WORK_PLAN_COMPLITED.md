@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Экран delivery attempts (2026-06-03)
+
+- [x] Добавить выборку delivery attempts с фильтрами по боту/update.
+- [x] Добавить маршрут и шаблон `/delivery-attempts`.
+- [x] Добавить ссылку в навигацию и переход в чат из строк attempts.
+- [x] Расширить тесты HTML smoke-проверкой списка и фильтра.
+- [x] Обновить документацию/контекст, удалить `task02.md`, сделать коммит и push.
+
 ## Ручной resend failed webhook delivery (2026-06-03)
 
 - [x] Изучить текущую webhook-доставку, repositories и UI inspector.
