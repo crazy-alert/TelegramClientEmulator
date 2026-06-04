@@ -458,6 +458,28 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
     assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
+    $chatDom = htmlDocument($chat['body']);
+    assertDomXPathExists(
+        $chatDom,
+        '//form[@method="post" and @action="/chat/send"]//textarea[@name="text"]',
+        'DOM: форма отправки сообщения должна содержать textarea text',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//form[@method="post" and @action="/chat/callback"]//input[@type="hidden" and @name="callback_data" and @value="inline-action"]',
+        'DOM: inline keyboard callback должен быть формой /chat/callback с callback_data',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//form[@method="post" and @action="/chat/send"]//button[contains(normalize-space(.), "Reply A")]',
+        'DOM: reply keyboard button должен отправлять форму /chat/send',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//select[contains(concat(" ", normalize-space(@class), " "), " bot-command-select ") and @name="text"]',
+        'DOM: команды бота должны быть select[name=text]',
+    );
+
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '1',
         'bot_id' => '1',

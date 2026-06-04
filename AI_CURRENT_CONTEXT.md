@@ -2,6 +2,14 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task26.md` — выбран подход PHP `DOMDocument`/`DOMXPath` для структурных UI-проверок без Playwright и browser dependencies. В `tests/support/test_helpers.php` добавлены DOM helpers, в `tests/scenarios/http_scenarios.php` добавлена структурная проверка формы `/chat/send`, inline callback формы `/chat/callback`, reply keyboard button и select команд бота. README и `docs/adr-testing.md` обновлены.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task25.md` — добавлен `docs/roadmap-update-checklist.md` с правилом актуализации `ROADMAP.md` после задач, которые меняют scope, архитектуру, Bot API surface, ограничения или ближайшие планы. Checklist включает Bot API endpoints/ошибки, статусы этапов, ограничения, следующие методы, архитектуру и документацию запуска. В `AGENTS.md` добавлено постоянное правило пользоваться этим checklist; README и `AI_PROJECT_MAP.md` обновлены. `ROADMAP.md` не менялся, потому что задача добавляет правило актуализации, а не новый продуктовый пункт.
 
 Проверки:

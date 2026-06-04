@@ -29,6 +29,25 @@ function assertArrayHasKeyValue(string $key, array $array, string $message): voi
     }
 }
 
+function htmlDocument(string $html): DOMDocument {
+    $previous = libxml_use_internal_errors(true);
+    $document = new DOMDocument();
+    $document->loadHTML('<!doctype html><meta charset="UTF-8">' . $html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+
+    return $document;
+}
+
+function assertDomXPathExists(DOMDocument $document, string $expression, string $message): void {
+    $xpath = new DOMXPath($document);
+    $nodes = $xpath->query($expression);
+
+    if ($nodes === false || $nodes->length === 0) {
+        throw new TestFailure($message . "\nXPath: " . $expression);
+    }
+}
+
 /**
  * @return array{status: int, headers: list<string>, body: string, json: array<string, mixed>|null}
  */
