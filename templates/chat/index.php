@@ -98,7 +98,7 @@
             <?php foreach ($messages as $msg): ?>
                 <?php
                 $replyMarkup = \App\ReplyMarkup::fromMessage($msg);
-                $messageBlocks = \App\MessageRenderer::blocksFromMessage($msg);
+                $messageBlocks = \App\MessageRenderer::blocksFromMessage($msg, $mediaStorage ?? null, (string) ($bot['token'] ?? ''));
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -115,6 +115,14 @@
                             <strong><?= e($messageBlock['title']) ?></strong>
                             <?php if (isset($messageBlock['source']) && (string) $messageBlock['source'] !== ''): ?>
                                 <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($messageBlock['source']) ?></code></div>
+                            <?php endif; ?>
+                            <?php if (isset($messageBlock['preview_url']) && (string) $messageBlock['preview_url'] !== ''): ?>
+                                <img class="media-preview" src="<?= e($messageBlock['preview_url']) ?>" alt="" loading="lazy" style="display: block; max-width: min(260px, 100%); max-height: 180px; object-fit: contain; margin-top: 8px; border-radius: 6px; border: 1px solid #d8e1e8;">
+                            <?php endif; ?>
+                            <?php if (isset($messageBlock['download_url']) && (string) $messageBlock['download_url'] !== ''): ?>
+                                <div style="margin-top: 8px;">
+                                    <a class="secondary media-download-link" href="<?= e($messageBlock['download_url']) ?>" target="_blank" rel="noopener">Скачать</a>
+                                </div>
                             <?php endif; ?>
                             <?php if (isset($messageBlock['lines']) && is_array($messageBlock['lines'])): ?>
                                 <?php foreach ($messageBlock['lines'] as $line): ?>

@@ -1110,6 +1110,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue('Бот не найден', $json['description'], 'Локальная отдача должна проверять bot token');
 
     $boundary = '----TelegramClientEmulatorUiUploadPhoto';
+    $uiPhotoBytes = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=') ?: '';
     $response = httpRequest('POST', $baseUrl . '/chat/send', multipartBody([
         'profile_id' => '1',
         'bot_id' => '1',
@@ -1117,9 +1118,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
         'caption' => 'UI upload photo',
     ], $boundary, [
         'photo_file' => [
-            'filename' => 'ui-photo.jpg',
-            'content' => 'ui-photo-bytes',
-            'content_type' => 'image/jpeg',
+            'filename' => 'ui-photo.png',
+            'content' => $uiPhotoBytes,
+            'content_type' => 'image/png',
         ],
     ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]);
     assertSameValue(303, $response['status'], 'UI photo upload должен редиректить обратно в чат');
@@ -1138,6 +1139,20 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
         ],
     ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]);
     assertSameValue(303, $response['status'], 'UI document upload должен редиректить обратно в чат');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Чат после UI upload должен открываться');
+    $chatDom = htmlDocument($chat['body']);
+    assertDomXPathExists(
+        $chatDom,
+        '//img[contains(concat(" ", normalize-space(@class), " "), " media-preview ") and contains(@src, "/file/bot")]',
+        'DOM: локальный image media должен показывать compact preview',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//a[contains(concat(" ", normalize-space(@class), " "), " media-download-link ") and contains(@href, "/file/bot") and normalize-space(.)="Скачать"]',
+        'DOM: локальный media block должен показывать ссылку Скачать',
+    );
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
     assertSameValue('Bad Request: parameter "callback_query_id" is required', $json['description'], 'answerCallbackQuery требует callback_query_id');

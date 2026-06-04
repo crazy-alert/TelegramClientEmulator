@@ -257,6 +257,8 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Отображение structured/media payload в `/chat` нормализует helper `MessageRenderer`: он превращает raw payload или update envelope в единый список UI-блоков (`title`, `source`, `lines`, `items`). Шаблон отвечает за HTML-вывод этих блоков и не должен повторно определять типы сообщений.
 
+Если media source имеет вид `local-media:<sha256>` и файл найден в `MediaStorage`, `MessageRenderer` добавляет в UI-блок ссылку download на локальный `/file/bot<TOKEN>/<file_path>`. Для локальных image media добавляется компактный preview. Внешние URL и неизвестные `file_id` не preview-ятся.
+
 Создание Telegram-like `Message`, `Chat` и media objects для ответов локального Bot API нормализует `BotApiPayloadFactory`. `BotApiController` отвечает за маршруты, валидацию параметров, HTTP-ошибки и запись сообщений, но не должен заново реализовывать низкоуровневую сборку этих payload.
 
 Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания.

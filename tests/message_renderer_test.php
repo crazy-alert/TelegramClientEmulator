@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+require dirname(__DIR__) . '/src/MediaStorage.php';
 require dirname(__DIR__) . '/src/MessageRenderer.php';
 
+use App\MediaStorage;
 use App\MessageRenderer;
 
 final class MessageRendererTestFailure extends RuntimeException {
@@ -84,6 +86,42 @@ assertRendererSame(
     ],
     $blocks,
     'Renderer должен нормализовать poll options',
+);
+
+$mediaDir = sys_get_temp_dir() . '/telegram-emulator-renderer-' . bin2hex(random_bytes(4));
+$mediaStorage = new MediaStorage($mediaDir, 1024 * 1024);
+$pngBytes = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=') ?: '';
+$storedMedia = $mediaStorage->storeUploadedFile([
+    'name' => 'photo',
+    'filename' => 'photo.png',
+    'content_type' => 'image/png',
+    'content' => $pngBytes,
+    'size' => strlen($pngBytes),
+]);
+$blocks = MessageRenderer::blocksFromMessage([
+    'raw_payload' => json_encode([
+        'photo' => [
+            [
+                'file_id' => $storedMedia['file_id'],
+                'file_unique_id' => $storedMedia['file_unique_id'],
+                'width' => 0,
+                'height' => 0,
+            ],
+        ],
+        'photo_source' => $storedMedia['file_id'],
+    ], JSON_THROW_ON_ERROR),
+], $mediaStorage, '123456:local-dev-token');
+assertRendererSame(
+    [
+        [
+            'title' => 'Photo',
+            'source' => $storedMedia['file_id'],
+            'download_url' => '/file/bot123456:local-dev-token/' . rawurlencode($storedMedia['file_path']),
+            'preview_url' => '/file/bot123456:local-dev-token/' . rawurlencode($storedMedia['file_path']),
+        ],
+    ],
+    $blocks,
+    'Renderer должен добавлять download и preview URL для локального image media',
 );
 
 echo "OK: message renderer tests passed\n";

@@ -1,5 +1,23 @@
 # Завершенные планы работы
 
+## Preview и download links для media в UI (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий renderer media blocks.
+- [x] Добавить `download_url`/`preview_url` для `local-media:<sha256>` через `MediaStorage`.
+- [x] Обновить шаблон чата для компактного preview и ссылки "Скачать".
+- [x] Добавить focused/DOM regression checks.
+- [x] Обновить документацию.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task03, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## Multipart upload для typed media (2026-06-05)
 
 - [x] Проверить git status, task-файл и существующие media tests/helpers.

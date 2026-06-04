@@ -33,7 +33,7 @@
 - `src/HttpLogger.php` — запись HTTP request/response событий в JSONL.
 - `src/HttpLogRepository.php` — read-only выборка Bot API request/response из HTTP JSONL-логов для inspector.
 - `src/MediaStorage.php` — локальное media-хранилище, стабильные `local-media:<sha256>` id, поиск `getFile` и безопасное разрешение download path.
-- `src/MessageRenderer.php` — нормализация raw payload/update envelope в единые UI-блоки для `templates/chat/index.php`.
+- `src/MessageRenderer.php` — нормализация raw payload/update envelope в единые UI-блоки для `templates/chat/index.php`, включая download/preview ссылки для найденных локальных media.
 - `src/Response.php` — HTTP response helpers.
 - `src/ReplyMarkup.php` — общий helper для Bot API `reply_markup`: чтение Bot API параметра, кодирование в `messages.raw_payload`, извлечение markup из сообщения и вычисление актуальной reply keyboard.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.

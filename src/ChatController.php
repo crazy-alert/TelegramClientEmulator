@@ -106,6 +106,7 @@ final readonly class ChatController {
             'latestDeliveryAttempt' => $latestDeliveryAttempt,
             'pendingUpdateCount' => $pendingUpdateCount,
             'botCommands' => $botCommands,
+            'mediaStorage' => $this->mediaStorage,
             'selectedProfileId' => (int) ($_GET['profile_id'] ?? 0),
             'selectedBotId' => (int) ($_GET['bot_id'] ?? 0),
         ];

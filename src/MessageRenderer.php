@@ -11,9 +11,9 @@ final readonly class MessageRenderer {
 
     /**
      * @param array<string, mixed> $message
-     * @return list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}>
+     * @return list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}>
      */
-    public static function blocksFromMessage(array $message): array {
+    public static function blocksFromMessage(array $message, ?MediaStorage $mediaStorage = null, string $botToken = ''): array {
         $payload = self::messagePayload($message);
         if ($payload === null) {
             return [];
@@ -29,7 +29,7 @@ final readonly class MessageRenderer {
         self::appendPoll($blocks, $payload);
         self::appendTypedMedia($blocks, $payload);
 
-        return $blocks;
+        return self::withLocalMediaLinks($blocks, $mediaStorage, $botToken);
     }
 
     /**
@@ -48,7 +48,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendPhoto(array &$blocks, array $payload): void {
@@ -65,7 +65,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendDocument(array &$blocks, array $payload): void {
@@ -78,7 +78,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendLocation(array &$blocks, array $payload): void {
@@ -92,7 +92,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendVenue(array &$blocks, array $payload): void {
@@ -114,7 +114,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendContact(array &$blocks, array $payload): void {
@@ -129,7 +129,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendDice(array &$blocks, array $payload): void {
@@ -143,7 +143,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendPoll(array &$blocks, array $payload): void {
@@ -168,7 +168,7 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @param list<array{title: string, source?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
      * @param array<string, mixed> $payload
      */
     private static function appendTypedMedia(array &$blocks, array $payload): void {
@@ -200,7 +200,40 @@ final readonly class MessageRenderer {
     }
 
     /**
-     * @return array{title: string, source?: string, lines?: list<string>, items?: list<string>}
+     * @param list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}> $blocks
+     * @return list<array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}>
+     */
+    private static function withLocalMediaLinks(array $blocks, ?MediaStorage $mediaStorage, string $botToken): array {
+        if ($mediaStorage === null || $botToken === '') {
+            return $blocks;
+        }
+
+        foreach ($blocks as $index => $block) {
+            $source = (string) ($block['source'] ?? '');
+            if (!str_starts_with($source, 'local-media:')) {
+                continue;
+            }
+
+            $file = $mediaStorage->findByFileId($source);
+            if ($file === null) {
+                continue;
+            }
+
+            $filePath = (string) $file['file_path'];
+            $downloadUrl = '/file/bot' . $botToken . '/' . rawurlencode($filePath);
+            $blocks[$index]['download_url'] = $downloadUrl;
+
+            $resolvedPath = $mediaStorage->resolveDownloadPath($filePath);
+            if ($resolvedPath !== null && str_starts_with($mediaStorage->contentType($resolvedPath), 'image/')) {
+                $blocks[$index]['preview_url'] = $downloadUrl;
+            }
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * @return array{title: string, source?: string, download_url?: string, preview_url?: string, lines?: list<string>, items?: list<string>}
      */
     private static function block(string $title, string $source = '', array $lines = [], array $items = []): array {
         $block = ['title' => $title];

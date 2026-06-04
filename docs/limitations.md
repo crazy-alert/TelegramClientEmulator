@@ -60,6 +60,8 @@
 
 `getFile` возвращает Telegram-like `File` только для локально сохраненных `local-media:<sha256>` файлов. Скачать такой файл можно по `GET /file/bot<TOKEN>/<file_path>`; endpoint проверяет bot token и отдает только файлы из `MEDIA_DIR`.
 
+В `/chat` для найденных локальных `local-media:<sha256>` показывается ссылка "Скачать". Preview показывается только для локальных файлов с image content type; внешние URL и неизвестные `file_id` не скачиваются и не preview-ятся.
+
 Ограничения:
 
 - внешние Telegram `file_id` и URL не скачиваются;

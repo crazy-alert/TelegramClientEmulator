@@ -2,21 +2,20 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task02-typed-media-multipart-upload.md`.
+2026-06-05: выполнена `.aitasks/task03-media-preview-download-links.md`.
 
 Что сделано:
 
-- `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` теперь принимают multipart file parts в каноничных media-полях.
-- Upload typed media сохраняется через существующий `MediaStorage`, как `sendPhoto`/`sendDocument`.
-- `BotApiPayloadFactory::typedMedia()` использует metadata загруженного файла: `file_unique_id`, `file_size`, `mime_type`, `file_name` там, где эти поля применимы к Telegram-like object.
-- Расширены HTTP tests: multipart `sendVideo`, metadata в ответе и `getFile` для typed media upload.
-- Обновлены `README.md`, `docs/technical-spec.md`, `docs/limitations.md` и `ROADMAP.md`.
+- `MessageRenderer` добавляет `download_url` для найденных локальных `local-media:<sha256>` файлов.
+- Для локальных image media renderer добавляет `preview_url`.
+- `/chat` показывает компактный `<img class="media-preview">` и ссылку `Скачать` для локальных media; внешние URL остаются только текстовым source.
+- `ChatController` передает `MediaStorage` в шаблон чата.
+- Обновлены `README.md`, `docs/technical-spec.md`, `docs/limitations.md` и `AI_PROJECT_MAP.md`.
 
 Проверки:
 
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
@@ -25,7 +24,6 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task03-media-preview-download-links.md`
 - `task04-application-decomposition.md`
 - `task05-split-http-scenarios.md`
 - `task06-webhook-retry-backoff.md`
@@ -36,7 +34,7 @@
 - `task11-http-log-inspector.md`
 - `task12-bot-api-surface-catalog.md`
 
-Следующий шаг: взять `task03-media-preview-download-links.md`, обновить `AI_WORK_PLAN.md` и улучшить UI-rendering локальных media.
+Следующий шаг: взять `task04-application-decomposition.md`, обновить `AI_WORK_PLAN.md` и начать декомпозицию `Application` с одного безопасного среза.
 
 ## Важные решения
 
