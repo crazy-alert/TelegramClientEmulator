@@ -255,6 +255,8 @@ GET  /file/bot<TOKEN>/<file_path>
 
 UI `/chat` принимает от пользователя structured-сообщения: photo/document по строковому URL, file_id или локальному файлу, location и contact. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
 
+Отображение structured/media payload в `/chat` нормализует helper `MessageRenderer`: он превращает raw payload или update envelope в единый список UI-блоков (`title`, `source`, `lines`, `items`). Шаблон отвечает за HTML-вывод этих блоков и не должен повторно определять типы сообщений.
+
 Поведение команд и кнопок:
 
 - `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.

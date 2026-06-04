@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## Унификация renderer для типов сообщений (2026-06-05)
+
+- [x] Проверить текущую структуру rendering в шаблоне и существующие UI tests.
+- [x] Добавить helper `MessageRenderer` для нормализации raw payload в единый список display blocks.
+- [x] Подключить helper в bootstrap и заменить дублирующую логику шаблона.
+- [x] Добавить/обновить focused tests для renderer и сохранить HTTP UI checks.
+- [x] Обновить архитектурную документацию при появлении helper.
+- [x] Запустить проверки, обновить контекст, перенести чеклист, удалить task07, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+
 ## `getFile` и локальная отдача media (2026-06-05)
 
 - [x] Проверить текущий `MediaStorage`, routing и Bot API routes.

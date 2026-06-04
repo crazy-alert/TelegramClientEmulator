@@ -2,20 +2,20 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task06-getfile-and-media-download.md`.
+2026-06-05: выполнена `.aitasks/task07-message-type-renderer-refactor.md`.
 
 Что сделано:
 
-- `GET|POST /bot<TOKEN>/getFile` возвращает Telegram-like `File` для локально сохраненных media.
-- `GET /file/bot<TOKEN>/<file_path>` отдает байты файла из `MEDIA_DIR`.
-- File endpoint проверяет bot token и не отдает неизвестные файлы.
-- `MediaStorage` умеет искать `local-media:<sha256>`, возвращать `file_path`, безопасно разрешать путь и определять content-type.
-- Защита от path traversal: download принимает только basename внутри `MEDIA_DIR`, без `/`, `\` и `..`.
-- Тесты покрывают upload -> `getFile` -> download, unknown `file_id`, unknown token и path traversal.
-- Документация обновлена: `README.md`, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md`.
+- Добавлен `App\MessageRenderer`.
+- `MessageRenderer` нормализует raw payload или update envelope в единые UI-блоки: `title`, `source`, `lines`, `items`.
+- `templates/chat/index.php` больше не содержит отдельные ветки rendering для каждого типа payload; он выводит общий список блоков.
+- Сохранены UI-проверки через HTTP smoke runner.
+- Добавлен focused test `tests/message_renderer_test.php`.
+- Обновлены `README.md`, `docs/technical-spec.md`, `AI_PROJECT_MAP.md`.
 
 Проверки:
 
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
@@ -23,11 +23,9 @@
 
 ## Ближайшая очередь
 
-Оставшиеся задачи в `.aitasks/`:
+`.aitasks/` пуста после завершения task07.
 
-- `task07-message-type-renderer-refactor.md`
-
-Следующий шаг: взять `task07-message-type-renderer-refactor.md`, обновить `AI_WORK_PLAN.md` и выполнить refactor renderer.
+Следующий шаг по правилу пользователя: когда задачи закончатся, проанализировать код и сделать предложения по модернизации в `AI_PROPOSALS.md`.
 
 ## Важные решения
 

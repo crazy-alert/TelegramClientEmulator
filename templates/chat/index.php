@@ -97,48 +97,8 @@
         <?php else: ?>
             <?php foreach ($messages as $msg): ?>
                 <?php
-                $rawPayload = json_decode((string) ($msg['raw_payload'] ?? ''), true);
-                $messagePayload = is_array($rawPayload) && isset($rawPayload['message']) && is_array($rawPayload['message'])
-                    ? $rawPayload['message']
-                    : $rawPayload;
                 $replyMarkup = \App\ReplyMarkup::fromMessage($msg);
-                $photoPayload = is_array($messagePayload) && isset($messagePayload['photo']) && is_array($messagePayload['photo'])
-                    ? $messagePayload['photo']
-                    : null;
-                $photoSource = is_array($messagePayload) ? (string) ($messagePayload['photo_source'] ?? '') : '';
-                if ($photoSource === '' && is_array($photoPayload) && isset($photoPayload[0]) && is_array($photoPayload[0])) {
-                    $photoSource = (string) ($photoPayload[0]['file_id'] ?? '');
-                }
-                $documentPayload = is_array($messagePayload) && isset($messagePayload['document']) && is_array($messagePayload['document'])
-                    ? $messagePayload['document']
-                    : null;
-                $documentSource = is_array($messagePayload) ? (string) ($messagePayload['document_source'] ?? '') : '';
-                if ($documentSource === '' && is_array($documentPayload)) {
-                    $documentSource = (string) ($documentPayload['file_id'] ?? '');
-                }
-                $locationPayload = is_array($messagePayload) && isset($messagePayload['location']) && is_array($messagePayload['location'])
-                    ? $messagePayload['location']
-                    : null;
-                $venuePayload = is_array($messagePayload) && isset($messagePayload['venue']) && is_array($messagePayload['venue'])
-                    ? $messagePayload['venue']
-                    : null;
-                $contactPayload = is_array($messagePayload) && isset($messagePayload['contact']) && is_array($messagePayload['contact'])
-                    ? $messagePayload['contact']
-                    : null;
-                $dicePayload = is_array($messagePayload) && isset($messagePayload['dice']) && is_array($messagePayload['dice'])
-                    ? $messagePayload['dice']
-                    : null;
-                $pollPayload = is_array($messagePayload) && isset($messagePayload['poll']) && is_array($messagePayload['poll'])
-                    ? $messagePayload['poll']
-                    : null;
-                $typedMediaLabels = [
-                    'video' => 'Video',
-                    'animation' => 'Animation',
-                    'audio' => 'Audio',
-                    'voice' => 'Voice',
-                    'video_note' => 'Video note',
-                    'sticker' => 'Sticker',
-                ];
+                $messageBlocks = \App\MessageRenderer::blocksFromMessage($msg);
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -150,115 +110,23 @@
                             · <?= e($msg['created_at']) ?>
                         </span>
                     </div>
-                    <?php if ($photoPayload !== null): ?>
+                    <?php foreach ($messageBlocks as $messageBlock): ?>
                         <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Photo</strong>
-                            <?php if ($photoSource !== ''): ?>
-                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($photoSource) ?></code></div>
+                            <strong><?= e($messageBlock['title']) ?></strong>
+                            <?php if (isset($messageBlock['source']) && (string) $messageBlock['source'] !== ''): ?>
+                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($messageBlock['source']) ?></code></div>
                             <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($documentPayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Document</strong>
-                            <?php if ($documentSource !== ''): ?>
-                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($documentSource) ?></code></div>
+                            <?php if (isset($messageBlock['lines']) && is_array($messageBlock['lines'])): ?>
+                                <?php foreach ($messageBlock['lines'] as $line): ?>
+                                    <div class="muted"><?= e($line) ?></div>
+                                <?php endforeach; ?>
                             <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($locationPayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Location</strong>
-                            <div class="muted">
-                                <?= e((string) ($locationPayload['latitude'] ?? '')) ?>,
-                                <?= e((string) ($locationPayload['longitude'] ?? '')) ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($venuePayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Venue</strong>
-                            <div><?= e((string) ($venuePayload['title'] ?? '')) ?></div>
-                            <div class="muted"><?= e((string) ($venuePayload['address'] ?? '')) ?></div>
-                            <?php if (isset($venuePayload['location']) && is_array($venuePayload['location'])): ?>
-                                <div class="muted">
-                                    <?= e((string) ($venuePayload['location']['latitude'] ?? '')) ?>,
-                                    <?= e((string) ($venuePayload['location']['longitude'] ?? '')) ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($contactPayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Contact</strong>
-                            <div>
-                                <?= e((string) ($contactPayload['first_name'] ?? '')) ?>
-                                <?= e((string) ($contactPayload['last_name'] ?? '')) ?>
-                            </div>
-                            <div class="muted"><?= e((string) ($contactPayload['phone_number'] ?? '')) ?></div>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($dicePayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Dice</strong>
-                            <div class="muted">
-                                <?= e((string) ($dicePayload['emoji'] ?? '')) ?>
-                                · value <?= e((string) ($dicePayload['value'] ?? '')) ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($pollPayload !== null): ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong>Poll</strong>
-                            <div><?= e((string) ($pollPayload['question'] ?? '')) ?></div>
-                            <div class="muted"><?= e((string) ($pollPayload['type'] ?? 'regular')) ?></div>
-                            <?php if (isset($pollPayload['options']) && is_array($pollPayload['options'])): ?>
+                            <?php if (isset($messageBlock['items']) && is_array($messageBlock['items'])): ?>
                                 <ol style="margin: 8px 0 0 18px; padding: 0;">
-                                    <?php foreach ($pollPayload['options'] as $option): ?>
-                                        <?php if (!is_array($option)) { continue; } ?>
-                                        <li>
-                                            <?= e((string) ($option['text'] ?? '')) ?>
-                                            <span class="muted">(<?= e((string) ($option['voter_count'] ?? 0)) ?>)</span>
-                                        </li>
+                                    <?php foreach ($messageBlock['items'] as $item): ?>
+                                        <li><?= e($item) ?></li>
                                     <?php endforeach; ?>
                                 </ol>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    <?php foreach ($typedMediaLabels as $mediaField => $mediaLabel): ?>
-                        <?php
-                        $typedMediaPayload = is_array($messagePayload) && isset($messagePayload[$mediaField]) && is_array($messagePayload[$mediaField])
-                            ? $messagePayload[$mediaField]
-                            : null;
-                        if ($typedMediaPayload === null) {
-                            continue;
-                        }
-                        $typedMediaSource = is_array($messagePayload) ? (string) ($messagePayload[$mediaField . '_source'] ?? '') : '';
-                        if ($typedMediaSource === '') {
-                            $typedMediaSource = (string) ($typedMediaPayload['file_id'] ?? '');
-                        }
-                        ?>
-                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
-                            <strong><?= e($mediaLabel) ?></strong>
-                            <?php if ($typedMediaSource !== ''): ?>
-                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($typedMediaSource) ?></code></div>
-                            <?php endif; ?>
-                            <?php if (isset($typedMediaPayload['duration'])): ?>
-                                <div class="muted">duration <?= e((string) $typedMediaPayload['duration']) ?></div>
-                            <?php endif; ?>
-                            <?php if (isset($typedMediaPayload['width']) || isset($typedMediaPayload['height'])): ?>
-                                <div class="muted">
-                                    <?= e((string) ($typedMediaPayload['width'] ?? '')) ?>x<?= e((string) ($typedMediaPayload['height'] ?? '')) ?>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (isset($typedMediaPayload['file_name']) && (string) $typedMediaPayload['file_name'] !== ''): ?>
-                                <div class="muted"><?= e((string) $typedMediaPayload['file_name']) ?></div>
-                            <?php endif; ?>
-                            <?php if (isset($typedMediaPayload['title']) && (string) $typedMediaPayload['title'] !== ''): ?>
-                                <div class="muted"><?= e((string) $typedMediaPayload['title']) ?></div>
-                            <?php endif; ?>
-                            <?php if (isset($typedMediaPayload['performer']) && (string) $typedMediaPayload['performer'] !== ''): ?>
-                                <div class="muted"><?= e((string) $typedMediaPayload['performer']) ?></div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
