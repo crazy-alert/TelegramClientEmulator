@@ -41,14 +41,6 @@
         Выберите сохраненного пользователя и бота, чтобы открыть диалог.
     </div>
 <?php else: ?>
-    <?php if (!$chatFragment): ?>
-        <div
-            id="chat-live"
-            hx-get="/chat/fragment?profile_id=<?= e($profile['id']) ?>&amp;bot_id=<?= e($bot['id']) ?>"
-            hx-trigger="every 3s"
-            hx-swap="innerHTML"
-        >
-    <?php endif; ?>
     <?php
     $replyKeyboard = \App\ReplyMarkup::latestKeyboard($messages);
 
@@ -71,7 +63,8 @@
         echo e(substr($text, $offset));
     };
     ?>
-    <div class="panel" style="margin-bottom: 18px;">
+    <?php if (!$chatFragment): ?>
+    <div class="panel" style="margin-bottom: 12px;">
         <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
         (<?= e($profile['first_name']) ?> <?= e($profile['last_name'] ?? '') ?>,
         ID: <?= e($profile['user_id']) ?>,
@@ -88,6 +81,14 @@
             <button type="submit" class="danger">Очистить диалог</button>
         </form>
     </div>
+
+        <div
+            id="chat-live"
+            hx-get="/chat/fragment?profile_id=<?= e($profile['id']) ?>&amp;bot_id=<?= e($bot['id']) ?>"
+            hx-trigger="every 3s"
+            hx-swap="innerHTML"
+        >
+    <?php endif; ?>
 
     <!-- История сообщений -->
     <div id="chat-messages" class="panel chat-messages" data-chat-messages style="margin-bottom: 18px; min-height: 200px; max-height: 500px; overflow-y: auto;">
@@ -134,7 +135,7 @@
                         </div>
                     <?php endif; ?>
                     <?php if ((string) $msg['text'] !== ''): ?>
-                        <div style="white-space: pre-wrap;"><?php $renderMessageText((string) $msg['text']); ?></div>
+                        <div style="white-space: pre-line;"><?php $renderMessageText((string) $msg['text']); ?></div>
                     <?php endif; ?>
                     <?php if ($msg['direction'] === 'bot' && $replyMarkup !== null && isset($replyMarkup['inline_keyboard']) && is_array($replyMarkup['inline_keyboard'])): ?>
                         <div style="display: grid; gap: 6px; margin-top: 10px; max-width: 420px;">
@@ -194,9 +195,48 @@
         </div>
     <?php endif; ?>
 
-    <!-- Инспектор последнего Update -->
-    <?php if ($latestUpdate !== null): ?>
-        <section class="panel">
+    <?php if (!$chatFragment): ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!$chatFragment && ($botCommands ?? []) !== []): ?>
+        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <label style="margin-bottom: 0;">
+                <span class="muted" style="font-size: 13px;">Команды бота</span>
+                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
+                    <option value="" selected disabled>Выберите команду</option>
+                    <?php foreach ($botCommands as $command): ?>
+                        <option value="/<?= e($command['command']) ?>">
+                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </form>
+    <?php endif; ?>
+
+    <!-- Поле ввода -->
+    <?php if (!$chatFragment): ?>
+        <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <label>
+                Сообщение
+                <textarea name="text" rows="3" required
+                    placeholder="Введите сообщение (например, /start)..."
+                    style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
+                ></textarea>
+            </label>
+            <div class="actions">
+                <button type="submit">Отправить</button>
+            </div>
+        </form>
+    <?php endif; ?>
+
+    <?php if (!$chatFragment && $latestUpdate !== null): ?>
+        <section class="panel" style="margin-top: 18px;">
             <h2>Последний Update (inspector)</h2>
             <table>
                 <tr>
@@ -251,44 +291,5 @@
                 <?php endif; ?>
             <?php endif; ?>
         </section>
-    <?php endif; ?>
-    <?php if (!$chatFragment): ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if (!$chatFragment && ($botCommands ?? []) !== []): ?>
-        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <label style="margin-bottom: 0;">
-                <span class="muted" style="font-size: 13px;">Команды бота</span>
-                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
-                    <option value="" selected disabled>Выберите команду</option>
-                    <?php foreach ($botCommands as $command): ?>
-                        <option value="/<?= e($command['command']) ?>">
-                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-        </form>
-    <?php endif; ?>
-
-    <!-- Поле ввода -->
-    <?php if (!$chatFragment): ?>
-        <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <label>
-                Сообщение
-                <textarea name="text" rows="3" required
-                    placeholder="Введите сообщение (например, /start)..."
-                    style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
-                ></textarea>
-            </label>
-            <div class="actions">
-                <button type="submit">Отправить</button>
-            </div>
-        </form>
     <?php endif; ?>
 <?php endif; ?>

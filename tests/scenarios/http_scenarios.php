@@ -248,6 +248,17 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'queue_state</th>'), 'Inspector должен показывать update');
     assertTrueValue(str_contains($chat['body'], '>failed<'), 'Failed webhook должен оставить update в состоянии failed');
     assertTrueValue(str_contains($chat['body'], '/updates/1/resend'), 'Для failed update должна быть кнопка resend');
+    $messagesPosition = strpos($chat['body'], 'id="chat-messages"');
+    $commandsPosition = strpos($chat['body'], 'bot-command-select');
+    $inspectorPosition = strpos($chat['body'], 'queue_state</th>');
+    assertTrueValue(
+        $messagesPosition !== false && $commandsPosition !== false && $messagesPosition < $commandsPosition,
+        'История чата должна быть выше выбора команд',
+    );
+    assertTrueValue(
+        $commandsPosition !== false && $inspectorPosition !== false && $commandsPosition < $inspectorPosition,
+        'Inspector должен быть ниже основных элементов чата',
+    );
 
     $fragment = httpRequest('GET', $baseUrl . '/chat/fragment?profile_id=1&bot_id=1');
     assertSameValue(200, $fragment['status'], 'HTMX-фрагмент чата должен открываться');
@@ -255,8 +266,10 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(!str_contains($fragment['body'], '<textarea'), 'HTMX-фрагмент не должен перерисовывать поле ввода сообщения');
     assertTrueValue(!str_contains($fragment['body'], 'bot-command-select'), 'HTMX-фрагмент не должен перерисовывать select команд бота');
     assertTrueValue(str_contains($fragment['body'], 'id="chat-messages"'), 'HTMX-фрагмент должен возвращать историю сообщений');
-    assertTrueValue(str_contains($fragment['body'], 'queue_state</th>'), 'HTMX-фрагмент должен сохранять inspector');
-    assertTrueValue(str_contains($fragment['body'], '/updates/1/resend'), 'HTMX-фрагмент должен сохранять кнопку resend');
+    assertTrueValue(!str_contains($fragment['body'], 'queue_state</th>'), 'HTMX-фрагмент не должен перерисовывать inspector');
+    assertTrueValue(!str_contains($fragment['body'], 'Raw payload (JSON)'), 'HTMX-фрагмент не должен перерисовывать Raw payload');
+    assertTrueValue(!str_contains($fragment['body'], 'Webhook delivery'), 'HTMX-фрагмент не должен перерисовывать webhook delivery');
+    assertTrueValue(!str_contains($fragment['body'], '/updates/1/resend'), 'HTMX-фрагмент не должен перерисовывать кнопку resend');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setWebhook', formBody([
         'url' => 'http://127.0.0.1:' . $receiverPort . '/receiver.php?status=202',
@@ -451,6 +464,8 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
+    assertTrueValue(str_contains($chat['body'], 'white-space: pre-line'), 'Текст сообщений должен сохранять переносы строк без лишних пробелов');
+    assertTrueValue(!str_contains($chat['body'], 'white-space: pre-wrap'), 'Текст сообщений не должен раздувать блоки через pre-wrap');
     assertTrueValue(str_contains($chat['body'], 'Inline action'), 'Чат показывает inline keyboard');
     assertTrueValue(str_contains($chat['body'], 'Edited reply keyboard'), 'Чат показывает отредактированное сообщение бота');
     assertTrueValue(str_contains($chat['body'], 'Photo caption'), 'Чат показывает caption photo-сообщения');

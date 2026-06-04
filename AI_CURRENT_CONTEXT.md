@@ -2,6 +2,14 @@
 
 ## Последнее обновление
 
+2026-06-04: исправлена компоновка и автообновление страницы `/chat` после ручной проверки пользователя. `/chat/fragment` теперь возвращает только историю сообщений и reply keyboard; `Последний Update (inspector)`, `Raw payload (JSON)`, `Webhook delivery`, resend-кнопка, select команд и textarea больше не попадают в polling-обновление. На полной странице порядок стал практичнее: информация о паре пользователь-бот, live-блок сообщений/reply-клавиатуры, выбор команд, поле ввода, затем нижний диагностический inspector. Для текста сообщений заменен `white-space: pre-wrap` на `pre-line`, чтобы сохранять переносы строк без раздувания блоков лишними пробелами. В `tests/scenarios/http_scenarios.php` добавлены regression checks на порядок блоков, узкий HTMX-фрагмент и отсутствие `pre-wrap`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l templates/chat/index.php && php -l tests/scenarios/http_scenarios.php && find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task01.md` — исправлен polling вкладки "Чат". Раньше HTMX обновлял контейнер, внутри которого были select команд и textarea, поэтому поле ввода стиралось каждые 3 секунды. В `templates/chat/index.php` polling перенесен на `#chat-live`: `/chat/fragment` теперь возвращает историю/статусы/inspector и reply keyboard, но не textarea и не select команд. В `tests/scenarios/http_scenarios.php` добавлены regression checks, что fragment не содержит `<textarea` и `bot-command-select`, но содержит `#chat-messages`.
 
 Проверки:
