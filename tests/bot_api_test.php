@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+require dirname(__DIR__) . '/src/ReplyMarkup.php';
 require dirname(__DIR__) . '/src/UpdateGenerator.php';
 
 use App\UpdateGenerator;

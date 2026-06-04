@@ -6,7 +6,7 @@
 
 ## Контекст
 
-Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый файл поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`. `tests/request_parser_test.php` отдельно проверяет `BotApiRequestParser` без HTTP server.
+Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый файл поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`. `tests/request_parser_test.php` отдельно проверяет `BotApiRequestParser`, а `tests/reply_markup_test.php` — helper `ReplyMarkup` без HTTP server.
 
 Это дает высокую ценность для локального эмулятора: тест проверяет не только отдельные функции, но и фактический workflow, который используют bot containers.
 
@@ -85,10 +85,10 @@
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
 ```
 
-Focused parser test:
+Focused tests:
 
 ```bash
-docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php"
+docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"
 ```
 
 PHP lint:

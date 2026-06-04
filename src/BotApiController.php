@@ -171,7 +171,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        $replyMarkup = ReplyMarkup::fromBotApiParam($params['reply_markup'] ?? null);
         if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
             $this->badRequest('Bad Request: object expected as reply markup');
             return;
@@ -183,9 +183,7 @@ final readonly class BotApiController {
             'chat_id' => $chatId,
             'direction' => 'bot',
             'text' => trim((string) $params['text']),
-            'raw_payload' => $replyMarkup === null
-                ? null
-                : json_encode(['reply_markup' => $replyMarkup], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'raw_payload' => ReplyMarkup::encodeOnly($replyMarkup),
         ]);
 
         Response::json([
@@ -225,7 +223,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        $replyMarkup = ReplyMarkup::fromBotApiParam($params['reply_markup'] ?? null);
         if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
             $this->badRequest('Bad Request: object expected as reply markup');
             return;
@@ -234,9 +232,7 @@ final readonly class BotApiController {
         $updatedMessage = $this->messages->updateBotMessage(
             (int) $message['id'],
             trim((string) $params['text']),
-            $replyMarkup === null
-                ? null
-                : json_encode(['reply_markup' => $replyMarkup], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ReplyMarkup::encodeOnly($replyMarkup),
         );
 
         Response::json([
@@ -272,7 +268,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $replyMarkup = $this->replyMarkupParam($params['reply_markup'] ?? null);
+        $replyMarkup = ReplyMarkup::fromBotApiParam($params['reply_markup'] ?? null);
         if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
             $this->badRequest('Bad Request: object expected as reply markup');
             return;
@@ -292,9 +288,7 @@ final readonly class BotApiController {
         if ($caption !== '') {
             $rawPayload['caption'] = $caption;
         }
-        if ($replyMarkup !== null) {
-            $rawPayload['reply_markup'] = $replyMarkup;
-        }
+        $rawPayload = ReplyMarkup::withReplyMarkup($rawPayload, $replyMarkup);
 
         $message = $this->messages->create([
             'bot_id' => (int) $bot['id'],
@@ -302,7 +296,7 @@ final readonly class BotApiController {
             'chat_id' => $chatId,
             'direction' => 'bot',
             'text' => $caption,
-            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'raw_payload' => ReplyMarkup::encodePayload($rawPayload),
         ]);
 
         Response::json([
@@ -632,38 +626,6 @@ final readonly class BotApiController {
     }
 
     /**
-     * @return array<string, mixed>|null
-     */
-    private function replyMarkupParam(mixed $value): ?array {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-            $value = is_array($decoded) ? $decoded : null;
-        }
-
-        if (!is_array($value)) {
-            return null;
-        }
-
-        $allowedKeys = [
-            'inline_keyboard',
-            'keyboard',
-            'resize_keyboard',
-            'one_time_keyboard',
-            'is_persistent',
-            'input_field_placeholder',
-            'selective',
-            'remove_keyboard',
-            'force_reply',
-        ];
-
-        return array_intersect_key($value, array_flip($allowedKeys));
-    }
-
-    /**
      * @return list<array<string, mixed>>
      */
     private function pendingUpdates(int $botId, int $offset, int $limit): array {
@@ -754,8 +716,9 @@ final readonly class BotApiController {
             $payload['text'] = $message['text'];
         }
 
-        if (is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])) {
-            $payload['reply_markup'] = $rawPayload['reply_markup'];
+        $replyMarkup = ReplyMarkup::fromMessage($message);
+        if ($replyMarkup !== null) {
+            $payload['reply_markup'] = $replyMarkup;
         }
 
         return $payload;

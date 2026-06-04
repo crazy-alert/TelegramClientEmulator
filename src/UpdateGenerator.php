@@ -71,7 +71,6 @@ final readonly class UpdateGenerator {
         string $callbackData,
     ): array {
         $timestamp = strtotime((string) ($message['created_at'] ?? '')) ?: time();
-        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
         $messagePayload = [
             'message_id' => (int) ($message['telegram_message_id'] ?? 0),
             'date' => $timestamp,
@@ -85,8 +84,9 @@ final readonly class UpdateGenerator {
             'text' => (string) ($message['text'] ?? ''),
         ];
 
-        if (is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])) {
-            $messagePayload['reply_markup'] = $rawPayload['reply_markup'];
+        $replyMarkup = ReplyMarkup::fromMessage($message);
+        if ($replyMarkup !== null) {
+            $messagePayload['reply_markup'] = $replyMarkup;
         }
 
         return [

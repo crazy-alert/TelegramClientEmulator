@@ -50,27 +50,7 @@
         >
     <?php endif; ?>
     <?php
-    $replyKeyboard = null;
-    for ($i = count($messages) - 1; $i >= 0; $i--) {
-        if (($messages[$i]['direction'] ?? '') !== 'bot') {
-            continue;
-        }
-
-        $rawPayload = json_decode((string) ($messages[$i]['raw_payload'] ?? ''), true);
-        $markup = is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])
-            ? $rawPayload['reply_markup']
-            : null;
-
-        if ($markup !== null && !empty($markup['remove_keyboard'])) {
-            $replyKeyboard = null;
-            break;
-        }
-
-        if ($markup !== null && isset($markup['keyboard']) && is_array($markup['keyboard'])) {
-            $replyKeyboard = $markup['keyboard'];
-            break;
-        }
-    }
+    $replyKeyboard = \App\ReplyMarkup::latestKeyboard($messages);
 
     $renderMessageText = static function (string $text) use ($profile, $bot): void {
         $offset = 0;
@@ -117,9 +97,7 @@
             <?php foreach ($messages as $msg): ?>
                 <?php
                 $rawPayload = json_decode((string) ($msg['raw_payload'] ?? ''), true);
-                $replyMarkup = is_array($rawPayload) && isset($rawPayload['reply_markup']) && is_array($rawPayload['reply_markup'])
-                    ? $rawPayload['reply_markup']
-                    : null;
+                $replyMarkup = \App\ReplyMarkup::fromMessage($msg);
                 $photoPayload = is_array($rawPayload) && isset($rawPayload['photo']) && is_array($rawPayload['photo'])
                     ? $rawPayload['photo']
                     : null;

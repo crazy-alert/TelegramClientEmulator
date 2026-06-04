@@ -2,6 +2,15 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task23.md` — добавлен `src/ReplyMarkup.php` как общий helper для Bot API `reply_markup` поверх текущего `messages.raw_payload`. `BotApiController` использует helper для чтения Bot API параметра и кодирования raw payload, `UpdateGenerator` и `templates/chat/index.php` читают markup через helper, а UI вычисляет актуальную reply keyboard через `ReplyMarkup::latestKeyboard()`. Добавлен `tests/reply_markup_test.php`, обновлены README, `AI_PROJECT_MAP.md` и `docs/adr-testing.md`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task22.md` — parsing request body вынесен из `Application` в `src/BotApiRequestParser.php`. Parser принимает method/raw body/content-type и возвращает параметры для JSON, `application/x-www-form-urlencoded` и текстовых multipart fields; пустое тело и malformed JSON не меняют `$_POST`. `Application` применяет parser до маршрутизации, чтобы сохранить работу UI POST и Bot API POST при `enable_post_data_reading=Off`. Добавлен `tests/request_parser_test.php`, обновлены README, `AI_PROJECT_MAP.md`, `docs/adr-routing.md`, `docs/adr-testing.md` и `docs/technical-spec.md`.
 
 Проверки:

@@ -280,14 +280,14 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 Подробный список ограничений, включая media upload, command scopes, language-specific commands, webhook retries и timeout, описан в [ограничениях эмулятора](docs/limitations.md).
 
-Проверки Bot API и parser запускаются в контейнере:
+Проверки Bot API и focused tests запускаются в контейнере:
 
 ```bash
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
-docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php"
+docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"
 ```
 
-Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; он проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads и UI smoke HTML. Небольшие focused tests вроде `tests/request_parser_test.php` проверяют изолированные компоненты без HTTP server.
+Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; он проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads и UI smoke HTML. Небольшие focused tests вроде `tests/request_parser_test.php` и `tests/reply_markup_test.php` проверяют изолированные компоненты без HTTP server.
 
 Синтаксис PHP-файлов:
 

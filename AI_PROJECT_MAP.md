@@ -30,6 +30,7 @@
 - `src/HttpLogger.php` — запись HTTP request/response событий в JSONL.
 - `src/HttpLogRepository.php` — read-only выборка Bot API request/response из HTTP JSONL-логов для inspector.
 - `src/Response.php` — HTTP response helpers.
+- `src/ReplyMarkup.php` — общий helper для Bot API `reply_markup`: чтение Bot API параметра, кодирование в `messages.raw_payload`, извлечение markup из сообщения и вычисление актуальной reply keyboard.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
 - `src/WebhookDeliveryService.php` — одна попытка webhook-доставки update, сохранение delivery attempt и обновление состояния очереди.
 - `src/View.php` — рендеринг полных шаблонов и partial-шаблонов без layout для HTMX.
@@ -57,6 +58,7 @@
 
 - `tests/bot_api_test.php` — интеграционный тест Bot API через встроенный PHP HTTP server.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
+- `tests/reply_markup_test.php` — focused tests helper `ReplyMarkup` для inline keyboard, reply keyboard, чтения из `raw_payload` и `remove_keyboard`.
 
 ## Документация
 
