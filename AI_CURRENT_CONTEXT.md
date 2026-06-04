@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task21.2.md` — Chat UI handlers вынесены из `Application` в `src/ChatController.php`. Новый контроллер обрабатывает `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирует данные для `templates/chat/index.php`, создает message/callback updates и запускает webhook delivery для chat-сценариев. `Application` остался composition root/router; обновлены `public/index.php`, `AI_PROJECT_MAP.md`, `docs/adr-routing.md` и `docs/technical-spec.md`. Новые тесты не добавлялись, потому что поведение не расширялось; существующий Docker HTTP smoke runner покрывает chat-send/update/Bot API цепочку.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task21.1.md` — Bot API handlers вынесены из `Application` в `src/BotApiController.php`. Новый контроллер обрабатывает локальные маршруты `/bot<TOKEN>/<METHOD>` для `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`; `Application` остался composition root/router и делегирует Bot API requests. Удалены дублирующие Bot API helpers из `Application`, обновлены `public/index.php`, `AI_PROJECT_MAP.md`, `docs/adr-routing.md` и `docs/technical-spec.md`.
 
 Проверки:

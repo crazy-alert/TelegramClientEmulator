@@ -437,7 +437,7 @@ Runtime stack проекта:
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.
-- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`; дальнейшая декомпозиция должна аналогично выносить Chat UI handlers без изменения HTTP-контрактов.
+- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы

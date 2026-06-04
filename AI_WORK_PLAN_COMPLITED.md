@@ -1,5 +1,14 @@
 # Завершенные планы работы
 
+## Вынести Chat UI handlers (2026-06-04)
+
+- [x] Проверить git status, активный план и текст задачи.
+- [x] Изучить текущие chat routes, зависимости и helpers в `Application`.
+- [x] Создать `ChatController` с handlers для chat UI routes.
+- [x] Подключить controller в `Application` и `public/index.php`.
+- [x] Обновить карту проекта/документацию.
+- [x] Прогнать Bot API тесты и PHP lint, обновить контекст, удалить задачу, сделать коммит и push.
+
 ## Вынести Bot API handlers (2026-06-04)
 
 - [x] Проверить git status, активный план и текст задачи.

@@ -66,6 +66,8 @@
 
 Первый шаг выполнен: локальные маршруты `/bot<TOKEN>/<METHOD>` и handlers методов `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery` вынесены из `Application` в `src/BotApiController.php`. `Application` остается composition root и router, который делегирует Bot API requests без изменения HTTP-контрактов.
 
+Второй шаг выполнен: UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback` и `/chat/clear` вынесены из `Application` в `src/ChatController.php`. Шаблон `templates/chat/index.php`, redirects, HTMX-фрагмент, keyboards и group chat behavior сохранены.
+
 Framework стоит пересмотреть, если одновременно выполняются несколько условий:
 
 - число маршрутов и handlers продолжает расти;

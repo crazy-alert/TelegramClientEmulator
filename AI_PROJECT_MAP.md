@@ -17,6 +17,7 @@
 - `public/index.php` — front controller.
 - `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`.
 - `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, Telegram-like responses и handlers методов `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
+- `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
