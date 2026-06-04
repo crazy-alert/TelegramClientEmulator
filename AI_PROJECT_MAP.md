@@ -56,7 +56,10 @@
 
 ## Тесты
 
-- `tests/bot_api_test.php` — интеграционный тест Bot API через встроенный PHP HTTP server.
+- `tests/bot_api_test.php` — entrypoint интеграционного теста Bot API через встроенный PHP HTTP server.
+- `tests/support/test_helpers.php` — assertions, HTTP client helpers, form/multipart helpers и управление тестовыми runtime/server процессами.
+- `tests/scenarios/unit_scenarios.php` — базовые unit-проверки `UpdateGenerator`.
+- `tests/scenarios/http_scenarios.php` — HTTP-сценарии UI, Bot API, SQLite runtime, webhook delivery, Long Polling и import/export.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
 - `tests/reply_markup_test.php` — focused tests helper `ReplyMarkup` для inline keyboard, reply keyboard, чтения из `raw_payload` и `remove_keyboard`.
 

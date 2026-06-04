@@ -6,7 +6,7 @@
 
 ## Контекст
 
-Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый файл поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`. `tests/request_parser_test.php` отдельно проверяет `BotApiRequestParser`, а `tests/reply_markup_test.php` — helper `ReplyMarkup` без HTTP server.
+Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый entrypoint поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`. Helpers вынесены в `tests/support/test_helpers.php`, сценарии — в `tests/scenarios/unit_scenarios.php` и `tests/scenarios/http_scenarios.php`. `tests/request_parser_test.php` отдельно проверяет `BotApiRequestParser`, а `tests/reply_markup_test.php` — helper `ReplyMarkup` без HTTP server.
 
 Это дает высокую ценность для локального эмулятора: тест проверяет не только отдельные функции, но и фактический workflow, который используют bot containers.
 
@@ -65,7 +65,7 @@
 - добавлять отдельные focused PHP tests для pure-компонентов вроде request parser, когда HTTP smoke runner был бы избыточен;
 - держать команду запуска в README;
 - запускать PHP lint отдельно;
-- при существенном росте файла выделить helpers и сценарии в `tests/support/` и `tests/scenarios/`, но сохранить один entrypoint;
+- при дальнейшем росте HTTP-сценариев дробить `tests/scenarios/http_scenarios.php` на более мелкие файлы, но сохранить один entrypoint;
 - PHPUnit подключать только после появления Composer в проекте или явной потребности в независимых unit suites.
 
 ## Критерии пересмотра

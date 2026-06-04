@@ -2,6 +2,14 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task24.md` — структурирован тестовый runner. `tests/bot_api_test.php` оставлен entrypoint, assertions/HTTP helpers/form/multipart helpers/runtime server utilities вынесены в `tests/support/test_helpers.php`, unit-проверки `UpdateGenerator` — в `tests/scenarios/unit_scenarios.php`, HTTP-сценарии UI/Bot API/webhook/Long Polling/import-export — в `tests/scenarios/http_scenarios.php`. Запуск `php tests/bot_api_test.php` сохранен. Обновлены README, `AI_PROJECT_MAP.md` и `docs/adr-testing.md`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task23.md` — добавлен `src/ReplyMarkup.php` как общий helper для Bot API `reply_markup` поверх текущего `messages.raw_payload`. `BotApiController` использует helper для чтения Bot API параметра и кодирования raw payload, `UpdateGenerator` и `templates/chat/index.php` читают markup через helper, а UI вычисляет актуальную reply keyboard через `ReplyMarkup::latestKeyboard()`. Добавлен `tests/reply_markup_test.php`, обновлены README, `AI_PROJECT_MAP.md` и `docs/adr-testing.md`.
 
 Проверки:
