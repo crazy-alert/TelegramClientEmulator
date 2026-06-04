@@ -2,21 +2,21 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task01-long-polling-service.md`.
+2026-06-05: выполнена `.aitasks/task02-typed-media-multipart-upload.md`.
 
 Что сделано:
 
-- Добавлен `App\LongPollingService`.
-- Сервис выбирает pending updates для `getUpdates`, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`.
-- `BotApiController` оставлен владельцем HTTP-политики `getUpdates`: поиск бота, конфликт с активным webhook, parsing параметров, цикл короткого ожидания и JSON response.
-- Добавлен focused test `tests/long_polling_service_test.php`.
-- Обновлены `README.md`, `docs/technical-spec.md` и `AI_PROJECT_MAP.md`.
+- `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` теперь принимают multipart file parts в каноничных media-полях.
+- Upload typed media сохраняется через существующий `MediaStorage`, как `sendPhoto`/`sendDocument`.
+- `BotApiPayloadFactory::typedMedia()` использует metadata загруженного файла: `file_unique_id`, `file_size`, `mime_type`, `file_name` там, где эти поля применимы к Telegram-like object.
+- Расширены HTTP tests: multipart `sendVideo`, metadata в ответе и `getFile` для typed media upload.
+- Обновлены `README.md`, `docs/technical-spec.md`, `docs/limitations.md` и `ROADMAP.md`.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
@@ -25,7 +25,6 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task02-typed-media-multipart-upload.md`
 - `task03-media-preview-download-links.md`
 - `task04-application-decomposition.md`
 - `task05-split-http-scenarios.md`
@@ -37,7 +36,7 @@
 - `task11-http-log-inspector.md`
 - `task12-bot-api-surface-catalog.md`
 
-Следующий шаг: взять `task02-typed-media-multipart-upload.md`, обновить `AI_WORK_PLAN.md` и расширить multipart upload на typed media методы.
+Следующий шаг: взять `task03-media-preview-download-links.md`, обновить `AI_WORK_PLAN.md` и улучшить UI-rendering локальных media.
 
 ## Важные решения
 

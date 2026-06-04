@@ -1,5 +1,23 @@
 # Завершенные планы работы
 
+## Multipart upload для typed media (2026-06-05)
+
+- [x] Проверить git status, task-файл и существующие media tests/helpers.
+- [x] Добавить upload handling в `sendTypedMedia` и metadata в `BotApiPayloadFactory`.
+- [x] Расширить HTTP tests для multipart typed media и `getFile`.
+- [x] Обновить README, technical spec, limitations и ROADMAP.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task02, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## LongPollingService (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущую реализацию `getUpdates`.

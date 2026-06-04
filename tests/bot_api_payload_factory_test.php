@@ -171,4 +171,24 @@ assertBotApiPayloadSame(
     'typedMedia должен нормализовать optional int/string поля',
 );
 
+assertBotApiPayloadSame(
+    [
+        'file_id' => 'local-media:video',
+        'file_unique_id' => 'video-unique',
+        'duration' => 5,
+        'file_size' => 2048,
+        'mime_type' => 'video/mp4',
+        'file_name' => 'clip.mp4',
+    ],
+    $factory->typedMedia('video', 'local-media:video', [
+        'duration' => '5',
+    ], [
+        'file_unique_id' => 'video-unique',
+        'file_name' => 'clip.mp4',
+        'mime_type' => 'video/mp4',
+        'file_size' => 2048,
+    ]),
+    'typedMedia должен использовать metadata загруженного media',
+);
+
 echo "OK: bot api payload factory tests passed\n";

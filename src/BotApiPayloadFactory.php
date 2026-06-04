@@ -146,12 +146,13 @@ final class BotApiPayloadFactory {
 
     /**
      * @param array<string, mixed> $params
+     * @param array<string, mixed>|null $storedMedia
      * @return array<string, mixed>
      */
-    public function typedMedia(string $mediaField, string $fileId, array $params): array {
+    public function typedMedia(string $mediaField, string $fileId, array $params, ?array $storedMedia = null): array {
         $payload = [
             'file_id' => $fileId,
-            'file_unique_id' => substr(sha1($mediaField . ':' . $fileId), 0, 16),
+            'file_unique_id' => $storedMedia['file_unique_id'] ?? substr(sha1($mediaField . ':' . $fileId), 0, 16),
         ];
 
         foreach ($this->typedMediaOptionalFields($mediaField) as $field => $type) {
@@ -164,7 +165,7 @@ final class BotApiPayloadFactory {
                 : trim((string) $params[$field]);
         }
 
-        if (($mediaField === 'audio' || $mediaField === 'document') && !isset($payload['file_name'])) {
+        if ($storedMedia === null && ($mediaField === 'audio' || $mediaField === 'document') && !isset($payload['file_name'])) {
             $path = parse_url($fileId, PHP_URL_PATH);
             $fileName = basename((string) ($path ?: $fileId));
             if ($fileName !== '') {
@@ -172,7 +173,25 @@ final class BotApiPayloadFactory {
             }
         }
 
+        if ($storedMedia !== null) {
+            $payload['file_size'] = $storedMedia['file_size'];
+            if ($this->supportsStoredMimeType($mediaField) && !isset($payload['mime_type'])) {
+                $payload['mime_type'] = $storedMedia['mime_type'];
+            }
+            if ($this->supportsStoredFileName($mediaField) && !isset($payload['file_name'])) {
+                $payload['file_name'] = $storedMedia['file_name'];
+            }
+        }
+
         return $payload;
+    }
+
+    private function supportsStoredMimeType(string $mediaField): bool {
+        return in_array($mediaField, ['video', 'animation', 'audio', 'voice'], true);
+    }
+
+    private function supportsStoredFileName(string $mediaField): bool {
+        return in_array($mediaField, ['video', 'animation', 'audio'], true);
     }
 
     /**

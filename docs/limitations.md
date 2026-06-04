@@ -54,9 +54,9 @@
 
 ## Media upload
 
-`sendPhoto` и `sendDocument` принимают строковое/URL значение соответствующего media-поля или multipart upload в каноничных полях `photo` и `document`. Загруженные файлы сохраняются в локальном `MEDIA_DIR`, получают стабильный `file_id` вида `local-media:<sha256>` и `file_unique_id` на основе содержимого.
+`sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают строковое/URL значение соответствующего media-поля или multipart upload в каноничном media-поле метода. Загруженные файлы сохраняются в локальном `MEDIA_DIR`, получают стабильный `file_id` вида `local-media:<sha256>` и `file_unique_id` на основе содержимого.
 
-`sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` пока принимают только строковое или URL значение соответствующего media-поля, optional caption там, где он есть в Bot API, и optional `reply_markup`. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части используются только в media-методах, где это явно реализовано.
+Для typed media upload эмулятор возвращает доступные metadata (`file_size`, `mime_type`, `file_name`) только там, где такие поля есть в соответствующем Telegram-like object. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части используются только в media-методах, где это явно реализовано.
 
 `getFile` возвращает Telegram-like `File` только для локально сохраненных `local-media:<sha256>` файлов. Скачать такой файл можно по `GET /file/bot<TOKEN>/<file_path>`; endpoint проверяет bot token и отдает только файлы из `MEDIA_DIR`.
 

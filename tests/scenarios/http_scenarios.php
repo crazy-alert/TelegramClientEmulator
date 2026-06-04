@@ -1080,6 +1080,32 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/file/bot' . $token . '/' . rawurlencode('../report.txt')), 404, false);
     assertSameValue('File not found', $json['description'], 'Локальная отдача должна отклонять path traversal');
 
+    $videoBytes = 'uploaded-video-bytes';
+    $videoHash = hash('sha256', $videoBytes);
+    $boundary = '----TelegramClientEmulatorUploadVideo';
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', multipartBody([
+        'chat_id' => '1001',
+        'caption' => 'Uploaded video caption',
+        'duration' => '9',
+    ], $boundary, [
+        'video' => [
+            'filename' => 'clip.mp4',
+            'content' => $videoBytes,
+            'content_type' => 'video/mp4',
+        ],
+    ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]), 200, true);
+    assertSameValue('local-media:' . $videoHash, $json['result']['video']['file_id'], 'sendVideo должен принимать multipart upload');
+    assertSameValue('clip.mp4', $json['result']['video']['file_name'], 'sendVideo multipart должен возвращать file_name');
+    assertSameValue('video/mp4', $json['result']['video']['mime_type'], 'sendVideo multipart должен возвращать mime_type');
+    assertSameValue(strlen($videoBytes), $json['result']['video']['file_size'], 'sendVideo multipart должен возвращать размер файла');
+    assertSameValue(9, $json['result']['video']['duration'], 'sendVideo multipart должен сохранять duration');
+    assertSameValue('Uploaded video caption', $json['result']['caption'], 'sendVideo multipart должен сохранять caption');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getFile?file_id=' . rawurlencode('local-media:' . $videoHash)), 200, true);
+    assertSameValue('local-media:' . $videoHash, $json['result']['file_id'], 'getFile должен находить typed media upload');
+    assertSameValue(strlen($videoBytes), $json['result']['file_size'], 'getFile должен вернуть размер typed media');
+    assertTrueValue(str_starts_with($json['result']['file_path'], $videoHash), 'getFile должен вернуть file_path typed media');
+
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/file/bot000000:unknown-local-dev-token/' . rawurlencode($documentFilePath)), 404, false);
     assertSameValue('Бот не найден', $json['description'], 'Локальная отдача должна проверять bot token');
 

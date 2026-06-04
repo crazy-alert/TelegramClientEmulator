@@ -323,7 +323,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, multipart upload, caption и optional `reply_markup`;
 - базовый `sendDocument` — реализовано для строкового/URL `document`, multipart upload, caption и optional `reply_markup`;
 - `getFile` и локальная отдача media — реализованы для файлов, сохраненных в `MEDIA_DIR`;
-- базовые audio/video media методы — реализованы `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` для строкового/URL media без upload;
+- базовые audio/video media методы — реализованы `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` для строкового/URL media и multipart upload;
 - poll/quiz сообщения — реализован базовый `sendPoll` как read-only `Message.poll`;
 - structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
 - прием structured сообщений от пользователя через UI — реализован для photo/document по URL, file_id или локальному файлу, location и contact.

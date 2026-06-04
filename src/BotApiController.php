@@ -348,7 +348,12 @@ final readonly class BotApiController {
         }
 
         $params = $this->botApiParams();
-        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, $mediaField)) {
+        $uploadedFile = $this->uploadedFile($params, $mediaField);
+        if (!$this->requireParam($params, 'chat_id')) {
+            return;
+        }
+
+        if ($uploadedFile === null && !$this->requireParam($params, $mediaField)) {
             return;
         }
 
@@ -358,10 +363,21 @@ final readonly class BotApiController {
             return;
         }
 
-        $media = trim((string) $params[$mediaField]);
+        $media = trim((string) ($params[$mediaField] ?? ''));
+        $storedMedia = null;
+        if ($uploadedFile !== null) {
+            try {
+                $storedMedia = $this->mediaStorage->storeUploadedFile($uploadedFile);
+                $media = $storedMedia['file_id'];
+            } catch (RuntimeException $exception) {
+                $this->badRequest($exception->getMessage());
+                return;
+            }
+        }
+
         $caption = trim((string) ($params['caption'] ?? ''));
         $rawPayload = [
-            $mediaField => $this->payloadFactory->typedMedia($mediaField, $media, $params),
+            $mediaField => $this->payloadFactory->typedMedia($mediaField, $media, $params, $storedMedia),
             $mediaField . '_source' => $media,
         ];
         if ($caption !== '' && in_array($mediaField, ['video', 'animation', 'audio'], true)) {
