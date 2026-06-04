@@ -1028,6 +1028,71 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue(3001, $json['result'][0]['message']['from']['id'], 'Первый group update содержит отправителя Alice');
     assertSameValue(3002, $json['result'][1]['message']['from']['id'], 'Второй group update содержит отправителя Bob');
 
+    $photoBytes = 'uploaded-photo-bytes';
+    $photoHash = hash('sha256', $photoBytes);
+    $boundary = '----TelegramClientEmulatorUploadPhoto';
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPhoto', multipartBody([
+        'chat_id' => '1001',
+        'caption' => 'Uploaded photo caption',
+    ], $boundary, [
+        'photo' => [
+            'filename' => '../photo.png',
+            'content' => $photoBytes,
+            'content_type' => 'image/png',
+        ],
+    ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]), 200, true);
+    assertSameValue('local-media:' . $photoHash, $json['result']['photo'][0]['file_id'], 'sendPhoto должен принимать multipart upload');
+    assertSameValue(strlen($photoBytes), $json['result']['photo'][0]['file_size'], 'sendPhoto должен возвращать размер локального файла');
+    assertSameValue('Uploaded photo caption', $json['result']['caption'], 'sendPhoto multipart сохраняет caption');
+
+    $documentBytes = 'uploaded-document-bytes';
+    $documentHash = hash('sha256', $documentBytes);
+    $boundary = '----TelegramClientEmulatorUploadDocument';
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDocument', multipartBody([
+        'chat_id' => '1001',
+        'caption' => 'Uploaded document caption',
+    ], $boundary, [
+        'document' => [
+            'filename' => '..\\report.txt',
+            'content' => $documentBytes,
+            'content_type' => 'text/plain',
+        ],
+    ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]), 200, true);
+    assertSameValue('local-media:' . $documentHash, $json['result']['document']['file_id'], 'sendDocument должен принимать multipart upload');
+    assertSameValue('report.txt', $json['result']['document']['file_name'], 'sendDocument должен чистить path traversal из имени файла');
+    assertSameValue('text/plain', $json['result']['document']['mime_type'], 'sendDocument должен возвращать mime_type');
+    assertSameValue(strlen($documentBytes), $json['result']['document']['file_size'], 'sendDocument должен возвращать размер локального файла');
+
+    $boundary = '----TelegramClientEmulatorUiUploadPhoto';
+    $response = httpRequest('POST', $baseUrl . '/chat/send', multipartBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'photo',
+        'caption' => 'UI upload photo',
+    ], $boundary, [
+        'photo_file' => [
+            'filename' => 'ui-photo.jpg',
+            'content' => 'ui-photo-bytes',
+            'content_type' => 'image/jpeg',
+        ],
+    ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]);
+    assertSameValue(303, $response['status'], 'UI photo upload должен редиректить обратно в чат');
+
+    $boundary = '----TelegramClientEmulatorUiUploadDocument';
+    $response = httpRequest('POST', $baseUrl . '/chat/send', multipartBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'document',
+        'caption' => 'UI upload document',
+    ], $boundary, [
+        'document_file' => [
+            'filename' => 'ui-report.pdf',
+            'content' => 'ui-document-bytes',
+            'content_type' => 'application/pdf',
+        ],
+    ]), ['Content-Type: multipart/form-data; boundary=' . $boundary]);
+    assertSameValue(303, $response['status'], 'UI document upload должен редиректить обратно в чат');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/answerCallbackQuery', formBody([]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
     assertSameValue('Bad Request: parameter "callback_query_id" is required', $json['description'], 'answerCallbackQuery требует callback_query_id');
 }

@@ -366,7 +366,7 @@
         <details class="panel chat-structured-inputs">
             <summary>Вложения</summary>
             <div class="chat-structured-grid">
-                <form method="post" action="/chat/send">
+                <form method="post" action="/chat/send" enctype="multipart/form-data">
                     <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
                     <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
                     <input type="hidden" name="message_type" value="photo">
@@ -375,18 +375,26 @@
                         <input type="text" name="photo" placeholder="https://example.test/photo.jpg">
                     </label>
                     <label>
+                        Photo file
+                        <input type="file" name="photo_file" accept="image/*">
+                    </label>
+                    <label>
                         Caption
                         <input type="text" name="caption">
                     </label>
                     <button type="submit" class="secondary">Photo</button>
                 </form>
-                <form method="post" action="/chat/send">
+                <form method="post" action="/chat/send" enctype="multipart/form-data">
                     <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
                     <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
                     <input type="hidden" name="message_type" value="document">
                     <label>
                         Document URL/file_id
                         <input type="text" name="document" placeholder="https://example.test/file.pdf">
+                    </label>
+                    <label>
+                        Document file
+                        <input type="file" name="document_file">
                     </label>
                     <label>
                         Caption

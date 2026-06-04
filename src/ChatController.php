@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use Closure;
+use RuntimeException;
 
 /**
  * Обрабатывает UI-маршруты локального чата.
@@ -21,6 +22,7 @@ final readonly class ChatController {
         private DeliveryAttemptRepository $deliveryAttempts,
         private UpdateGenerator $updateGenerator,
         private WebhookDeliveryService $webhookDelivery,
+        private MediaStorage $mediaStorage,
         private View $view,
         private Closure $webhookTimeoutSeconds,
     ) {
@@ -190,13 +192,18 @@ final readonly class ChatController {
 
         if ($messageType === 'photo') {
             $photo = trim((string) ($_POST['photo'] ?? ''));
+            $storedMedia = $this->storeUploadedFile('photo_file');
+            if ($storedMedia !== null) {
+                $photo = $storedMedia['file_id'];
+            }
+
             if ($photo === '') {
                 return null;
             }
 
             $caption = trim((string) ($_POST['caption'] ?? ''));
             $rawPayload = [
-                'photo' => $this->photoSizesPayload($photo),
+                'photo' => $this->photoSizesPayload($photo, $storedMedia),
                 'photo_source' => $photo,
             ];
             if ($caption !== '') {
@@ -211,13 +218,18 @@ final readonly class ChatController {
 
         if ($messageType === 'document') {
             $document = trim((string) ($_POST['document'] ?? ''));
+            $storedMedia = $this->storeUploadedFile('document_file');
+            if ($storedMedia !== null) {
+                $document = $storedMedia['file_id'];
+            }
+
             if ($document === '') {
                 return null;
             }
 
             $caption = trim((string) ($_POST['caption'] ?? ''));
             $rawPayload = [
-                'document' => $this->documentPayload($document),
+                'document' => $this->documentPayload($document, $storedMedia),
                 'document_source' => $document,
             ];
             if ($caption !== '') {
@@ -399,21 +411,37 @@ final readonly class ChatController {
     /**
      * @return list<array<string, mixed>>
      */
-    private function photoSizesPayload(string $photo): array {
-        return [
+    private function photoSizesPayload(string $photo, ?array $storedMedia = null): array {
+        $payload = [
             [
                 'file_id' => $photo,
-                'file_unique_id' => substr(sha1($photo), 0, 16),
+                'file_unique_id' => $storedMedia['file_unique_id'] ?? substr(sha1($photo), 0, 16),
                 'width' => 0,
                 'height' => 0,
             ],
         ];
+
+        if ($storedMedia !== null) {
+            $payload[0]['file_size'] = $storedMedia['file_size'];
+        }
+
+        return $payload;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function documentPayload(string $document): array {
+    private function documentPayload(string $document, ?array $storedMedia = null): array {
+        if ($storedMedia !== null) {
+            return [
+                'file_id' => $document,
+                'file_unique_id' => $storedMedia['file_unique_id'],
+                'file_name' => $storedMedia['file_name'],
+                'mime_type' => $storedMedia['mime_type'],
+                'file_size' => $storedMedia['file_size'],
+            ];
+        }
+
         $path = parse_url($document, PHP_URL_PATH);
         $fileName = basename((string) ($path ?: $document));
 
@@ -421,6 +449,45 @@ final readonly class ChatController {
             'file_id' => $document,
             'file_unique_id' => substr(sha1($document), 0, 16),
             'file_name' => $fileName === '' ? null : $fileName,
+        ];
+    }
+
+    /**
+     * @return array{file_id: string, file_unique_id: string, file_name: string, mime_type: string, file_size: int, file_path: string}|null
+     */
+    private function storeUploadedFile(string $field): ?array {
+        $uploadedFile = $this->uploadedFile($field);
+        if ($uploadedFile === null) {
+            return null;
+        }
+
+        try {
+            return $this->mediaStorage->storeUploadedFile($uploadedFile);
+        } catch (RuntimeException) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array{name: string, filename: string, content_type: string, content: string, size: int}|null
+     */
+    private function uploadedFile(string $field): ?array {
+        $files = $_POST[BotApiRequestParser::FILES_KEY] ?? null;
+        if (!is_array($files) || !isset($files[$field]) || !is_array($files[$field])) {
+            return null;
+        }
+
+        $file = $files[$field];
+        if (!isset($file['filename'], $file['content'])) {
+            return null;
+        }
+
+        return [
+            'name' => (string) ($file['name'] ?? $field),
+            'filename' => (string) $file['filename'],
+            'content_type' => (string) ($file['content_type'] ?? 'application/octet-stream'),
+            'content' => (string) $file['content'],
+            'size' => (int) ($file['size'] ?? strlen((string) $file['content'])),
         ];
     }
 

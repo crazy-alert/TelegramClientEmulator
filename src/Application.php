@@ -28,6 +28,7 @@ final class Application {
     private WebhookDeliveryService $webhookDelivery;
     private HttpLogRepository $httpLogs;
     private HttpLogger $httpLogger;
+    private MediaStorage $mediaStorage;
     private View $view;
     private ?string $rawBody = null;
 
@@ -46,6 +47,10 @@ final class Application {
         $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
         $this->requestParser = new BotApiRequestParser();
+        $this->mediaStorage = new MediaStorage(
+            getenv('MEDIA_DIR') ?: $this->dataDir . '/media',
+            $this->intParam(getenv('MEDIA_MAX_BYTES') ?: 10485760, 10485760),
+        );
         $this->webhookDelivery = new WebhookDeliveryService($this->deliveryAttempts, $this->updates);
         $this->botApi = new BotApiController(
             $this->bots,
@@ -54,6 +59,7 @@ final class Application {
             $this->messages,
             $this->updates,
             $this->deliveryAttempts,
+            $this->mediaStorage,
         );
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);
@@ -68,6 +74,7 @@ final class Application {
             $this->deliveryAttempts,
             $this->updateGenerator,
             $this->webhookDelivery,
+            $this->mediaStorage,
             $this->view,
             fn(): int => $this->webhookTimeoutSeconds(),
         );

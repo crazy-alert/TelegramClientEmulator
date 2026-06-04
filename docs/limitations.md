@@ -39,7 +39,7 @@
 
 - полный Telegram Bot API;
 - подключение к настоящему Telegram;
-- файловые upload и download: multipart file parts, `getFile`, file URL и хранение бинарных файлов;
+- файловые download: `getFile` и локальные file URL;
 - media/structured-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
 - payments, invoices, shipping/pre-checkout queries;
 - Telegram Passport;
@@ -53,9 +53,16 @@
 
 ## Media upload
 
-`sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают строковое или URL значение соответствующего media-поля, optional caption там, где он есть в Bot API, и optional `reply_markup`. Эмулятор сохраняет media placeholder в истории чата и возвращает Telegram-like `Message.*`.
+`sendPhoto` и `sendDocument` принимают строковое/URL значение соответствующего media-поля или multipart upload в каноничных полях `photo` и `document`. Загруженные файлы сохраняются в локальном `MEDIA_DIR`, получают стабильный `file_id` вида `local-media:<sha256>` и `file_unique_id` на основе содержимого.
 
-Файловая загрузка через multipart пока не реализована. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части не превращаются в Telegram file object.
+`sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` пока принимают только строковое или URL значение соответствующего media-поля, optional caption там, где он есть в Bot API, и optional `reply_markup`. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части используются только в media-методах, где это явно реализовано.
+
+Ограничения:
+
+- локальная отдача файлов, `getFile` и download URL пока не реализованы;
+- размер одного upload ограничен `MEDIA_MAX_BYTES`, по умолчанию `10485760` байт;
+- имена файлов очищаются от путей и небезопасных символов; path traversal не сохраняется;
+- бинарные файлы не входят в import/export JSON.
 
 ## Structured сообщения
 
@@ -63,13 +70,13 @@
 
 `sendPoll` принимает `question`, `options` и базовые optional параметры regular/quiz poll. Эмулятор сохраняет poll как read-only сообщение и возвращает Telegram-like `Message.poll`.
 
-UI чата может отправлять от пользователя photo/document по URL или file_id, location и contact. Эти сообщения создают обычный `message` update для webhook и Long Polling.
+UI чата может отправлять от пользователя photo/document по URL, file_id или локальному файлу, location и contact. Эти сообщения создают обычный `message` update для webhook и Long Polling.
 
 Ограничения:
 
 - `sendDice` возвращает детерминированное значение: `4` для обычных dice emoji и `32` для slot machine, чтобы локальные тесты были стабильными;
 - интерактивное голосование в poll, карты и внешние previews пока не моделируются;
-- multipart upload и локальное media-хранилище выделены в отдельную будущую задачу.
+- download локальных media-файлов выделен в отдельную будущую задачу.
 
 ## Команды бота
 

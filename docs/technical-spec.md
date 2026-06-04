@@ -228,6 +228,7 @@ POST /bot<TOKEN>/getUpdates
 - Проверять, что token соответствует известному боту.
 - Принимать JSON и form-encoded requests, если это практично.
 - Принимать текстовые поля `multipart/form-data` для совместимости с bot frameworks, которые отправляют Bot API параметры как multipart даже без файлов.
+- Для `sendPhoto` и `sendDocument` принимать файловые части multipart в каноничных полях `photo` и `document`, сохранять их в локальном media-хранилище и возвращать стабильные `file_id`/`file_unique_id`.
 - Сохранять сообщение бота в истории диалога пользователя.
 - Сохранять и возвращать `reply_markup` для `inline_keyboard` и `keyboard`, чтобы интерфейс чата мог показать кнопки.
 - Возвращать Telegram-like response:
@@ -247,9 +248,9 @@ POST /bot<TOKEN>/getUpdates
 }
 ```
 
-Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact`, `sendDice`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. Media-методы в первой версии принимают только строковое/URL значение соответствующего media-поля без файловых upload. `sendPoll` сохраняет read-only regular/quiz poll и возвращает `Message.poll`, но интерактивное голосование пока не моделируется. `sendLocation`/`sendVenue`/`sendContact`/`sendDice` сохраняют structured payload в истории и возвращают соответствующие Telegram-like поля `Message`; `sendDice` использует детерминированное значение для стабильных локальных тестов. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact`, `sendDice`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto` и `sendDocument` принимают строковое/URL значение или multipart upload; остальные media-методы пока принимают только строковое/URL значение соответствующего media-поля без файловых upload. `sendPoll` сохраняет read-only regular/quiz poll и возвращает `Message.poll`, но интерактивное голосование пока не моделируется. `sendLocation`/`sendVenue`/`sendContact`/`sendDice` сохраняют structured payload в истории и возвращают соответствующие Telegram-like поля `Message`; `sendDice` использует детерминированное значение для стабильных локальных тестов. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
 
-UI `/chat` принимает от пользователя structured-сообщения без multipart upload: photo/document по строковому URL или file_id, location и contact. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
+UI `/chat` принимает от пользователя structured-сообщения: photo/document по строковому URL, file_id или локальному файлу, location и contact. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
 
 Поведение команд и кнопок:
 
@@ -265,6 +266,7 @@ MVP может использовать локальную file-backed database.
 Рекомендуемые варианты:
 
 - SQLite для структурированных данных и простой Docker volume persistence.
+- Локальная директория `MEDIA_DIR` для бинарных файлов upload; по умолчанию это `<DATA_DIR>/media`.
 - JSON files только для раннего prototype, но до расширения API coverage лучше перейти на SQLite.
 
 Обязательные persistent entities:
@@ -361,6 +363,8 @@ Import принимает как envelope с ключом `bots`/`profiles`, т�
 - `APP_HOST`: bind host, по умолчанию `0.0.0.0`.
 - `APP_PORT`: HTTP port, по умолчанию `8080`.
 - `DATA_DIR`: директория данных, по умолчанию `/app/data`.
+- `MEDIA_DIR`: директория локальных media-файлов, по умолчанию `<DATA_DIR>/media`.
+- `MEDIA_MAX_BYTES`: максимальный размер одного upload-файла, по умолчанию `10485760`.
 - `LOG_LEVEL`: по умолчанию `info`.
 - `WEBHOOK_TIMEOUT_MS`: по умолчанию `10000`.
 

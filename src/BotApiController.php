@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App;
 
+use RuntimeException;
+
 /**
  * Обрабатывает локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`.
  */
@@ -16,6 +18,7 @@ final readonly class BotApiController {
         private MessageRepository $messages,
         private UpdateRepository $updates,
         private DeliveryAttemptRepository $deliveryAttempts,
+        private MediaStorage $mediaStorage,
     ) {
     }
 
@@ -571,7 +574,12 @@ final readonly class BotApiController {
         }
 
         $params = $this->botApiParams();
-        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, $mediaField)) {
+        $uploadedFile = $this->uploadedFile($params, $mediaField);
+        if (!$this->requireParam($params, 'chat_id')) {
+            return;
+        }
+
+        if ($uploadedFile === null && !$this->requireParam($params, $mediaField)) {
             return;
         }
 
@@ -587,15 +595,26 @@ final readonly class BotApiController {
             return;
         }
 
-        $media = trim((string) $params[$mediaField]);
+        $media = trim((string) ($params[$mediaField] ?? ''));
+        $storedMedia = null;
+        if ($uploadedFile !== null) {
+            try {
+                $storedMedia = $this->mediaStorage->storeUploadedFile($uploadedFile);
+                $media = $storedMedia['file_id'];
+            } catch (RuntimeException $exception) {
+                $this->badRequest($exception->getMessage());
+                return;
+            }
+        }
+
         $caption = trim((string) ($params['caption'] ?? ''));
         $rawPayload = $mediaField === 'photo'
             ? [
-                'photo' => $this->photoSizesPayload($media),
+                'photo' => $this->photoSizesPayload($media, $storedMedia),
                 'photo_source' => $media,
             ]
             : [
-                'document' => $this->documentPayload($media),
+                'document' => $this->documentPayload($media, $storedMedia),
                 'document_source' => $media,
             ];
         if ($caption !== '') {
@@ -1087,21 +1106,37 @@ final readonly class BotApiController {
     /**
      * @return list<array<string, mixed>>
      */
-    private function photoSizesPayload(string $photo): array {
-        return [
+    private function photoSizesPayload(string $photo, ?array $storedMedia = null): array {
+        $payload = [
             [
                 'file_id' => $photo,
-                'file_unique_id' => substr(sha1($photo), 0, 16),
+                'file_unique_id' => $storedMedia['file_unique_id'] ?? substr(sha1($photo), 0, 16),
                 'width' => 0,
                 'height' => 0,
             ],
         ];
+
+        if ($storedMedia !== null) {
+            $payload[0]['file_size'] = $storedMedia['file_size'];
+        }
+
+        return $payload;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function documentPayload(string $document): array {
+    private function documentPayload(string $document, ?array $storedMedia = null): array {
+        if ($storedMedia !== null) {
+            return [
+                'file_id' => $document,
+                'file_unique_id' => $storedMedia['file_unique_id'],
+                'file_name' => $storedMedia['file_name'],
+                'mime_type' => $storedMedia['mime_type'],
+                'file_size' => $storedMedia['file_size'],
+            ];
+        }
+
         $path = parse_url($document, PHP_URL_PATH);
         $fileName = basename((string) ($path ?: $document));
 
@@ -1109,6 +1144,30 @@ final readonly class BotApiController {
             'file_id' => $document,
             'file_unique_id' => substr(sha1($document), 0, 16),
             'file_name' => $fileName === '' ? null : $fileName,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array{name: string, filename: string, content_type: string, content: string, size: int}|null
+     */
+    private function uploadedFile(array $params, string $field): ?array {
+        $files = $params[BotApiRequestParser::FILES_KEY] ?? null;
+        if (!is_array($files) || !isset($files[$field]) || !is_array($files[$field])) {
+            return null;
+        }
+
+        $file = $files[$field];
+        if (!isset($file['filename'], $file['content'])) {
+            return null;
+        }
+
+        return [
+            'name' => (string) ($file['name'] ?? $field),
+            'filename' => (string) $file['filename'],
+            'content_type' => (string) ($file['content_type'] ?? 'application/octet-stream'),
+            'content' => (string) $file['content'],
+            'size' => (int) ($file['size'] ?? strlen((string) $file['content'])),
         ];
     }
 

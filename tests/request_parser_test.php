@@ -58,13 +58,25 @@ assertParserSame(
 
 $boundary = 'telegram-emulator-test-boundary';
 assertParserSame(
-    ['chat_id' => '1001', 'caption' => 'Документ'],
+    [
+        'chat_id' => '1001',
+        'caption' => 'Документ',
+        BotApiRequestParser::FILES_KEY => [
+            'document' => [
+                'name' => 'document',
+                'filename' => 'report.txt',
+                'content_type' => 'application/octet-stream',
+                'content' => 'file-bytes',
+                'size' => 10,
+            ],
+        ],
+    ],
     $parser->parse(
         'POST',
         parserMultipartBody(['chat_id' => '1001', 'caption' => 'Документ'], ['document' => 'report.txt'], $boundary),
         'multipart/form-data; boundary="' . $boundary . '"',
     ),
-    'Multipart parser должен возвращать только текстовые поля и игнорировать файлы',
+    'Multipart parser должен возвращать текстовые поля и файлы',
 );
 
 assertParserSame(

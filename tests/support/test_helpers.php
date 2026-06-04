@@ -115,13 +115,20 @@ function formBody(array $data): string {
 
 /**
  * @param array<string, string> $data
+ * @param array<string, array{filename: string, content: string, content_type?: string}> $files
  */
-function multipartBody(array $data, string $boundary): string {
+function multipartBody(array $data, string $boundary, array $files = []): string {
     $body = '';
     foreach ($data as $name => $value) {
         $body .= '--' . $boundary . "\r\n";
         $body .= 'Content-Disposition: form-data; name="' . $name . '"' . "\r\n\r\n";
         $body .= $value . "\r\n";
+    }
+    foreach ($files as $name => $file) {
+        $body .= '--' . $boundary . "\r\n";
+        $body .= 'Content-Disposition: form-data; name="' . $name . '"; filename="' . $file['filename'] . '"' . "\r\n";
+        $body .= 'Content-Type: ' . ($file['content_type'] ?? 'application/octet-stream') . "\r\n\r\n";
+        $body .= $file['content'] . "\r\n";
     }
     $body .= '--' . $boundary . "--\r\n";
 

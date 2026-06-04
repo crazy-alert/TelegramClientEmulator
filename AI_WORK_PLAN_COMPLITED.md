@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## Multipart upload и локальное media-хранилище (2026-06-05)
+
+- [x] Проверить текущий multipart parsing, media payload и UI-формы.
+- [x] Добавить локальное media-хранилище с настраиваемым путем, лимитом размера и безопасными именами.
+- [x] Поддержать multipart upload для `sendPhoto` и `sendDocument`, сохранив строковые `file_id`/URL.
+- [x] Добавить attach file в UI для пользовательских фото и документов.
+- [x] Добавить тесты parser/Bot API/UI upload и проверить сценарии.
+- [x] Обновить README, technical spec, limitations и ROADMAP.
+- [x] Обновить `AI_CURRENT_CONTEXT.md`, перенести чеклист в `AI_WORK_PLAN_COMPLITED.md`, удалить task05 и сделать коммит.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+
 ## Poll/quiz сообщения (2026-06-05)
 
 - [x] Добавить Bot API route `sendPoll`, parsing/validation `question` и `options`, Telegram-like `Message.poll`.
