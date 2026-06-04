@@ -15,6 +15,7 @@ final class Application {
 
     private Database $database;
     private BotApiController $botApi;
+    private BotApiPayloadFactory $botApiPayloads;
     private BotApiRequestParser $requestParser;
     private ChatController $chat;
     private BotRepository $bots;
@@ -47,6 +48,7 @@ final class Application {
         $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
         $this->requestParser = new BotApiRequestParser();
+        $this->botApiPayloads = new BotApiPayloadFactory();
         $this->mediaStorage = new MediaStorage(
             getenv('MEDIA_DIR') ?: $this->dataDir . '/media',
             $this->intParam(getenv('MEDIA_MAX_BYTES') ?: 10485760, 10485760),
@@ -60,6 +62,7 @@ final class Application {
             $this->updates,
             $this->deliveryAttempts,
             $this->mediaStorage,
+            $this->botApiPayloads,
         );
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);

@@ -2,34 +2,34 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task01-bot-api-params-helper.md`.
+2026-06-05: выполнена `.aitasks/task02-bot-api-payload-factory.md`.
 
 Что сделано:
 
-- Добавлен `App\BotApiParams`.
-- Helper нормализует объединение query/body параметров, `int`, `float`, boolean-like значения, `allowed_updates`, commands и poll options.
-- `BotApiController` использует `BotApiParams` для чистого parsing; `requireParam` оставлен в контроллере, потому что он формирует HTTP 400.
-- Добавлен focused test `tests/bot_api_params_test.php`.
-- Обновлены `README.md` и `AI_PROJECT_MAP.md`.
+- Добавлен `App\BotApiPayloadFactory`.
+- Фабрика собирает Telegram-like `Message`, `Chat`, `photo`, `document` и typed media payload для локального Bot API.
+- `BotApiController` больше не владеет низкоуровневой сборкой `Message`/`Chat`/media payload; контроллер оставлен владельцем маршрутов, валидации, HTTP-ошибок и записи сообщений.
+- Добавлен focused test `tests/bot_api_payload_factory_test.php`.
+- Обновлены `README.md`, `docs/technical-spec.md` и `AI_PROJECT_MAP.md`.
 
 Проверки:
 
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+- `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
 ## Ближайшая очередь
 
-Оставшиеся задачи в `.aitasks/`:
+Очередь `.aitasks/` должна быть пустой после коммита task02.
 
-- `task02-bot-api-payload-factory.md`
-
-Следующий шаг: взять `task02-bot-api-payload-factory.md`, обновить `AI_WORK_PLAN.md` и вынести Telegram-like payload builders из `BotApiController`.
+Следующий шаг после пустой очереди: обновить `AI_PROPOSALS.md` по текущему состоянию проекта и, если нужны новые работы, снова разложить их в `.aitasks/`.
 
 ## Важные решения
 
 - Проект Docker-first; на хосте может не быть `php`, проверки запускать через `docker compose run`.
 - Не добавлять неканоничные Telegram Bot API aliases/shortcuts без явного запроса.
-- `BotApiParams` не отвечает за HTTP response policy; ошибки required-параметров пока остаются в `BotApiController`.
+- `BotApiParams` отвечает за parsing/нормализацию параметров, но не за HTTP response policy.
+- `BotApiPayloadFactory` отвечает за чистую сборку response payload и не должен обращаться к БД, HTTP response helpers или runtime storage.

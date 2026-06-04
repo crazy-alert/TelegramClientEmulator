@@ -257,6 +257,8 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Отображение structured/media payload в `/chat` нормализует helper `MessageRenderer`: он превращает raw payload или update envelope в единый список UI-блоков (`title`, `source`, `lines`, `items`). Шаблон отвечает за HTML-вывод этих блоков и не должен повторно определять типы сообщений.
 
+Создание Telegram-like `Message`, `Chat` и media objects для ответов локального Bot API нормализует `BotApiPayloadFactory`. `BotApiController` отвечает за маршруты, валидацию параметров, HTTP-ошибки и запись сообщений, но не должен заново реализовывать низкоуровневую сборку этих payload.
+
 Поведение команд и кнопок:
 
 - `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.
@@ -459,7 +461,7 @@ Runtime stack проекта:
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.
-- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, parsing request body вынесен в `BotApiRequestParser`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
+- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, parsing request body вынесен в `BotApiRequestParser`, сборка Bot API response payload вынесена в `BotApiPayloadFactory`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы

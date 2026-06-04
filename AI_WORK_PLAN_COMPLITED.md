@@ -1,5 +1,24 @@
 # Завершенные планы работы
 
+## BotApiPayloadFactory (2026-06-05)
+
+- [x] Проверить текущую очередь задач, рабочий контекст и состояние git.
+- [x] Найти builder-методы и точки подключения `BotApiController`.
+- [x] Добавить `BotApiPayloadFactory` и перевести контроллер на нее.
+- [x] Добавить focused tests для фабрики payload.
+- [x] Обновить архитектурную документацию и карту проекта.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить выполненную задачу, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## BotApiParams helper (2026-06-05)
 
 - [x] Проверить текущие helpers `BotApiController` и места использования.
