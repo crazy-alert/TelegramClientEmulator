@@ -271,6 +271,38 @@
             margin-top: 10px;
         }
 
+        .chat-structured-inputs {
+            padding: 10px 12px;
+            margin-bottom: 18px;
+        }
+
+        .chat-structured-inputs summary {
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .chat-structured-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .chat-structured-grid form {
+            display: grid;
+            gap: 8px;
+            align-content: start;
+            padding: 10px;
+            border: 1px solid #e6edf2;
+            border-radius: 6px;
+            background: #f8fafc;
+        }
+
+        .chat-structured-grid label {
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
         @media (max-width: 560px) {
             .chat-compose {
                 grid-template-columns: 1fr;

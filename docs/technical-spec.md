@@ -242,6 +242,8 @@ POST /bot<TOKEN>/getUpdates
 
 Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `sendLocation`, `sendVenue`, `sendContact`, `sendDice`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. `sendLocation`/`sendVenue`/`sendContact`/`sendDice` сохраняют structured payload в истории и возвращают соответствующие Telegram-like поля `Message`; `sendDice` использует детерминированное значение для стабильных локальных тестов. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
 
+UI `/chat` принимает от пользователя structured-сообщения без multipart upload: photo/document по строковому URL или file_id, location и contact. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
+
 Поведение команд и кнопок:
 
 - `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.

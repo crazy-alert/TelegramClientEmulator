@@ -2,6 +2,15 @@
 
 ## Последнее обновление
 
+2026-06-05: выполнена `.aitasks/task02-chat-ui-user-structured-inputs.md` — UI `/chat` теперь принимает structured сообщения от пользователя без multipart upload: photo/document по URL или file_id, location и contact. В `ChatController` добавлен `message_type` parsing для `/chat/send`, `UpdateGenerator` переносит user raw payload в Telegram-like `message.photo`/`message.document`/`message.location`/`message.contact`. Шаблон чата показывает media/structured payload как для прямого raw payload бота, так и для user update envelope. В `/chat` добавлен компактный раскрывающийся блок `Вложения`. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP/DOM сценарии.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l src/ChatController.php && php -l src/UpdateGenerator.php && php -l templates/chat/index.php && php -l templates/layout.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-05: по запросу пользователя про поддержку картинок, документов, гео и других типов сообщений создана очередь `.aitasks/task01`–`task07`. Выполнена первая задача: добавлены structured Bot API методы без файлового upload — `sendLocation`, `sendVenue`, `sendContact`, `sendDice`. Методы сохраняют structured payload в `messages.raw_payload`, возвращают Telegram-like `Message.location`/`Message.venue`/`Message.contact`/`Message.dice` и отображаются в `/chat` как компактные блоки. `sendDice` сделан детерминированным для стабильных тестов: `4` для обычных dice emoji, `32` для slot machine. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP-сценарии.
 
 Проверки:

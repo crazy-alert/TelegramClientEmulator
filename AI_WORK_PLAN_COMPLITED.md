@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Прием structured сообщений от пользователя в UI (2026-06-05)
+
+- [x] Обновить `ChatController` и `UpdateGenerator` для user structured payload без multipart upload.
+- [x] Добавить компактный UI-блок в `/chat` для отправки photo/document/location/contact.
+- [x] Расширить HTTP/DOM тесты на update payload и rendering.
+- [x] Обновить документацию по измененной UI/Bot API surface.
+- [x] Запустить проверки, обновить контекст, удалить task02, сделать коммит и push.
+
 ## Structured Bot API сообщения без файлов (2026-06-05)
 
 - [x] Сформировать `.aitasks` с поэтапной поддержкой media/geo/contact/dice/poll/file upload.

@@ -120,10 +120,9 @@ final readonly class ChatController {
             return;
         }
 
-        $text = trim((string) ($_POST['text'] ?? ''));
-
-        if ($text === '') {
-            Response::redirect('/chat');
+        $messageData = $this->messageDataFromPost();
+        if ($messageData === null) {
+            Response::redirect('/chat?profile_id=' . $profileId . '&bot_id=' . $botId);
             return;
         }
 
@@ -131,13 +130,13 @@ final readonly class ChatController {
         $botId = (int) $bot['id'];
         $profileId = (int) $profile['id'];
 
-        // Сохраняем сообщение пользователя.
         $this->messages->create([
             'bot_id' => $botId,
             'profile_id' => $profileId,
             'chat_id' => $chatId,
             'direction' => 'user',
-            'text' => $text,
+            'text' => $messageData['text'],
+            'raw_payload' => $messageData['raw_payload'],
         ]);
 
         // Получаем только что созданное сообщение для генерации Update.
@@ -169,6 +168,109 @@ final readonly class ChatController {
         }
 
         Response::redirect('/chat?profile_id=' . $profileId . '&bot_id=' . $botId);
+    }
+
+    /**
+     * @return array{text: string, raw_payload: string|null}|null
+     */
+    private function messageDataFromPost(): ?array {
+        $messageType = (string) ($_POST['message_type'] ?? 'text');
+
+        if ($messageType === 'text') {
+            $text = trim((string) ($_POST['text'] ?? ''));
+            if ($text === '') {
+                return null;
+            }
+
+            return [
+                'text' => $text,
+                'raw_payload' => null,
+            ];
+        }
+
+        if ($messageType === 'photo') {
+            $photo = trim((string) ($_POST['photo'] ?? ''));
+            if ($photo === '') {
+                return null;
+            }
+
+            $caption = trim((string) ($_POST['caption'] ?? ''));
+            $rawPayload = [
+                'photo' => $this->photoSizesPayload($photo),
+                'photo_source' => $photo,
+            ];
+            if ($caption !== '') {
+                $rawPayload['caption'] = $caption;
+            }
+
+            return [
+                'text' => $caption,
+                'raw_payload' => $this->encodePayload($rawPayload),
+            ];
+        }
+
+        if ($messageType === 'document') {
+            $document = trim((string) ($_POST['document'] ?? ''));
+            if ($document === '') {
+                return null;
+            }
+
+            $caption = trim((string) ($_POST['caption'] ?? ''));
+            $rawPayload = [
+                'document' => $this->documentPayload($document),
+                'document_source' => $document,
+            ];
+            if ($caption !== '') {
+                $rawPayload['caption'] = $caption;
+            }
+
+            return [
+                'text' => $caption,
+                'raw_payload' => $this->encodePayload($rawPayload),
+            ];
+        }
+
+        if ($messageType === 'location') {
+            $latitude = $this->floatPostParam('latitude');
+            $longitude = $this->floatPostParam('longitude');
+            if ($latitude === null || $longitude === null || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
+                return null;
+            }
+
+            return [
+                'text' => '[location]',
+                'raw_payload' => $this->encodePayload([
+                    'location' => [
+                        'latitude' => $latitude,
+                        'longitude' => $longitude,
+                    ],
+                ]),
+            ];
+        }
+
+        if ($messageType === 'contact') {
+            $phoneNumber = trim((string) ($_POST['phone_number'] ?? ''));
+            $firstName = trim((string) ($_POST['first_name'] ?? ''));
+            if ($phoneNumber === '' || $firstName === '') {
+                return null;
+            }
+
+            $contact = [
+                'phone_number' => $phoneNumber,
+                'first_name' => $firstName,
+            ];
+            $lastName = trim((string) ($_POST['last_name'] ?? ''));
+            if ($lastName !== '') {
+                $contact['last_name'] = $lastName;
+            }
+
+            return [
+                'text' => '[contact] ' . $firstName,
+                'raw_payload' => $this->encodePayload(['contact' => $contact]),
+            ];
+        }
+
+        return null;
     }
 
     private function callback(): void {
@@ -285,6 +387,55 @@ final readonly class ChatController {
 
     private function isGroupChatType(string $chatType): bool {
         return in_array($chatType, ['group', 'supergroup'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function encodePayload(array $payload): string {
+        return json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function photoSizesPayload(string $photo): array {
+        return [
+            [
+                'file_id' => $photo,
+                'file_unique_id' => substr(sha1($photo), 0, 16),
+                'width' => 0,
+                'height' => 0,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function documentPayload(string $document): array {
+        $path = parse_url($document, PHP_URL_PATH);
+        $fileName = basename((string) ($path ?: $document));
+
+        return [
+            'file_id' => $document,
+            'file_unique_id' => substr(sha1($document), 0, 16),
+            'file_name' => $fileName === '' ? null : $fileName,
+        ];
+    }
+
+    private function floatPostParam(string $name): ?float {
+        $value = $_POST[$name] ?? null;
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !is_numeric($value)) {
+            return null;
+        }
+
+        return (float) $value;
     }
 
     private function webhookTimeoutSeconds(): int {

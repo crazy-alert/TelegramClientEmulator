@@ -54,11 +54,13 @@
 
 `sendLocation`, `sendVenue`, `sendContact` и `sendDice` принимают обязательные параметры Telegram Bot API, сохраняют structured payload в истории чата и возвращают Telegram-like `Message.location`, `Message.venue`, `Message.contact` или `Message.dice`.
 
+UI чата может отправлять от пользователя photo/document по URL или file_id, location и contact. Эти сообщения создают обычный `message` update для webhook и Long Polling.
+
 Ограничения:
 
 - `sendDice` возвращает детерминированное значение: `4` для обычных dice emoji и `32` для slot machine, чтобы локальные тесты были стабильными;
 - интерактивное голосование, карты и внешние previews пока не моделируются;
-- прием таких сообщений от пользователя через UI выделен в отдельную будущую задачу.
+- multipart upload и локальное media-хранилище выделены в отдельную будущую задачу.
 
 ## Команды бота
 

@@ -29,6 +29,7 @@ final readonly class UpdateGenerator {
         $userId = (int) ($profile['user_id'] ?? 0);
         $timestamp = time();
 
+        $rawPayload = json_decode((string) ($message['raw_payload'] ?? ''), true);
         $messagePayload = [
             'message_id' => (int) ($message['telegram_message_id'] ?? 0),
             'date' => $timestamp,
@@ -41,13 +42,30 @@ final readonly class UpdateGenerator {
                 'last_name' => $profile['last_name'] ?? '',
                 'language_code' => $profile['language_code'] ?? 'ru',
             ],
-            'text' => $text,
         ];
 
-        // Если сообщение начинается с '/', добавляем entity bot_command
-        $entities = $this->extractEntities($text);
-        if ($entities !== []) {
-            $messagePayload['entities'] = $entities;
+        if (is_array($rawPayload) && isset($rawPayload['photo']) && is_array($rawPayload['photo'])) {
+            $messagePayload['photo'] = $rawPayload['photo'];
+            if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
+                $messagePayload['caption'] = (string) $rawPayload['caption'];
+            }
+        } elseif (is_array($rawPayload) && isset($rawPayload['document']) && is_array($rawPayload['document'])) {
+            $messagePayload['document'] = $rawPayload['document'];
+            if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
+                $messagePayload['caption'] = (string) $rawPayload['caption'];
+            }
+        } elseif (is_array($rawPayload) && isset($rawPayload['location']) && is_array($rawPayload['location'])) {
+            $messagePayload['location'] = $rawPayload['location'];
+        } elseif (is_array($rawPayload) && isset($rawPayload['contact']) && is_array($rawPayload['contact'])) {
+            $messagePayload['contact'] = $rawPayload['contact'];
+        } else {
+            $messagePayload['text'] = $text;
+
+            // Если сообщение начинается с '/', добавляем entity bot_command
+            $entities = $this->extractEntities($text);
+            if ($entities !== []) {
+                $messagePayload['entities'] = $entities;
+            }
         }
 
         return [

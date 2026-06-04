@@ -98,26 +98,35 @@
             <?php foreach ($messages as $msg): ?>
                 <?php
                 $rawPayload = json_decode((string) ($msg['raw_payload'] ?? ''), true);
+                $messagePayload = is_array($rawPayload) && isset($rawPayload['message']) && is_array($rawPayload['message'])
+                    ? $rawPayload['message']
+                    : $rawPayload;
                 $replyMarkup = \App\ReplyMarkup::fromMessage($msg);
-                $photoPayload = is_array($rawPayload) && isset($rawPayload['photo']) && is_array($rawPayload['photo'])
-                    ? $rawPayload['photo']
+                $photoPayload = is_array($messagePayload) && isset($messagePayload['photo']) && is_array($messagePayload['photo'])
+                    ? $messagePayload['photo']
                     : null;
-                $photoSource = is_array($rawPayload) ? (string) ($rawPayload['photo_source'] ?? '') : '';
-                $documentPayload = is_array($rawPayload) && isset($rawPayload['document']) && is_array($rawPayload['document'])
-                    ? $rawPayload['document']
+                $photoSource = is_array($messagePayload) ? (string) ($messagePayload['photo_source'] ?? '') : '';
+                if ($photoSource === '' && is_array($photoPayload) && isset($photoPayload[0]) && is_array($photoPayload[0])) {
+                    $photoSource = (string) ($photoPayload[0]['file_id'] ?? '');
+                }
+                $documentPayload = is_array($messagePayload) && isset($messagePayload['document']) && is_array($messagePayload['document'])
+                    ? $messagePayload['document']
                     : null;
-                $documentSource = is_array($rawPayload) ? (string) ($rawPayload['document_source'] ?? '') : '';
-                $locationPayload = is_array($rawPayload) && isset($rawPayload['location']) && is_array($rawPayload['location'])
-                    ? $rawPayload['location']
+                $documentSource = is_array($messagePayload) ? (string) ($messagePayload['document_source'] ?? '') : '';
+                if ($documentSource === '' && is_array($documentPayload)) {
+                    $documentSource = (string) ($documentPayload['file_id'] ?? '');
+                }
+                $locationPayload = is_array($messagePayload) && isset($messagePayload['location']) && is_array($messagePayload['location'])
+                    ? $messagePayload['location']
                     : null;
-                $venuePayload = is_array($rawPayload) && isset($rawPayload['venue']) && is_array($rawPayload['venue'])
-                    ? $rawPayload['venue']
+                $venuePayload = is_array($messagePayload) && isset($messagePayload['venue']) && is_array($messagePayload['venue'])
+                    ? $messagePayload['venue']
                     : null;
-                $contactPayload = is_array($rawPayload) && isset($rawPayload['contact']) && is_array($rawPayload['contact'])
-                    ? $rawPayload['contact']
+                $contactPayload = is_array($messagePayload) && isset($messagePayload['contact']) && is_array($messagePayload['contact'])
+                    ? $messagePayload['contact']
                     : null;
-                $dicePayload = is_array($rawPayload) && isset($rawPayload['dice']) && is_array($rawPayload['dice'])
-                    ? $rawPayload['dice']
+                $dicePayload = is_array($messagePayload) && isset($messagePayload['dice']) && is_array($messagePayload['dice'])
+                    ? $messagePayload['dice']
                     : null;
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
@@ -287,6 +296,72 @@
                 </form>
             </details>
         <?php endif; ?>
+
+        <details class="panel chat-structured-inputs">
+            <summary>Вложения</summary>
+            <div class="chat-structured-grid">
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="photo">
+                    <label>
+                        Photo URL/file_id
+                        <input type="text" name="photo" placeholder="https://example.test/photo.jpg">
+                    </label>
+                    <label>
+                        Caption
+                        <input type="text" name="caption">
+                    </label>
+                    <button type="submit" class="secondary">Photo</button>
+                </form>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="document">
+                    <label>
+                        Document URL/file_id
+                        <input type="text" name="document" placeholder="https://example.test/file.pdf">
+                    </label>
+                    <label>
+                        Caption
+                        <input type="text" name="caption">
+                    </label>
+                    <button type="submit" class="secondary">Document</button>
+                </form>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="location">
+                    <label>
+                        Latitude
+                        <input type="text" name="latitude" placeholder="43.1155">
+                    </label>
+                    <label>
+                        Longitude
+                        <input type="text" name="longitude" placeholder="131.8855">
+                    </label>
+                    <button type="submit" class="secondary">Location</button>
+                </form>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="contact">
+                    <label>
+                        Phone
+                        <input type="text" name="phone_number" placeholder="+70000000000">
+                    </label>
+                    <label>
+                        First name
+                        <input type="text" name="first_name">
+                    </label>
+                    <label>
+                        Last name
+                        <input type="text" name="last_name">
+                    </label>
+                    <button type="submit" class="secondary">Contact</button>
+                </form>
+            </div>
+        </details>
     <?php endif; ?>
 
     <?php if (!$chatFragment && $latestUpdate !== null): ?>

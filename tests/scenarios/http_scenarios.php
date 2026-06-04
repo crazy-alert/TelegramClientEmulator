@@ -536,6 +536,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(!str_contains($chat['body'], '@media (max-width: 720px)'), 'Compose-зона не должна складываться на небольшом экране ноутбука');
     assertTrueValue(str_contains($chat['body'], 'class="bot-command-select"'), 'Команды бота должны быть доступны через select');
     assertTrueValue(str_contains($chat['body'], '<details class="panel bot-command-picker">'), 'Команды бота должны быть спрятаны в раскрывающийся блок');
+    assertTrueValue(str_contains($chat['body'], '<details class="panel chat-structured-inputs">'), 'Вложения пользователя должны быть спрятаны в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
     assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
@@ -559,6 +560,16 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
         $chatDom,
         '//details[contains(concat(" ", normalize-space(@class), " "), " bot-command-picker ")]//select[contains(concat(" ", normalize-space(@class), " "), " bot-command-select ") and @name="text"]',
         'DOM: команды бота должны быть select[name=text] внутри details',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//details[contains(concat(" ", normalize-space(@class), " "), " chat-structured-inputs ")]//input[@type="hidden" and @name="message_type" and @value="photo"]',
+        'DOM: вложения должны содержать форму photo',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//details[contains(concat(" ", normalize-space(@class), " "), " chat-structured-inputs ")]//input[@type="hidden" and @name="message_type" and @value="location"]',
+        'DOM: вложения должны содержать форму location',
     );
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
@@ -597,6 +608,86 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $nextOffset = ((int) $update['update_id']) + 1;
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
     assertSameValue([], $json['result'], 'offset подтверждает старые updates');
+
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'photo',
+        'photo' => 'https://example.test/user-photo.jpg',
+        'caption' => 'User photo caption',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'User photo из UI должен редиректить обратно в чат');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getUpdates', json_encode([
+        'limit' => 1,
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue('https://example.test/user-photo.jpg', $json['result'][0]['message']['photo'][0]['file_id'], 'User photo update содержит Message.photo');
+    assertSameValue('User photo caption', $json['result'][0]['message']['caption'], 'User photo update содержит caption');
+    $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
+
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'document',
+        'document' => 'https://example.test/user-file.pdf',
+        'caption' => 'User document caption',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'User document из UI должен редиректить обратно в чат');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getUpdates', json_encode([
+        'limit' => 1,
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue('https://example.test/user-file.pdf', $json['result'][0]['message']['document']['file_id'], 'User document update содержит Message.document');
+    assertSameValue('user-file.pdf', $json['result'][0]['message']['document']['file_name'], 'User document update содержит file_name');
+    $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
+
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'location',
+        'latitude' => '43.2',
+        'longitude' => '132.3',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'User location из UI должен редиректить обратно в чат');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getUpdates', json_encode([
+        'limit' => 1,
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(43.2, $json['result'][0]['message']['location']['latitude'], 'User location update содержит latitude');
+    assertSameValue(132.3, $json['result'][0]['message']['location']['longitude'], 'User location update содержит longitude');
+    $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
+
+    $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
+        'profile_id' => '1',
+        'bot_id' => '1',
+        'message_type' => 'contact',
+        'phone_number' => '+71111111111',
+        'first_name' => 'User Contact',
+        'last_name' => 'Local',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'User contact из UI должен редиректить обратно в чат');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getUpdates', json_encode([
+        'limit' => 1,
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue('+71111111111', $json['result'][0]['message']['contact']['phone_number'], 'User contact update содержит phone_number');
+    assertSameValue('User Contact', $json['result'][0]['message']['contact']['first_name'], 'User contact update содержит first_name');
+    $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Чат после user structured сообщений должен открываться');
+    assertTrueValue(str_contains($chat['body'], 'User photo caption'), 'Чат показывает caption user photo');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/user-file.pdf'), 'Чат показывает user document placeholder');
+    assertTrueValue(str_contains($chat['body'], '43.2'), 'Чат показывает user location latitude');
+    assertTrueValue(str_contains($chat['body'], '+71111111111'), 'Чат показывает user contact phone');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '1',

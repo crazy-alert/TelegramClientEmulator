@@ -321,6 +321,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, caption и optional `reply_markup`;
 - базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`;
 - structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
+- прием structured сообщений от пользователя через UI — реализован для photo/document по URL или file_id, location и contact.
 
 Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.
 
