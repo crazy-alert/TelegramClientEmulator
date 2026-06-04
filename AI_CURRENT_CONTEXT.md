@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task13.2.md` — улучшено поведение чата после HTMX-обновлений. История сообщений получила стабильный контейнер `#chat-messages` с маркером `data-chat-messages`, а layout прокручивает историю вниз при `DOMContentLoaded` и после `htmx:afterSwap`. Блок команд бота убран из верхней отдельной панели и перенесен вниз к форме ввода как компактный `select`, который отправляет выбранную команду через `onchange` без отдельной кнопки. Reply keyboard тоже остается в нижней зоне инструментов перед вводом.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена `.aitasks/task14.md` — добавлены примеры интеграции bot frameworks. Создан `docs/framework-examples.md` с примерами для PHP HTTP-клиента, python-telegram-bot, aiogram, grammY и Telegraf; все примеры используют fake token `123456:local-dev-token` и Docker service DNS `http://telegram-emulator:8080`. В `README.md` добавлена ссылка на документ, `AI_PROJECT_MAP.md` обновлен.
 
 Проверки:

@@ -222,5 +222,23 @@
 <main>
     <?php require $contentTemplate; ?>
 </main>
+<script>
+    function scrollChatMessagesToBottom() {
+        const messages = document.querySelector('[data-chat-messages]');
+
+        if (messages === null) {
+            return;
+        }
+
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    document.addEventListener('DOMContentLoaded', scrollChatMessagesToBottom);
+    document.body.addEventListener('htmx:afterSwap', (event) => {
+        if (event.target.id === 'chat-thread' || event.target.querySelector?.('[data-chat-messages]') !== null) {
+            scrollChatMessagesToBottom();
+        }
+    });
+</script>
 </body>
 </html>

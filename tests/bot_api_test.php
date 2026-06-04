@@ -490,6 +490,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'htmx.org@1.9.12'), 'Layout должен подключать HTMX');
     assertTrueValue(str_contains($chat['body'], 'hx-get="/chat/fragment?profile_id=1&amp;bot_id=1"'), 'Чат должен polling-обновлять выбранную пару');
     assertTrueValue(str_contains($chat['body'], 'hx-trigger="every 3s"'), 'Чат должен периодически обновлять фрагмент');
+    assertTrueValue(str_contains($chat['body'], 'id="chat-messages"'), 'История чата должна иметь контейнер для автопрокрутки');
+    assertTrueValue(str_contains($chat['body'], 'data-chat-messages'), 'История чата должна помечаться для JS автопрокрутки');
+    assertTrueValue(str_contains($chat['body'], 'htmx:afterSwap'), 'Layout должен прокручивать историю после HTMX-обновления');
     assertTrueValue(str_contains($chat['body'], 'queue_state</th>'), 'Inspector должен показывать update');
     assertTrueValue(str_contains($chat['body'], '>failed<'), 'Failed webhook должен оставить update в состоянии failed');
     assertTrueValue(str_contains($chat['body'], '/updates/1/resend'), 'Для failed update должна быть кнопка resend');
@@ -700,6 +703,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'Document caption'), 'Чат показывает caption document-сообщения');
     assertTrueValue(str_contains($chat['body'], 'https://example.test/manual.pdf'), 'Чат показывает document placeholder');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
+    assertTrueValue(str_contains($chat['body'], 'class="bot-command-select"'), 'Команды бота должны быть компактным select рядом с вводом');
+    assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
+    assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '1',

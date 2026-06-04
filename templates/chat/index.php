@@ -108,41 +108,8 @@
         </form>
     </div>
 
-    <?php if (($botCommands ?? []) !== []): ?>
-        <div class="panel" style="margin-bottom: 18px;">
-            <h2>Команды бота</h2>
-            <form method="post" action="/chat/send" style="display: flex; gap: 8px; align-items: end; margin-bottom: 12px;">
-                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-                <label style="flex: 1; margin-bottom: 0;">
-                    Выберите команду
-                    <select name="text" required>
-                        <?php foreach ($botCommands as $command): ?>
-                            <option value="/<?= e($command['command']) ?>">
-                                /<?= e($command['command']) ?> — <?= e($command['description']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-                <button type="submit">Отправить</button>
-            </form>
-            <div class="actions">
-                <?php foreach ($botCommands as $command): ?>
-                    <form method="post" action="/chat/send">
-                        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-                        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-                        <input type="hidden" name="text" value="/<?= e($command['command']) ?>">
-                        <button type="submit" class="secondary" title="<?= e($command['description']) ?>">
-                            /<?= e($command['command']) ?>
-                        </button>
-                    </form>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- История сообщений -->
-    <div class="panel" style="margin-bottom: 18px; min-height: 200px; max-height: 500px; overflow-y: auto;">
+    <div id="chat-messages" class="panel chat-messages" data-chat-messages style="margin-bottom: 18px; min-height: 200px; max-height: 500px; overflow-y: auto;">
         <?php if ($messages === []): ?>
             <p class="muted">Диалог пуст. Отправьте первое сообщение.</p>
         <?php else: ?>
@@ -223,8 +190,7 @@
     </div>
 
     <?php if (is_array($replyKeyboard)): ?>
-        <div class="panel" style="margin-bottom: 18px;">
-            <h2>Клавиатура</h2>
+        <div class="panel chat-input-tools" style="margin-bottom: 18px;">
             <div style="display: grid; gap: 8px; max-width: 520px;">
                 <?php foreach ($replyKeyboard as $row): ?>
                     <?php if (!is_array($row)) { continue; } ?>
@@ -247,6 +213,24 @@
                 <?php endforeach; ?>
             </div>
         </div>
+    <?php endif; ?>
+
+    <?php if (($botCommands ?? []) !== []): ?>
+        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <label style="margin-bottom: 0;">
+                <span class="muted" style="font-size: 13px;">Команды бота</span>
+                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
+                    <option value="" selected disabled>Выберите команду</option>
+                    <?php foreach ($botCommands as $command): ?>
+                        <option value="/<?= e($command['command']) ?>">
+                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </form>
     <?php endif; ?>
 
     <!-- Поле ввода -->
