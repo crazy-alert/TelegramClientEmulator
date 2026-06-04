@@ -259,6 +259,8 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Создание Telegram-like `Message`, `Chat` и media objects для ответов локального Bot API нормализует `BotApiPayloadFactory`. `BotApiController` отвечает за маршруты, валидацию параметров, HTTP-ошибки и запись сообщений, но не должен заново реализовывать низкоуровневую сборку этих payload.
 
+Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания.
+
 Поведение команд и кнопок:
 
 - `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.
@@ -461,7 +463,7 @@ Runtime stack проекта:
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.
-- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, parsing request body вынесен в `BotApiRequestParser`, сборка Bot API response payload вынесена в `BotApiPayloadFactory`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
+- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, parsing request body вынесен в `BotApiRequestParser`, сборка Bot API response payload вынесена в `BotApiPayloadFactory`, Long Polling queue logic вынесена в `LongPollingService`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы

@@ -304,7 +304,7 @@ docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_te
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"
 ```
 
-Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; `tests/bot_api_test.php` остается entrypoint, а helpers и сценарии вынесены в `tests/support/` и `tests/scenarios/`. Runner проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и структурные HTML-проверки через `DOMDocument`/`DOMXPath`. Небольшие focused tests вроде `tests/bot_api_params_test.php`, `tests/bot_api_payload_factory_test.php`, `tests/request_parser_test.php`, `tests/reply_markup_test.php` и `tests/message_renderer_test.php` проверяют изолированные компоненты без HTTP server.
+Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; `tests/bot_api_test.php` остается entrypoint, а helpers и сценарии вынесены в `tests/support/` и `tests/scenarios/`. Runner проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и структурные HTML-проверки через `DOMDocument`/`DOMXPath`. Небольшие focused tests вроде `tests/bot_api_params_test.php`, `tests/bot_api_payload_factory_test.php`, `tests/long_polling_service_test.php`, `tests/request_parser_test.php`, `tests/reply_markup_test.php` и `tests/message_renderer_test.php` проверяют изолированные компоненты без HTTP server.
 
 Синтаксис PHP-файлов:
 

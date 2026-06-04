@@ -30,6 +30,7 @@ final class Application {
     private HttpLogRepository $httpLogs;
     private HttpLogger $httpLogger;
     private MediaStorage $mediaStorage;
+    private LongPollingService $longPolling;
     private View $view;
     private ?string $rawBody = null;
 
@@ -53,6 +54,7 @@ final class Application {
             getenv('MEDIA_DIR') ?: $this->dataDir . '/media',
             $this->intParam(getenv('MEDIA_MAX_BYTES') ?: 10485760, 10485760),
         );
+        $this->longPolling = new LongPollingService($this->updates);
         $this->webhookDelivery = new WebhookDeliveryService($this->deliveryAttempts, $this->updates);
         $this->botApi = new BotApiController(
             $this->bots,
@@ -63,6 +65,7 @@ final class Application {
             $this->deliveryAttempts,
             $this->mediaStorage,
             $this->botApiPayloads,
+            $this->longPolling,
         );
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);

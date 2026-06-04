@@ -20,6 +20,7 @@ final readonly class BotApiController {
         private DeliveryAttemptRepository $deliveryAttempts,
         private MediaStorage $mediaStorage,
         private BotApiPayloadFactory $payloadFactory,
+        private LongPollingService $longPolling,
     ) {
     }
 
@@ -760,15 +761,14 @@ final readonly class BotApiController {
 
         $params = $this->botApiParams();
         $offset = BotApiParams::int($params['offset'] ?? 0, 0);
-        $limit = max(1, min(100, BotApiParams::int($params['limit'] ?? 100, 100)));
+        $limit = BotApiParams::int($params['limit'] ?? 100, 100);
         $timeout = max(0, BotApiParams::int($params['timeout'] ?? 0, 0));
         $allowedUpdates = BotApiParams::allowedUpdates($params['allowed_updates'] ?? null);
         $botId = (int) $bot['id'];
         $waitUntil = microtime(true) + min($timeout, 3);
 
         do {
-            $updates = $this->pendingUpdates($botId, $offset, $limit);
-            $result = $this->updatesResult($updates, $allowedUpdates);
+            $result = $this->longPolling->result($botId, $offset, $limit, $allowedUpdates);
 
             if ($result !== [] || $timeout === 0 || microtime(true) >= $waitUntil) {
                 Response::json([
@@ -903,63 +903,6 @@ final readonly class BotApiController {
         $host = (string) ($parts['host'] ?? '');
 
         return $host !== '' && in_array($scheme, ['http', 'https'], true);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function pendingUpdates(int $botId, int $offset, int $limit): array {
-        if ($offset < 0) {
-            $updates = $this->updates->findLastPending($botId, abs($offset));
-            if ($updates !== []) {
-                $this->updates->confirmBeforeOffset($botId, (int) $updates[0]['update_id']);
-            }
-
-            return array_slice($updates, 0, $limit);
-        }
-
-        $this->updates->confirmBeforeOffset($botId, $offset);
-
-        return $this->updates->findPending($botId, $limit, $offset);
-    }
-
-    /**
-     * @param list<array<string, mixed>> $updates
-     * @param list<string>|null $allowedUpdates
-     * @return list<array<string, mixed>>
-     */
-    private function updatesResult(array $updates, ?array $allowedUpdates): array {
-        $result = [];
-
-        foreach ($updates as $update) {
-            $payload = json_decode((string) $update['payload'], true);
-            if (!is_array($payload)) {
-                continue;
-            }
-
-            $payload['update_id'] = (int) $update['update_id'];
-            if ($allowedUpdates !== null && !$this->isAllowedUpdate($payload, $allowedUpdates)) {
-                continue;
-            }
-
-            $result[] = $payload;
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @param list<string> $allowedUpdates
-     */
-    private function isAllowedUpdate(array $payload, array $allowedUpdates): bool {
-        foreach (array_keys($payload) as $key) {
-            if ($key !== 'update_id' && in_array($key, $allowedUpdates, true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

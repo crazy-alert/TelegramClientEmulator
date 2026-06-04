@@ -21,6 +21,7 @@
 - `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
 - `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded`, multipart text fields и multipart file parts при отключенном `enable_post_data_reading`.
 - `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
+- `src/LongPollingService.php` — выбор pending updates для `getUpdates`, подтверждение offset, negative offset и фильтрация `allowed_updates`.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
@@ -66,6 +67,7 @@
 - `tests/scenarios/http_scenarios.php` — HTTP-сценарии UI, Bot API, SQLite runtime, webhook delivery, Long Polling и import/export.
 - `tests/bot_api_params_test.php` — focused tests helper `BotApiParams`.
 - `tests/bot_api_payload_factory_test.php` — focused tests фабрики `BotApiPayloadFactory` для `Message`, `Chat` и media payload.
+- `tests/long_polling_service_test.php` — focused tests сервиса `LongPollingService` для offset, negative offset, limit и `allowed_updates`.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
 - `tests/reply_markup_test.php` — focused tests helper `ReplyMarkup` для inline keyboard, reply keyboard, чтения из `raw_payload` и `remove_keyboard`.
 - `tests/message_renderer_test.php` — focused tests helper `MessageRenderer` для media/update envelope и poll-блоков.
