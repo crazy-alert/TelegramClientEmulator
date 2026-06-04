@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task14.md` — добавлены примеры интеграции bot frameworks. Создан `docs/framework-examples.md` с примерами для PHP HTTP-клиента, python-telegram-bot, aiogram, grammY и Telegraf; все примеры используют fake token `123456:local-dev-token` и Docker service DNS `http://telegram-emulator:8080`. В `README.md` добавлена ссылка на документ, `AI_PROJECT_MAP.md` обновлен.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по `docs/framework-examples.md`, `README.md`, `AI_PROJECT_MAP.md` — fake token, service DNS и ссылки на документацию присутствуют.
+
 2026-06-03: выполнена `.aitasks/task13.md` — расширена документация Docker Compose сценариев. В `README.md` добавлен раздел с compose-фрагментами для Long Polling и webhook ботов, fake token `123456:local-dev-token`, service DNS (`telegram-emulator`, `bot`), пояснение `localhost` внутри контейнера и варианты `TELEGRAM_API_BASE_URL`.
 
 Проверки:
