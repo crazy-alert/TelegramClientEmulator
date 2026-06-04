@@ -70,4 +70,5 @@
 - `docs/framework-examples.md` — примеры подключения PHP, Python и Node.js bot frameworks к локальному Bot API эмулятора через Docker Compose service DNS.
 - `docs/adr-routing.md` — архитектурное решение по custom router и отказу от micro-framework на текущем этапе.
 - `docs/adr-testing.md` — архитектурное решение по тестовой стратегии и текущему Docker HTTP smoke runner.
+- `docs/roadmap-update-checklist.md` — чеклист проверки `ROADMAP.md` после задач, которые меняют scope, Bot API surface, ограничения или ближайшие планы.
 

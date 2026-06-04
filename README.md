@@ -313,4 +313,5 @@ docker compose run --rm --no-deps telegram-emulator sh -lc "find src public temp
 - [Примеры интеграции bot frameworks](docs/framework-examples.md)
 - [ADR: HTTP routing и micro-framework](docs/adr-routing.md)
 - [ADR: стратегия тестирования](docs/adr-testing.md)
+- [Чеклист актуализации Roadmap](docs/roadmap-update-checklist.md)
 - [Roadmap](ROADMAP.md)

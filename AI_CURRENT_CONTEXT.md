@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task25.md` — добавлен `docs/roadmap-update-checklist.md` с правилом актуализации `ROADMAP.md` после задач, которые меняют scope, архитектуру, Bot API surface, ограничения или ближайшие планы. Checklist включает Bot API endpoints/ошибки, статусы этапов, ограничения, следующие методы, архитектуру и документацию запуска. В `AGENTS.md` добавлено постоянное правило пользоваться этим checklist; README и `AI_PROJECT_MAP.md` обновлены. `ROADMAP.md` не менялся, потому что задача добавляет правило актуализации, а не новый продуктовый пункт.
+
+Проверки:
+
+- `Select-String` по `docs/roadmap-update-checklist.md`, `AGENTS.md`, `README.md`, `AI_PROJECT_MAP.md` — ссылки и обязательные пункты присутствуют.
+- `git diff --check` — whitespace-ошибок нет, только стандартные CRLF warnings Git на Windows.
+
 2026-06-04: выполнена `.aitasks/task24.md` — структурирован тестовый runner. `tests/bot_api_test.php` оставлен entrypoint, assertions/HTTP helpers/form/multipart helpers/runtime server utilities вынесены в `tests/support/test_helpers.php`, unit-проверки `UpdateGenerator` — в `tests/scenarios/unit_scenarios.php`, HTTP-сценарии UI/Bot API/webhook/Long Polling/import-export — в `tests/scenarios/http_scenarios.php`. Запуск `php tests/bot_api_test.php` сохранен. Обновлены README, `AI_PROJECT_MAP.md` и `docs/adr-testing.md`.
 
 Проверки:
