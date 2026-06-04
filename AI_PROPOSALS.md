@@ -1,12 +1,14 @@
 # Предложения по модернизации проекта
 
-Файл обновлен после выполнения очереди `.aitasks`: активных задач больше нет. Ниже только актуальные предложения; уже выполненные пункты вроде `BotApiController`, `ChatController`, `BotApiRequestParser`, `ReplyMarkup`, структурирования тестового runner и DOM-проверок сюда не повторяются как будущие задачи.
+Файл обновлен после завершения очереди `.aitasks` 2026-06-05. Активных task-файлов сейчас нет.
+
+Ниже только актуальные предложения. Уже выполненные пункты не повторяются как будущие задачи: декомпозиция `BotApiRequestParser`, `ChatController`, `ReplyMarkup`, `MediaStorage`, `MessageRenderer`, поддержка базовых structured/media methods, multipart upload для `sendPhoto`/`sendDocument`, `getFile`, локальная отдача media и focused tests.
 
 ## Высокий приоритет
 
 ### 1. Дальше декомпозировать `Application`
 
-`src/Application.php` стал меньше, но все еще совмещает custom router, dashboard/settings, bots/profiles forms, updates/delivery attempts, request inspector, import/export и общие validation helpers.
+`src/Application.php` все еще совмещает composition root, custom router, dashboard/settings, bots/profiles forms, updates/delivery attempts, request inspector, import/export и общие validation helpers.
 
 Предлагаемый следующий срез:
 
@@ -14,105 +16,118 @@
 - `ProfileAdminController` для `/profiles`;
 - `ImportExportController` для `/import-*` и `/export-*`;
 - `InspectorController` для `/updates`, `/delivery-attempts`, `/request-inspector`;
-- оставить `Application` как composition root, bootstrapping и route dispatcher.
+- оставить `Application` как bootstrapping, DI/composition root и route dispatcher.
 
-Ожидаемый эффект: меньше риска при добавлении новых UI-экранов и проще поддерживать validation/import logic отдельно от маршрутизации.
+Ожидаемый эффект: меньше риска при добавлении UI-экранов, проще тестировать validation/import logic отдельно от маршрутизации.
 
-### 2. Разделить `BotApiController` на методы и payload services
+### 2. Разделить `BotApiController` на method handlers и payload services
 
-`src/BotApiController.php` уже содержит routing Bot API, validation параметров, Long Polling queue, message payload builders и media placeholder builders.
+`src/BotApiController.php` снова стал самым крупным файлом: routing Bot API, validation параметров, Long Polling queue, message payload builders, media payload и `getFile`.
 
 Предлагаемый шаг:
 
-- вынести `getUpdates` в `LongPollingController` или `LongPollingService`;
-- вынести создание Telegram-like `Message`, `Chat`, `PhotoSize`, `Document` payload в `BotApiPayloadFactory`;
-- оставить `BotApiController` диспетчером методов и владельцем HTTP status/response.
+- вынести `getUpdates` в `LongPollingService`;
+- вынести создание Telegram-like `Message`, `Chat`, `PhotoSize`, `Document`, typed media payload в `BotApiPayloadFactory`;
+- вынести повторяющуюся required-param/type validation в небольшой `BotApiParams`;
+- оставить `BotApiController` владельцем HTTP status/response и диспетчером методов.
 
-Ожидаемый эффект: проще добавлять новые Bot API methods без копирования validation и payload builders.
+Ожидаемый эффект: новые Bot API методы будут добавляться без копирования validation и payload builders.
 
-### 3. Реализовать следующий media method: `sendVideo`
+### 3. Расширить multipart upload на остальные media-методы
 
-Roadmap уже указывает `sendVideo` как следующий метод. После `sendPhoto` и `sendDocument` его можно добавить тем же ограниченным MVP-подходом.
+Сейчас реальные файлы поддержаны для `sendPhoto` и `sendDocument`. `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают только строковый URL/file_id.
 
 Минимальный scope:
 
-- `POST /bot<TOKEN>/sendVideo`;
-- параметры `chat_id`, `video`, optional `caption`, optional `reply_markup`;
-- строковое/URL значение `video`, без multipart file upload;
-- Telegram-like `Message.video` с `file_id`, `file_unique_id`, `width`, `height`, `duration`;
-- отображение video placeholder в чате;
-- тесты JSON/form-urlencoded и HTML render.
+- принимать multipart file parts в каноничных полях соответствующих методов;
+- переиспользовать `MediaStorage`;
+- возвращать `file_size`, `mime_type`, `file_name` там, где это есть в Telegram-like object;
+- добавить HTTP tests для success/required/unknown chat и `getFile`.
 
-### 4. Улучшить webhook retry/backoff
+Ожидаемый эффект: локальная проверка ботов с реальными audio/video/document-like сценариями станет ближе к Telegram.
 
-Сейчас webhook delivery делает одну попытку, а failed update можно переотправить вручную. Для локальной отладки ботов полезен управляемый retry без production-инфраструктуры.
+### 4. Сделать UI-preview и download links для локальных media
+
+Сейчас чат показывает media blocks как текстовые `file_id`/source. После `getFile` можно безопасно дать ссылку на локальный `/file/bot<TOKEN>/<file_path>`.
+
+Предлагаемый MVP:
+
+- для `local-media:<sha256>` показывать ссылку "Скачать" в media block;
+- для photo показывать компактный `<img>` preview, если content-type image и файл доступен;
+- не пытаться превьюить внешние URL;
+- сохранить лаконичную верстку `/chat` для маленьких экранов.
+
+Ожидаемый эффект: media-сообщения станут реально полезными в эмуляторе, а не только payload-заглушками.
+
+### 5. Улучшить webhook retry/backoff
+
+Сейчас webhook delivery делает одну попытку, failed update можно переотправить вручную.
 
 Предлагаемый MVP:
 
 - настройка количества retry и задержки в UI;
 - синхронные короткие retry в рамках текущего запроса или явный manual batch retry для failed updates;
 - отдельное логирование попыток без фонового worker на первом шаге;
-- ясное ограничение, что это development helper, а не production scheduler.
+- явно документировать, что это development helper, а не production scheduler.
 
 ## Средний приоритет
 
-### 5. Ввести отдельную модель group chat
+### 6. Ввести отдельную модель group chat
 
 Текущая group/supergroup модель работает через несколько `profiles` с общим `chat_id`. Этого достаточно для первых тестов, но не покрывает title, membership, роли и service messages.
 
-Предлагаемый первый шаг:
+Первый шаг:
 
 - добавить сущность `chats` или `groups` с `chat_id`, `type`, `title`;
 - связать profiles с group через membership table;
-- сохранить текущий быстрый сценарий выбора отправителя в `/chat`;
-- обновить import/export format v2 или добавить backward-compatible import.
+- сохранить быстрый сценарий выбора отправителя в `/chat`;
+- продумать backward-compatible import.
 
-### 6. Расширить import/export до fixtures
+### 7. Расширить import/export до fixture packs
 
 Текущий import/export сохраняет bots/profiles без истории. Для повторяемых тестовых сценариев полезны fixture packs.
 
-Предлагаемый scope:
+Scope:
 
 - optional export/import `bot_commands`;
 - optional export/import `groups/chats`, если появится отдельная модель;
 - позже optional `messages`/`updates` без delivery attempts;
-- документировать versioning и конфликтные стратегии до реализации.
+- отдельное решение для media archive/manifest, не бинарные файлы внутри JSON.
 
-### 7. Дробить HTTP scenarios дальше
+### 8. Дробить HTTP scenarios дальше
 
-`tests/scenarios/http_scenarios.php` уже вынесен из entrypoint, но остается крупным файлом.
+`tests/scenarios/http_scenarios.php` остается крупным файлом.
 
-Предлагаемый следующий срез:
+Следующий срез:
 
 - `chat_ui_scenarios.php`;
+- `media_scenarios.php`;
 - `webhook_scenarios.php`;
 - `long_polling_scenarios.php`;
 - `import_export_scenarios.php`;
 - общий entrypoint `tests/bot_api_test.php` оставить прежним.
 
-Ожидаемый эффект: легче добавлять новые Bot API методы и быстрее находить failing scenario.
+Ожидаемый эффект: проще искать failing scenario и добавлять новые Bot API методы.
 
-### 8. Уточнить Long Polling timeout модель
+### 9. Уточнить Long Polling timeout модель
 
 `getUpdates.timeout` ограничен 3 секундами из-за single-process PHP server. Это осознанное ограничение, но некоторым bot frameworks важно более похожее long polling поведение.
 
 Варианты:
 
-- оставить текущее ограничение и добавить больше документации для frameworks;
+- оставить ограничение и добавить больше framework-документации;
 - разрешить настройку верхней границы timeout в UI/env;
 - перейти на runtime/server mode, где блокирующее ожидание не мешает другим запросам.
 
 ## Низкий приоритет
 
-### 9. Поддержать command scopes и language-specific commands
+### 10. Поддержать command scopes и language-specific commands
 
-Сейчас `setMyCommands` хранит default-команды без scope и language. Это нормально для MVP, но не покрывает ботов с разными командами для групп, private chats или языков.
+`setMyCommands` хранит default-команды без scope и language. Для MVP нормально, но не покрывает разные команды для group/private chats и языков.
 
-Минимальный следующий шаг: сохранить raw `scope` и `language_code`, но сначала решить, как UI будет выбирать набор команд для текущего chat/profile.
+Минимальный следующий шаг: сохранять raw `scope` и `language_code`, но сначала решить, как UI будет выбирать набор команд для текущего chat/profile.
 
-### 10. Улучшить инспектор HTTP-логов
-
-Инспектор уже показывает Bot API logs и webhook attempts, но может стать удобнее для ежедневной отладки.
+### 11. Улучшить inspector HTTP-логов
 
 Идеи:
 
@@ -121,9 +136,9 @@ Roadmap уже указывает `sendVideo` как следующий мето
 - раскрытие JSON body в pretty tree;
 - связка request inspector с конкретным message/update.
 
-### 11. Добавить machine-readable описание локального Bot API surface
+### 12. Добавить machine-readable описание локального Bot API surface
 
-Документация сейчас человекочитаемая. Для bot framework examples и будущих tests можно добавить простой JSON/YAML каталог поддерживаемых методов.
+Документация сейчас человекочитаемая. Для examples и будущих tests можно добавить простой JSON/YAML каталог поддерживаемых методов.
 
 Формат может содержать:
 
@@ -131,9 +146,10 @@ Roadmap уже указывает `sendVideo` как следующий мето
 - HTTP methods;
 - required/optional params;
 - supported content types;
+- media upload support;
 - known limitations;
 - тестовый статус.
 
 ## Ближайшая практичная задача
 
-Наиболее полезная следующая задача: базовый `sendVideo` по аналогии с `sendPhoto`/`sendDocument`. Она расширяет уже сложившуюся media-модель, проверит готовность `BotApiPayloadFactory` после возможной декомпозиции и даст понятный пользовательский результат без необходимости сразу поддерживать file upload.
+Наиболее полезный следующий шаг: разделить `BotApiController` на `BotApiPayloadFactory` и `BotApiParams`, не меняя поведение. Это снизит риск перед расширением multipart upload на остальные media-методы.
