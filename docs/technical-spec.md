@@ -436,6 +436,7 @@ Runtime stack проекта:
 - Webhook URL чувствителен к Docker network context. В Docker Compose URL обычно должен использовать service DNS, например `http://bot:3000/webhook`, а не `localhost`.
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
+- Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы

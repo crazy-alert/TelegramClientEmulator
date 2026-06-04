@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task20.md` — принята стратегия тестирования. Создан `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner `tests/bot_api_test.php` остается основным контуром, PHPUnit не добавляется без явной необходимости, а при росте тестов сначала выделяются helpers/scenarios с сохранением одного entrypoint. README, technical spec, ROADMAP и project map обновлены.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по документации — `bot_api_test.php`, PHPUnit, Docker HTTP smoke runner и `docs/adr-testing.md` отражены.
+
 2026-06-04: выполнена `.aitasks/task19.md` — принято решение по micro-framework. Создан `docs/adr-routing.md`: текущий custom router в `src/Application.php` остается, Slim/Symfony components не внедряются без явной необходимости, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services. В README, technical spec, ROADMAP и project map добавлены ссылки/резюме.
 
 Проверки:

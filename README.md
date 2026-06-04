@@ -286,6 +286,8 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
 ```
 
+Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; он проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads и UI smoke HTML.
+
 Синтаксис PHP-файлов:
 
 ```bash
@@ -309,4 +311,5 @@ docker compose run --rm --no-deps telegram-emulator sh -lc "find src public temp
 - [Ограничения эмулятора](docs/limitations.md)
 - [Примеры интеграции bot frameworks](docs/framework-examples.md)
 - [ADR: HTTP routing и micro-framework](docs/adr-routing.md)
+- [ADR: стратегия тестирования](docs/adr-testing.md)
 - [Roadmap](ROADMAP.md)
