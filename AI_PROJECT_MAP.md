@@ -56,5 +56,6 @@
 ## Документация
 
 - `docs/technical-spec.md` — техническое задание.
+- `docs/limitations.md` — поддерживаемая Bot API поверхность и текущие ограничения эмулятора.
 - `docs/framework-examples.md` — примеры подключения PHP, Python и Node.js bot frameworks к локальному Bot API эмулятора через Docker Compose service DNS.
 

@@ -231,12 +231,12 @@ POST /bot<TOKEN>/getUpdates
 }
 ```
 
-Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку.
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
 
 Поведение команд и кнопок:
 
 - `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.
-- `/chat` показывает выпадающий список команд и отдельные кликабельные команды.
+- `/chat` показывает компактный выпадающий список команд рядом с полем ввода.
 - `reply_markup.inline_keyboard` отображается под сообщением бота; кнопки с `callback_data` создают `callback_query` update, URL-кнопки открываются как ссылки.
 - `reply_markup.keyboard` отображается как основная клавиатура чата; нажатие отправляет текст кнопки как обычное пользовательское сообщение.
 

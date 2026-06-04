@@ -265,7 +265,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - клики по reply-кнопкам создают обычные message updates;
 - клики по inline-кнопкам с `callback_data` создают `callback_query` updates;
 - сохранение и показ команд бота через `setMyCommands`/`getMyCommands`/`deleteMyCommands`;
-- кликабельные команды в панели команд и в истории сообщений.
+- компактный select команд рядом с полем ввода и кликабельные команды в истории сообщений.
 
 Принятые ограничения:
 
@@ -323,9 +323,9 @@ Update хранит Telegram-like событие, созданное эмуля�
 - тесты Bot API routes — начато через `tests/bot_api_test.php`;
 - тесты Long Polling offset behavior — реализованы в интеграционном тесте;
 - документация запуска тестов — добавлена в README;
-- документация Docker Compose сценариев;
-- примеры интеграции для PHP, Python и Node.js bot frameworks;
-- описание ограничений эмулятора.
+- документация Docker Compose сценариев — добавлена в README;
+- примеры интеграции для PHP, Python и Node.js bot frameworks — добавлены в `docs/framework-examples.md`;
+- описание ограничений эмулятора — добавлено в `docs/limitations.md`.
 
 Критерий готовности: новый разработчик может поднять проект и подключить своего бота по README без устных пояснений.
 

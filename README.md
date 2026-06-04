@@ -276,6 +276,8 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 `sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `sendPhoto` и `sendDocument` принимают строковое/URL значение `photo`/`document`, optional `caption` и `reply_markup`, сохраняют media placeholder в чате и возвращают Telegram-like `Message.photo`/`Message.document`; файловые upload в multipart пока не поддерживаются. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
 
+Подробный список ограничений, включая media upload, command scopes, language-specific commands, webhook retries и timeout, описан в [ограничениях эмулятора](docs/limitations.md).
+
 Проверки Bot API запускаются в контейнере:
 
 ```bash
@@ -302,5 +304,6 @@ docker compose run --rm --no-deps telegram-emulator sh -lc "find src public temp
 ## Документация
 
 - [Техническое задание](docs/technical-spec.md)
+- [Ограничения эмулятора](docs/limitations.md)
 - [Примеры интеграции bot frameworks](docs/framework-examples.md)
 - [Roadmap](ROADMAP.md)

@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task15.md` — добавлено явное описание ограничений эмулятора. Создан `docs/limitations.md` со списком поддерживаемых Bot API endpoints, правилом HTTP 501 для неподдерживаемых методов, ограничениями media upload/download, command scopes, language-specific commands, webhook retries/timeout, Long Polling timeout и напоминанием, что эмулятор не подключается к настоящему Telegram. В `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `AI_PROJECT_MAP.md` добавлены ссылки и синхронизированы краткие формулировки.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по документации — fake token, HTTP 501, отсутствие подключения к настоящему Telegram и ограничения upload/retry/timeout/commands описаны.
+
 2026-06-04: выполнена `.aitasks/task13.2.md` — улучшено поведение чата после HTMX-обновлений. История сообщений получила стабильный контейнер `#chat-messages` с маркером `data-chat-messages`, а layout прокручивает историю вниз при `DOMContentLoaded` и после `htmx:afterSwap`. Блок команд бота убран из верхней отдельной панели и перенесен вниз к форме ввода как компактный `select`, который отправляет выбранную команду через `onchange` без отдельной кнопки. Reply keyboard тоже остается в нижней зоне инструментов перед вводом.
 
 Проверки:
