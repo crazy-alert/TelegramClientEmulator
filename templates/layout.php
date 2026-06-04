@@ -303,8 +303,19 @@
     <?php require $contentTemplate; ?>
 </main>
 <script>
+    let shouldStickChatMessagesToBottom = true;
+    let previousChatMessagesScrollTop = 0;
+
+    function getChatMessages() {
+        return document.querySelector('[data-chat-messages]');
+    }
+
+    function isChatMessagesNearBottom(messages) {
+        return messages.scrollHeight - messages.scrollTop - messages.clientHeight <= 24;
+    }
+
     function scrollChatMessagesToBottom() {
-        const messages = document.querySelector('[data-chat-messages]');
+        const messages = getChatMessages();
 
         if (messages === null) {
             return;
@@ -313,10 +324,40 @@
         messages.scrollTop = messages.scrollHeight;
     }
 
+    function rememberChatMessagesScrollState() {
+        const messages = getChatMessages();
+
+        if (messages === null) {
+            return;
+        }
+
+        shouldStickChatMessagesToBottom = isChatMessagesNearBottom(messages);
+        previousChatMessagesScrollTop = messages.scrollTop;
+    }
+
+    function keepChatMessagesAtBottomIfNeeded() {
+        const messages = document.querySelector('[data-chat-messages]');
+
+        if (messages === null) {
+            return;
+        }
+
+        if (shouldStickChatMessagesToBottom) {
+            messages.scrollTop = messages.scrollHeight;
+        } else {
+            messages.scrollTop = previousChatMessagesScrollTop;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', scrollChatMessagesToBottom);
+    document.body.addEventListener('htmx:beforeSwap', (event) => {
+        if (event.target.id === 'chat-live') {
+            rememberChatMessagesScrollState();
+        }
+    });
     document.body.addEventListener('htmx:afterSwap', (event) => {
-        if (event.target.id === 'chat-thread' || event.target.querySelector?.('[data-chat-messages]') !== null) {
-            scrollChatMessagesToBottom();
+        if (event.target.id === 'chat-live') {
+            keepChatMessagesAtBottomIfNeeded();
         }
     });
 </script>

@@ -245,7 +245,11 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'id="chat-messages"'), 'История чата должна иметь контейнер для автопрокрутки');
     assertTrueValue(str_contains($chat['body'], 'data-chat-messages'), 'История чата должна помечаться для JS автопрокрутки');
     assertTrueValue(str_contains($chat['body'], 'max-height: 750px'), 'История чата должна быть достаточно высокой для небольшого экрана');
-    assertTrueValue(str_contains($chat['body'], 'htmx:afterSwap'), 'Layout должен прокручивать историю после HTMX-обновления');
+    assertTrueValue(str_contains($chat['body'], 'htmx:beforeSwap'), 'Layout должен запоминать позицию истории перед HTMX-обновлением');
+    assertTrueValue(str_contains($chat['body'], 'htmx:afterSwap'), 'Layout должен обрабатывать историю после HTMX-обновления');
+    assertTrueValue(str_contains($chat['body'], 'isChatMessagesNearBottom'), 'Layout должен проверять, был ли пользователь внизу истории');
+    assertTrueValue(str_contains($chat['body'], 'shouldStickChatMessagesToBottom'), 'Layout должен прокручивать историю вниз только при sticky-состоянии');
+    assertTrueValue(str_contains($chat['body'], 'previousChatMessagesScrollTop'), 'Layout должен сохранять позицию истории, если пользователь не внизу');
     assertTrueValue(str_contains($chat['body'], 'queue_state</th>'), 'Inspector должен показывать update');
     assertTrueValue(str_contains($chat['body'], '>failed<'), 'Failed webhook должен оставить update в состоянии failed');
     assertTrueValue(str_contains($chat['body'], '/updates/1/resend'), 'Для failed update должна быть кнопка resend');

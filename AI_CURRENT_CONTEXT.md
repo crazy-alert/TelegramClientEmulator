@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-05: исправлена автопрокрутка истории сообщений `/chat`. Layout теперь перед HTMX swap запоминает, был ли `#chat-messages` возле нижнего края, и текущий `scrollTop`. После swap история прокручивается вниз только если пользователь был внизу; если пользователь читал старые сообщения выше, прежняя позиция восстанавливается и polling не сбрасывает просмотр вниз. В `tests/scenarios/http_scenarios.php` добавлены проверки на `htmx:beforeSwap`, `isChatMessagesNearBottom`, `shouldStickChatMessagesToBottom` и сохранение `previousChatMessagesScrollTop`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l templates/layout.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+
 2026-06-05: увеличена видимая высота блока истории сообщений `/chat`: `#chat-messages` теперь имеет `max-height: 750px` вместо `500px`, чтобы на небольшом экране было видно больше переписки. В `tests/scenarios/http_scenarios.php` добавлена regression-проверка новой высоты.
 
 Проверки:
