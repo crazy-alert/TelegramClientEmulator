@@ -2,11 +2,11 @@
 
 ## Статус
 
-Принято: оставить текущий самописный Docker HTTP smoke runner `tests/bot_api_test.php` как основной тестовый контур на текущем этапе.
+Принято: оставить текущий самописный Docker HTTP smoke runner `tests/bot_api_test.php` как основной тестовый контур на текущем этапе. Небольшие focused tests для изолированных компонентов допускаются отдельными PHP-файлами без PHPUnit.
 
 ## Контекст
 
-Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый файл поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`.
+Проект запускается Docker-first на готовом образе `php:8.3-cli-alpine` без Composer dependencies. Текущий тестовый файл поднимает встроенный PHP HTTP server, отдельный webhook receiver и проверяет реальные HTTP routes, SQLite storage, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и базовые unit-проверки `UpdateGenerator`. `tests/request_parser_test.php` отдельно проверяет `BotApiRequestParser` без HTTP server.
 
 Это дает высокую ценность для локального эмулятора: тест проверяет не только отдельные функции, но и фактический workflow, который используют bot containers.
 
@@ -57,11 +57,12 @@
 
 ## Решение
 
-Сейчас оставить `tests/bot_api_test.php` как основной smoke runner и не добавлять PHPUnit.
+Сейчас оставить `tests/bot_api_test.php` как основной smoke runner и не добавлять PHPUnit. Для маленьких pure-компонентов можно добавлять focused PHP tests рядом с ним, если это снижает риск и не требует нового test framework.
 
 Ближайшая стратегия:
 
 - продолжать добавлять focused assertions в `tests/bot_api_test.php` для новых Bot API methods, payload structures, Long Polling, webhook delivery, storage и UI smoke;
+- добавлять отдельные focused PHP tests для pure-компонентов вроде request parser, когда HTTP smoke runner был бы избыточен;
 - держать команду запуска в README;
 - запускать PHP lint отдельно;
 - при существенном росте файла выделить helpers и сценарии в `tests/support/` и `tests/scenarios/`, но сохранить один entrypoint;
@@ -82,6 +83,12 @@
 
 ```bash
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
+```
+
+Focused parser test:
+
+```bash
+docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php"
 ```
 
 PHP lint:

@@ -1,5 +1,14 @@
 # Завершенные планы работы
 
+## Отдельный parser Bot API request parameters (2026-06-04)
+
+- [x] Проверить git status и текст задачи.
+- [x] Изучить текущий parsing и тестовый стиль проекта.
+- [x] Создать `BotApiRequestParser` и подключить его в `Application`.
+- [x] Добавить focused parser tests на JSON, form-urlencoded, multipart, пустое тело и malformed JSON.
+- [x] Обновить карту проекта/документацию при необходимости.
+- [x] Прогнать parser tests, Bot API smoke test и PHP lint, обновить контекст, удалить задачу, сделать коммит и push.
+
 ## Вынести Chat UI handlers (2026-06-04)
 
 - [x] Проверить git status, активный план и текст задачи.

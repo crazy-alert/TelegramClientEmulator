@@ -17,6 +17,7 @@
 - `public/index.php` — front controller.
 - `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`.
 - `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, Telegram-like responses и handlers методов `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
+- `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded` и текстовых multipart fields при отключенном `enable_post_data_reading`.
 - `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
@@ -55,6 +56,7 @@
 ## Тесты
 
 - `tests/bot_api_test.php` — интеграционный тест Bot API через встроенный PHP HTTP server.
+- `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
 
 ## Документация
 

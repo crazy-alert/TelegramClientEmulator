@@ -15,6 +15,7 @@ final class Application {
 
     private Database $database;
     private BotApiController $botApi;
+    private BotApiRequestParser $requestParser;
     private ChatController $chat;
     private BotRepository $bots;
     private BotCommandRepository $botCommands;
@@ -44,6 +45,7 @@ final class Application {
         $this->deliveryAttempts = new DeliveryAttemptRepository($this->database->pdo());
         $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
+        $this->requestParser = new BotApiRequestParser();
         $this->webhookDelivery = new WebhookDeliveryService($this->deliveryAttempts, $this->updates);
         $this->botApi = new BotApiController(
             $this->bots,
@@ -86,77 +88,15 @@ final class Application {
      * Парсит тело запроса в $_POST вручную (т.к. enable_post_data_reading = Off).
      */
     private function parseInput(): void {
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            return;
+        $parsed = $this->requestParser->parse(
+            $_SERVER['REQUEST_METHOD'] ?? 'GET',
+            $this->rawBody(),
+            $_SERVER['CONTENT_TYPE'] ?? '',
+        );
+
+        if ($parsed !== null) {
+            $_POST = $parsed;
         }
-
-        $raw = $this->rawBody();
-        if ($raw === '') {
-            return;
-        }
-
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-
-        if (str_contains($contentType, 'application/json')) {
-            $data = json_decode($raw, true);
-            if (is_array($data)) {
-                $_POST = $data;
-            }
-            return;
-        }
-
-        if (str_contains($contentType, 'application/x-www-form-urlencoded')) {
-            parse_str($raw, $_POST);
-            return;
-        }
-
-        if (str_contains($contentType, 'multipart/form-data')) {
-            $_POST = $this->parseMultipartFormData($raw, $contentType);
-        }
-    }
-
-    /**
-     * Парсит текстовые поля multipart/form-data при отключенном enable_post_data_reading.
-     *
-     * @return array<string, string>
-     */
-    private function parseMultipartFormData(string $raw, string $contentType): array {
-        if (preg_match('/boundary=(?:"([^"]+)"|([^;]+))/i', $contentType, $matches) !== 1) {
-            return [];
-        }
-
-        $boundary = $matches[1] !== '' ? $matches[1] : trim($matches[2]);
-        if ($boundary === '') {
-            return [];
-        }
-
-        $fields = [];
-        $parts = explode('--' . $boundary, $raw);
-
-        foreach ($parts as $part) {
-            $part = ltrim($part, "\r\n");
-            $part = preg_replace("/\r\n--\r\n?$/", '', $part) ?? $part;
-            $part = rtrim($part, "\r\n");
-
-            if ($part === '' || $part === '--') {
-                continue;
-            }
-
-            $separator = str_contains($part, "\r\n\r\n") ? "\r\n\r\n" : "\n\n";
-            [$headers, $body] = array_pad(explode($separator, $part, 2), 2, '');
-
-            if (preg_match('/Content-Disposition:\s*form-data\b[^\r\n]*\bname="([^"]+)"/i', $headers, $nameMatches) !== 1) {
-                continue;
-            }
-
-            if (preg_match('/Content-Disposition:\s*form-data\b[^\r\n]*\bfilename="/i', $headers) === 1) {
-                continue;
-            }
-
-            $fields[$nameMatches[1]] = $body;
-        }
-
-        return $fields;
     }
 
     public function handle(string $method, string $path): void {

@@ -60,13 +60,16 @@
 
 На текущем этапе оставить custom router. Приоритетная модернизация:
 
-- выделить parser Bot API request parameters и handlers/services для Bot API methods в отдельный `BotApiController`;
+- выделить parser request body в отдельный `BotApiRequestParser`;
+- выделить handlers/services для Bot API methods в отдельный `BotApiController`;
 - вынести UI actions из `Application` в небольшие контроллеры или action-классы;
 - оставить HTTP smoke tests в Docker как защиту от regressions.
 
 Первый шаг выполнен: локальные маршруты `/bot<TOKEN>/<METHOD>` и handlers методов `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery` вынесены из `Application` в `src/BotApiController.php`. `Application` остается composition root и router, который делегирует Bot API requests без изменения HTTP-контрактов.
 
 Второй шаг выполнен: UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback` и `/chat/clear` вынесены из `Application` в `src/ChatController.php`. Шаблон `templates/chat/index.php`, redirects, HTMX-фрагмент, keyboards и group chat behavior сохранены.
+
+Третий шаг выполнен: parsing JSON, `application/x-www-form-urlencoded` и текстовых multipart fields вынесен из `Application` в `src/BotApiRequestParser.php`. `Application` по-прежнему применяет parser до маршрутизации, чтобы UI POST и Bot API POST работали при отключенном `enable_post_data_reading`.
 
 Framework стоит пересмотреть, если одновременно выполняются несколько условий:
 
