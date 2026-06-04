@@ -23,9 +23,22 @@
 
 ## Ближайшая очередь
 
-Очередь `.aitasks/` должна быть пустой после коммита task02.
+Очередь `.aitasks/` после task02 была пустой, затем `AI_PROPOSALS.md` обновлен и разложен в новые task-файлы:
 
-Следующий шаг после пустой очереди: обновить `AI_PROPOSALS.md` по текущему состоянию проекта и, если нужны новые работы, снова разложить их в `.aitasks/`.
+- `task01-long-polling-service.md`
+- `task02-typed-media-multipart-upload.md`
+- `task03-media-preview-download-links.md`
+- `task04-application-decomposition.md`
+- `task05-split-http-scenarios.md`
+- `task06-webhook-retry-backoff.md`
+- `task07-group-chat-model.md`
+- `task08-fixture-packs-import-export.md`
+- `task09-long-polling-timeout-model.md`
+- `task10-command-scopes-language.md`
+- `task11-http-log-inspector.md`
+- `task12-bot-api-surface-catalog.md`
+
+Следующий шаг: взять `task01-long-polling-service.md`, обновить `AI_WORK_PLAN.md` и вынести logic `getUpdates` в сервис с focused tests.
 
 ## Важные решения
 
