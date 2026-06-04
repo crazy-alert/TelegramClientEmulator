@@ -128,6 +128,14 @@
                 $dicePayload = is_array($messagePayload) && isset($messagePayload['dice']) && is_array($messagePayload['dice'])
                     ? $messagePayload['dice']
                     : null;
+                $typedMediaLabels = [
+                    'video' => 'Video',
+                    'animation' => 'Animation',
+                    'audio' => 'Audio',
+                    'voice' => 'Voice',
+                    'video_note' => 'Video note',
+                    'sticker' => 'Sticker',
+                ];
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -196,6 +204,43 @@
                             </div>
                         </div>
                     <?php endif; ?>
+                    <?php foreach ($typedMediaLabels as $mediaField => $mediaLabel): ?>
+                        <?php
+                        $typedMediaPayload = is_array($messagePayload) && isset($messagePayload[$mediaField]) && is_array($messagePayload[$mediaField])
+                            ? $messagePayload[$mediaField]
+                            : null;
+                        if ($typedMediaPayload === null) {
+                            continue;
+                        }
+                        $typedMediaSource = is_array($messagePayload) ? (string) ($messagePayload[$mediaField . '_source'] ?? '') : '';
+                        if ($typedMediaSource === '') {
+                            $typedMediaSource = (string) ($typedMediaPayload['file_id'] ?? '');
+                        }
+                        ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong><?= e($mediaLabel) ?></strong>
+                            <?php if ($typedMediaSource !== ''): ?>
+                                <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($typedMediaSource) ?></code></div>
+                            <?php endif; ?>
+                            <?php if (isset($typedMediaPayload['duration'])): ?>
+                                <div class="muted">duration <?= e((string) $typedMediaPayload['duration']) ?></div>
+                            <?php endif; ?>
+                            <?php if (isset($typedMediaPayload['width']) || isset($typedMediaPayload['height'])): ?>
+                                <div class="muted">
+                                    <?= e((string) ($typedMediaPayload['width'] ?? '')) ?>x<?= e((string) ($typedMediaPayload['height'] ?? '')) ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (isset($typedMediaPayload['file_name']) && (string) $typedMediaPayload['file_name'] !== ''): ?>
+                                <div class="muted"><?= e((string) $typedMediaPayload['file_name']) ?></div>
+                            <?php endif; ?>
+                            <?php if (isset($typedMediaPayload['title']) && (string) $typedMediaPayload['title'] !== ''): ?>
+                                <div class="muted"><?= e((string) $typedMediaPayload['title']) ?></div>
+                            <?php endif; ?>
+                            <?php if (isset($typedMediaPayload['performer']) && (string) $typedMediaPayload['performer'] !== ''): ?>
+                                <div class="muted"><?= e((string) $typedMediaPayload['performer']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
                     <?php if ((string) $msg['text'] !== ''): ?>
                         <div style="white-space: pre-line;"><?php $renderMessageText((string) $msg['text']); ?></div>
                     <?php endif; ?>

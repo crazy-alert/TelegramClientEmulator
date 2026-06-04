@@ -126,6 +126,12 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `POST /bot{token}/sendMessage`
 - `POST /bot{token}/sendPhoto`
 - `POST /bot{token}/sendDocument`
+- `POST /bot{token}/sendVideo`
+- `POST /bot{token}/sendAnimation`
+- `POST /bot{token}/sendAudio`
+- `POST /bot{token}/sendVoice`
+- `POST /bot{token}/sendVideoNote`
+- `POST /bot{token}/sendSticker`
 - `POST /bot{token}/sendLocation`
 - `POST /bot{token}/sendVenue`
 - `POST /bot{token}/sendContact`
@@ -140,12 +146,6 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 ### Следующие методы
 
-- `POST /bot{token}/sendVideo`
-- `POST /bot{token}/sendAnimation`
-- `POST /bot{token}/sendAudio`
-- `POST /bot{token}/sendVoice`
-- `POST /bot{token}/sendVideoNote`
-- `POST /bot{token}/sendSticker`
 - `POST /bot{token}/sendPoll`
 
 Неподдерживаемые методы должны возвращать Telegram-like ошибку:
@@ -320,6 +320,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `editMessageText` — реализовано для текстовых сообщений бота и optional `reply_markup`;
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, caption и optional `reply_markup`;
 - базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`;
+- базовые audio/video media методы — реализованы `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` для строкового/URL media без upload;
 - structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
 - прием structured сообщений от пользователя через UI — реализован для photo/document по URL или file_id, location и contact.
 

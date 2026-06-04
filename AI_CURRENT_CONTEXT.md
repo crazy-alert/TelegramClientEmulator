@@ -2,6 +2,15 @@
 
 ## Последнее обновление
 
+2026-06-05: выполнена `.aitasks/task03-audio-video-voice-sticker-bot-api.md` — добавлены placeholder Bot API методы без multipart upload: `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`. Методы принимают строковый URL/file_id параметр соответствующего media-поля, сохраняют media placeholder в `messages.raw_payload`, возвращают Telegram-like `Message.video`/`animation`/`audio`/`voice`/`video_note`/`sticker` и отображаются в `/chat`. Для caption поддержаны `sendVideo`, `sendAnimation`, `sendAudio`; optional metadata вроде `duration`, `width`, `height`, `performer`, `title`, `length`, `emoji` сохраняются в payload. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP-сценарии.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l src/BotApiController.php && php -l templates/chat/index.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-05: выполнена `.aitasks/task02-chat-ui-user-structured-inputs.md` — UI `/chat` теперь принимает structured сообщения от пользователя без multipart upload: photo/document по URL или file_id, location и contact. В `ChatController` добавлен `message_type` parsing для `/chat/send`, `UpdateGenerator` переносит user raw payload в Telegram-like `message.photo`/`message.document`/`message.location`/`message.contact`. Шаблон чата показывает media/structured payload как для прямого raw payload бота, так и для user update envelope. В `/chat` добавлен компактный раскрывающийся блок `Вложения`. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP/DOM сценарии.
 
 Проверки:

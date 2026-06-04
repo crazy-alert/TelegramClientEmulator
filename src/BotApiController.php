@@ -45,6 +45,36 @@ final readonly class BotApiController {
             return true;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVideo$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'video');
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendAnimation$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'animation');
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendAudio$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'audio');
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVoice$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'voice');
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVideoNote$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'video_note');
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendSticker$#i', $path, $matches) === 1) {
+            $this->sendTypedMedia($matches[1], 'sticker');
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendLocation$#i', $path, $matches) === 1) {
             $this->sendLocation($matches[1]);
             return true;
@@ -267,6 +297,39 @@ final readonly class BotApiController {
 
     private function sendDocument(string $token): void {
         $this->sendMedia($token, 'document');
+    }
+
+    private function sendTypedMedia(string $token, string $mediaField): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, $mediaField)) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $media = trim((string) $params[$mediaField]);
+        $caption = trim((string) ($params['caption'] ?? ''));
+        $rawPayload = [
+            $mediaField => $this->typedMediaPayload($mediaField, $media, $params),
+            $mediaField . '_source' => $media,
+        ];
+        if ($caption !== '' && in_array($mediaField, ['video', 'animation', 'audio'], true)) {
+            $rawPayload['caption'] = $caption;
+        }
+
+        $text = $caption !== '' ? $caption : '[' . $mediaField . ']';
+        $this->sendStructuredMessage($bot, $profile, $chatId, $rawPayload, $text);
     }
 
     private function sendLocation(string $token): void {
@@ -906,6 +969,19 @@ final readonly class BotApiController {
             $payload['contact'] = $rawPayload['contact'];
         } elseif (is_array($rawPayload) && isset($rawPayload['dice']) && is_array($rawPayload['dice'])) {
             $payload['dice'] = $rawPayload['dice'];
+        } elseif (is_array($rawPayload)) {
+            foreach (['video', 'animation', 'audio', 'voice', 'video_note', 'sticker'] as $mediaField) {
+                if (isset($rawPayload[$mediaField]) && is_array($rawPayload[$mediaField])) {
+                    $payload[$mediaField] = $rawPayload[$mediaField];
+                    if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '' && in_array($mediaField, ['video', 'animation', 'audio'], true)) {
+                        $payload['caption'] = (string) $rawPayload['caption'];
+                    }
+                    break;
+                }
+            }
+            if (!array_intersect(['video', 'animation', 'audio', 'voice', 'video_note', 'sticker'], array_keys($payload))) {
+                $payload['text'] = $message['text'];
+            }
         } else {
             $payload['text'] = $message['text'];
         }
@@ -968,6 +1044,82 @@ final readonly class BotApiController {
             'file_unique_id' => substr(sha1($document), 0, 16),
             'file_name' => $fileName === '' ? null : $fileName,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    private function typedMediaPayload(string $mediaField, string $fileId, array $params): array {
+        $payload = [
+            'file_id' => $fileId,
+            'file_unique_id' => substr(sha1($mediaField . ':' . $fileId), 0, 16),
+        ];
+
+        foreach ($this->typedMediaOptionalFields($mediaField) as $field => $type) {
+            if (!isset($params[$field]) || trim((string) $params[$field]) === '') {
+                continue;
+            }
+
+            $payload[$field] = $type === 'int'
+                ? $this->intParam($params[$field], 0)
+                : trim((string) $params[$field]);
+        }
+
+        if (($mediaField === 'audio' || $mediaField === 'document') && !isset($payload['file_name'])) {
+            $path = parse_url($fileId, PHP_URL_PATH);
+            $fileName = basename((string) ($path ?: $fileId));
+            if ($fileName !== '') {
+                $payload['file_name'] = $fileName;
+            }
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, 'int'|'string'>
+     */
+    private function typedMediaOptionalFields(string $mediaField): array {
+        return match ($mediaField) {
+            'video' => [
+                'width' => 'int',
+                'height' => 'int',
+                'duration' => 'int',
+                'file_name' => 'string',
+                'mime_type' => 'string',
+            ],
+            'animation' => [
+                'width' => 'int',
+                'height' => 'int',
+                'duration' => 'int',
+                'file_name' => 'string',
+                'mime_type' => 'string',
+            ],
+            'audio' => [
+                'duration' => 'int',
+                'performer' => 'string',
+                'title' => 'string',
+                'file_name' => 'string',
+                'mime_type' => 'string',
+            ],
+            'voice' => [
+                'duration' => 'int',
+                'mime_type' => 'string',
+            ],
+            'video_note' => [
+                'duration' => 'int',
+                'length' => 'int',
+            ],
+            'sticker' => [
+                'type' => 'string',
+                'width' => 'int',
+                'height' => 'int',
+                'emoji' => 'string',
+                'set_name' => 'string',
+            ],
+            default => [],
+        };
     }
 
     /**

@@ -11,6 +11,12 @@
 - `POST /bot<TOKEN>/sendMessage`
 - `POST /bot<TOKEN>/sendPhoto`
 - `POST /bot<TOKEN>/sendDocument`
+- `POST /bot<TOKEN>/sendVideo`
+- `POST /bot<TOKEN>/sendAnimation`
+- `POST /bot<TOKEN>/sendAudio`
+- `POST /bot<TOKEN>/sendVoice`
+- `POST /bot<TOKEN>/sendVideoNote`
+- `POST /bot<TOKEN>/sendSticker`
 - `POST /bot<TOKEN>/sendLocation`
 - `POST /bot<TOKEN>/sendVenue`
 - `POST /bot<TOKEN>/sendContact`
@@ -33,7 +39,7 @@
 - полный Telegram Bot API;
 - подключение к настоящему Telegram;
 - файловые upload и download: multipart file parts, `getFile`, file URL и хранение бинарных файлов;
-- media-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
+- media-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
 - payments, invoices, shipping/pre-checkout queries;
 - Telegram Passport;
 - games;
@@ -46,7 +52,7 @@
 
 ## Media upload
 
-`sendPhoto` и `sendDocument` принимают строковое или URL значение `photo`/`document`, optional `caption` и optional `reply_markup`. Эмулятор сохраняет media placeholder в истории чата и возвращает Telegram-like `Message.photo` или `Message.document`.
+`sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают строковое или URL значение соответствующего media-поля, optional caption там, где он есть в Bot API, и optional `reply_markup`. Эмулятор сохраняет media placeholder в истории чата и возвращает Telegram-like `Message.*`.
 
 Файловая загрузка через multipart пока не реализована. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части не превращаются в Telegram file object.
 

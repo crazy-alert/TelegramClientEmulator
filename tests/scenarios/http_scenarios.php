@@ -511,6 +511,83 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue('🎲', $json['result']['dice']['emoji'], 'sendDice по умолчанию возвращает dice emoji');
     assertSameValue(4, $json['result']['dice']['value'], 'sendDice возвращает детерминированное значение');
 
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', json_encode([
+        'chat_id' => 1001,
+        'video' => 'https://example.test/video.mp4',
+        'caption' => 'Video caption',
+        'duration' => 12,
+        'width' => 640,
+        'height' => 360,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(12, $json['result']['message_id'], 'sendVideo возвращает следующий message_id');
+    assertSameValue('https://example.test/video.mp4', $json['result']['video']['file_id'], 'sendVideo возвращает video.file_id');
+    assertSameValue(12, $json['result']['video']['duration'], 'sendVideo возвращает duration');
+    assertSameValue('Video caption', $json['result']['caption'], 'sendVideo возвращает caption');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', formBody([
+        'chat_id' => '1001',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "video" is required', $json['description'], 'sendVideo требует video');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', formBody([
+        'chat_id' => '9999',
+        'video' => 'file-id',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: chat not found', $json['description'], 'sendVideo проверяет существование чата');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendAnimation', formBody([
+        'chat_id' => '1001',
+        'animation' => 'https://example.test/animation.gif',
+        'caption' => 'Animation caption',
+        'duration' => '5',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(13, $json['result']['message_id'], 'sendAnimation возвращает следующий message_id');
+    assertSameValue('https://example.test/animation.gif', $json['result']['animation']['file_id'], 'sendAnimation возвращает animation.file_id');
+    assertSameValue('Animation caption', $json['result']['caption'], 'sendAnimation возвращает caption');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendAudio', json_encode([
+        'chat_id' => 1001,
+        'audio' => 'https://example.test/audio.mp3',
+        'caption' => 'Audio caption',
+        'duration' => 31,
+        'performer' => 'Local performer',
+        'title' => 'Local title',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(14, $json['result']['message_id'], 'sendAudio возвращает следующий message_id');
+    assertSameValue('https://example.test/audio.mp3', $json['result']['audio']['file_id'], 'sendAudio возвращает audio.file_id');
+    assertSameValue('Local performer', $json['result']['audio']['performer'], 'sendAudio возвращает performer');
+    assertSameValue('Audio caption', $json['result']['caption'], 'sendAudio возвращает caption');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVoice', formBody([
+        'chat_id' => '1001',
+        'voice' => 'https://example.test/voice.ogg',
+        'duration' => '7',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(15, $json['result']['message_id'], 'sendVoice возвращает следующий message_id');
+    assertSameValue('https://example.test/voice.ogg', $json['result']['voice']['file_id'], 'sendVoice возвращает voice.file_id');
+    assertSameValue(7, $json['result']['voice']['duration'], 'sendVoice возвращает duration');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideoNote', formBody([
+        'chat_id' => '1001',
+        'video_note' => 'https://example.test/video-note.mp4',
+        'length' => '240',
+        'duration' => '8',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(16, $json['result']['message_id'], 'sendVideoNote возвращает следующий message_id');
+    assertSameValue('https://example.test/video-note.mp4', $json['result']['video_note']['file_id'], 'sendVideoNote возвращает video_note.file_id');
+    assertSameValue(240, $json['result']['video_note']['length'], 'sendVideoNote возвращает length');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendSticker', formBody([
+        'chat_id' => '1001',
+        'sticker' => 'sticker-file-id',
+        'emoji' => '🙂',
+        'width' => '512',
+        'height' => '512',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(17, $json['result']['message_id'], 'sendSticker возвращает следующий message_id');
+    assertSameValue('sticker-file-id', $json['result']['sticker']['file_id'], 'sendSticker возвращает sticker.file_id');
+    assertSameValue('🙂', $json['result']['sticker']['emoji'], 'sendSticker возвращает emoji');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
@@ -530,6 +607,18 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], '+70000000000'), 'Чат показывает phone_number contact-сообщения');
     assertTrueValue(str_contains($chat['body'], 'Dice'), 'Чат показывает dice-сообщение');
     assertTrueValue(str_contains($chat['body'], 'value 4'), 'Чат показывает value dice-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'Video'), 'Чат показывает video-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/video.mp4'), 'Чат показывает video placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Animation'), 'Чат показывает animation-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/animation.gif'), 'Чат показывает animation placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Audio'), 'Чат показывает audio-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'Local title'), 'Чат показывает audio title');
+    assertTrueValue(str_contains($chat['body'], 'Voice'), 'Чат показывает voice-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/voice.ogg'), 'Чат показывает voice placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Video note'), 'Чат показывает video note сообщение');
+    assertTrueValue(str_contains($chat['body'], 'https://example.test/video-note.mp4'), 'Чат показывает video note placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Sticker'), 'Чат показывает sticker-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'sticker-file-id'), 'Чат показывает sticker placeholder');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
     assertTrueValue(str_contains($chat['body'], 'class="chat-compose"'), 'Чат должен иметь компактную зону reply keyboard и ввода');
     assertTrueValue(str_contains($chat['body'], '@media (max-width: 560px)'), 'Compose-зона должна складываться вертикально только на смартфонах');
@@ -810,9 +899,12 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
     assertSameValue([], $json['result'], 'deleteMyCommands очищает команды');
 
-    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVideo', formBody([
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendInvoice', formBody([
         'chat_id' => '1001',
-        'video' => 'file-id',
+        'title' => 'Invoice',
+        'description' => 'Unsupported invoice',
+        'payload' => 'payload',
+        'currency' => 'USD',
     ]), ['Content-Type: application/x-www-form-urlencoded']), 501, false);
     assertSameValue(501, $json['error_code'], 'Неподдерживаемый Bot API метод возвращает 501');
 

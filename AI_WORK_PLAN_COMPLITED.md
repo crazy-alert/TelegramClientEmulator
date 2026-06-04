@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Audio/video/voice/sticker Bot API методы (2026-06-05)
+
+- [x] Добавить Bot API routes и payload generation для `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`.
+- [x] Обновить рендер `/chat` для новых media placeholders.
+- [x] Расширить HTTP tests на success, required param, chat not found и UI rendering.
+- [x] Обновить README/spec/limitations/ROADMAP.
+- [x] Запустить проверки, обновить контекст, удалить task03, сделать коммит и push.
+
 ## Прием structured сообщений от пользователя в UI (2026-06-05)
 
 - [x] Обновить `ChatController` и `UpdateGenerator` для user structured payload без multipart upload.
