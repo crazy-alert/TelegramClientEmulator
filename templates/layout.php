@@ -202,6 +202,86 @@
             color: #536471;
         }
 
+        .chat-compose {
+            display: grid;
+            grid-template-columns: minmax(180px, 0.3fr) minmax(0, 1fr);
+            gap: 12px;
+            align-items: stretch;
+            margin-bottom: 10px;
+        }
+
+        .chat-compose-single {
+            grid-template-columns: 1fr;
+        }
+
+        .chat-compose .panel,
+        .chat-compose form.editor {
+            padding: 12px;
+        }
+
+        .chat-input-tools {
+            min-width: 0;
+        }
+
+        .chat-reply-keyboard {
+            display: grid;
+            gap: 6px;
+        }
+
+        .chat-reply-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .chat-reply-row button {
+            min-height: 32px;
+            padding: 6px 10px;
+        }
+
+        .chat-message-form {
+            margin-bottom: 0;
+        }
+
+        .chat-message-form label {
+            margin-bottom: 8px;
+        }
+
+        .chat-message-form textarea {
+            width: 100%;
+            min-height: 84px;
+            resize: vertical;
+            font: inherit;
+            padding: 8px 10px;
+            border: 1px solid #c8d3dc;
+            border-radius: 6px;
+        }
+
+        .bot-command-picker {
+            padding: 10px 12px;
+            margin-bottom: 18px;
+        }
+
+        .bot-command-picker summary {
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .bot-command-picker form {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 720px) {
+            .chat-compose {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-compose .panel,
+            .chat-compose form.editor {
+                padding: 10px;
+            }
+        }
+
     </style>
 </head>
 <body>

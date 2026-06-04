@@ -473,14 +473,16 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'Document caption'), 'Чат показывает caption document-сообщения');
     assertTrueValue(str_contains($chat['body'], 'https://example.test/manual.pdf'), 'Чат показывает document placeholder');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
-    assertTrueValue(str_contains($chat['body'], 'class="bot-command-select"'), 'Команды бота должны быть компактным select рядом с вводом');
+    assertTrueValue(str_contains($chat['body'], 'class="chat-compose"'), 'Чат должен иметь компактную зону reply keyboard и ввода');
+    assertTrueValue(str_contains($chat['body'], 'class="bot-command-select"'), 'Команды бота должны быть доступны через select');
+    assertTrueValue(str_contains($chat['body'], '<details class="panel bot-command-picker">'), 'Команды бота должны быть спрятаны в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
     assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
     $chatDom = htmlDocument($chat['body']);
     assertDomXPathExists(
         $chatDom,
-        '//form[@method="post" and @action="/chat/send"]//textarea[@name="text"]',
+        '//div[contains(concat(" ", normalize-space(@class), " "), " chat-compose ")]//form[contains(concat(" ", normalize-space(@class), " "), " chat-message-form ")]//textarea[@name="text"]',
         'DOM: форма отправки сообщения должна содержать textarea text',
     );
     assertDomXPathExists(
@@ -490,13 +492,13 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     );
     assertDomXPathExists(
         $chatDom,
-        '//form[@method="post" and @action="/chat/send"]//button[contains(normalize-space(.), "Reply A")]',
+        '//div[contains(concat(" ", normalize-space(@class), " "), " chat-compose ")]//div[contains(concat(" ", normalize-space(@class), " "), " chat-input-tools ")]//form[@method="post" and @action="/chat/send"]//button[contains(normalize-space(.), "Reply A")]',
         'DOM: reply keyboard button должен отправлять форму /chat/send',
     );
     assertDomXPathExists(
         $chatDom,
-        '//select[contains(concat(" ", normalize-space(@class), " "), " bot-command-select ") and @name="text"]',
-        'DOM: команды бота должны быть select[name=text]',
+        '//details[contains(concat(" ", normalize-space(@class), " "), " bot-command-picker ")]//select[contains(concat(" ", normalize-space(@class), " "), " bot-command-select ") and @name="text"]',
+        'DOM: команды бота должны быть select[name=text] внутри details',
     );
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([

@@ -169,70 +169,71 @@
         <?php endif; ?>
     </div>
 
-    <?php if (is_array($replyKeyboard)): ?>
-        <div class="panel chat-input-tools" style="margin-bottom: 18px;">
-            <div style="display: grid; gap: 8px; max-width: 520px;">
-                <?php foreach ($replyKeyboard as $row): ?>
-                    <?php if (!is_array($row)) { continue; } ?>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        <?php foreach ($row as $button): ?>
-                            <?php
-                            $buttonText = is_array($button) ? (string) ($button['text'] ?? '') : (string) $button;
-                            if ($buttonText === '') {
-                                continue;
-                            }
-                            ?>
-                            <form method="post" action="/chat/send">
-                                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-                                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-                                <input type="hidden" name="text" value="<?= e($buttonText) ?>">
-                                <button type="submit" class="secondary"><?= e($buttonText) ?></button>
-                            </form>
+    <?php if (!$chatFragment): ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!$chatFragment): ?>
+        <div class="chat-compose<?= is_array($replyKeyboard) ? '' : ' chat-compose-single' ?>">
+            <?php if (is_array($replyKeyboard)): ?>
+                <div class="panel chat-input-tools">
+                    <div class="chat-reply-keyboard">
+                        <?php foreach ($replyKeyboard as $row): ?>
+                            <?php if (!is_array($row)) { continue; } ?>
+                            <div class="chat-reply-row">
+                                <?php foreach ($row as $button): ?>
+                                    <?php
+                                    $buttonText = is_array($button) ? (string) ($button['text'] ?? '') : (string) $button;
+                                    if ($buttonText === '') {
+                                        continue;
+                                    }
+                                    ?>
+                                    <form method="post" action="/chat/send">
+                                        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                                        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                                        <input type="hidden" name="text" value="<?= e($buttonText) ?>">
+                                        <button type="submit" class="secondary"><?= e($buttonText) ?></button>
+                                    </form>
+                                <?php endforeach; ?>
+                            </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Поле ввода -->
+            <form class="editor chat-message-form" method="post" action="/chat/send">
+                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                <label>
+                    Сообщение
+                    <textarea name="text" rows="3" required
+                        placeholder="Введите сообщение..."
+                    ></textarea>
+                </label>
+                <div class="actions">
+                    <button type="submit">Отправить</button>
+                </div>
+            </form>
         </div>
-    <?php endif; ?>
 
-    <?php if (!$chatFragment): ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if (!$chatFragment && ($botCommands ?? []) !== []): ?>
-        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <label style="margin-bottom: 0;">
-                <span class="muted" style="font-size: 13px;">Команды бота</span>
-                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
-                    <option value="" selected disabled>Выберите команду</option>
-                    <?php foreach ($botCommands as $command): ?>
-                        <option value="/<?= e($command['command']) ?>">
-                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-        </form>
-    <?php endif; ?>
-
-    <!-- Поле ввода -->
-    <?php if (!$chatFragment): ?>
-        <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <label>
-                Сообщение
-                <textarea name="text" rows="3" required
-                    placeholder="Введите сообщение (например, /start)..."
-                    style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
-                ></textarea>
-            </label>
-            <div class="actions">
-                <button type="submit">Отправить</button>
-            </div>
-        </form>
+        <?php if (($botCommands ?? []) !== []): ?>
+            <details class="panel bot-command-picker">
+                <summary>Команды бота</summary>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
+                        <option value="" selected disabled>Выберите команду</option>
+                        <?php foreach ($botCommands as $command): ?>
+                            <option value="/<?= e($command['command']) ?>">
+                                /<?= e($command['command']) ?> — <?= e($command['description']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </details>
+        <?php endif; ?>
     <?php endif; ?>
 
     <?php if (!$chatFragment && $latestUpdate !== null): ?>

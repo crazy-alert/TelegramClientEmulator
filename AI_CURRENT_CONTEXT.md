@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: сделана компактная нижняя зона `/chat` по просьбе пользователя для маленького экрана/телефона. Reply keyboard и textarea объединены в `chat-compose`: на широком экране reply-кнопки занимают левую узкую колонку меньше трети, поле ввода — правую широкую; на экранах до 720px блоки складываются вертикально. Если reply keyboard нет, textarea занимает всю ширину через `chat-compose-single`. Команды бота перенесены в раскрывающийся `details.bot-command-picker`, чтобы `/start` и другие команды не занимали место постоянно. Обновлены DOM-проверки в `tests/scenarios/http_scenarios.php`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l templates/chat/index.php && php -l templates/layout.php && php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+
 2026-06-04: исправлена компоновка и автообновление страницы `/chat` после ручной проверки пользователя. `/chat/fragment` теперь возвращает только историю сообщений и reply keyboard; `Последний Update (inspector)`, `Raw payload (JSON)`, `Webhook delivery`, resend-кнопка, select команд и textarea больше не попадают в polling-обновление. На полной странице порядок стал практичнее: информация о паре пользователь-бот, live-блок сообщений/reply-клавиатуры, выбор команд, поле ввода, затем нижний диагностический inspector. Для текста сообщений заменен `white-space: pre-wrap` на `pre-line`, чтобы сохранять переносы строк без раздувания блоков лишними пробелами. В `tests/scenarios/http_scenarios.php` добавлены regression checks на порядок блоков, узкий HTMX-фрагмент и отсутствие `pre-wrap`.
 
 Проверки:
