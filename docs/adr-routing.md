@@ -60,10 +60,11 @@
 
 На текущем этапе оставить custom router. Приоритетная модернизация:
 
-- выделить parser Bot API request parameters;
-- выделить handlers/services для Bot API methods;
+- выделить parser Bot API request parameters и handlers/services для Bot API methods в отдельный `BotApiController`;
 - вынести UI actions из `Application` в небольшие контроллеры или action-классы;
 - оставить HTTP smoke tests в Docker как защиту от regressions.
+
+Первый шаг выполнен: локальные маршруты `/bot<TOKEN>/<METHOD>` и handlers методов `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery` вынесены из `Application` в `src/BotApiController.php`. `Application` остается composition root и router, который делегирует Bot API requests без изменения HTTP-контрактов.
 
 Framework стоит пересмотреть, если одновременно выполняются несколько условий:
 

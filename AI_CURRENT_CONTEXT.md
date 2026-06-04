@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task21.1.md` — Bot API handlers вынесены из `Application` в `src/BotApiController.php`. Новый контроллер обрабатывает локальные маршруты `/bot<TOKEN>/<METHOD>` для `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`; `Application` остался composition root/router и делегирует Bot API requests. Удалены дублирующие Bot API helpers из `Application`, обновлены `public/index.php`, `AI_PROJECT_MAP.md`, `docs/adr-routing.md` и `docs/technical-spec.md`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: выполнена первая безопасная часть `.aitasks/task21.md` — webhook delivery вынесена из `Application` в `src/WebhookDeliveryService.php`. Сервис выполняет одну попытку POST-доставки update, сохраняет `delivery_attempts` и обновляет состояние update через `UpdateRepository`. `Application` остался router/composition root и делегирует доставку сервису с текущим timeout. Полная декомпозиция Bot API и Chat UI разбита на `.aitasks/task21.1.md` и `.aitasks/task21.2.md`, чтобы не делать рискованный большой refactor одним патчем. Обновлены `AI_PROJECT_MAP.md` и `docs/technical-spec.md`.
 
 Проверки:

@@ -1,5 +1,14 @@
 # Завершенные планы работы
 
+## Вынести Bot API handlers (2026-06-04)
+
+- [x] Проверить git status, активный план и текст задачи.
+- [x] Изучить границы Bot API методов и helper-функций в `Application`.
+- [x] Создать `BotApiController` с handlers и helpers.
+- [x] Подключить controller в `Application` и `public/index.php`.
+- [x] Обновить карту проекта/документацию.
+- [x] Прогнать Bot API тесты и PHP lint, обновить контекст, удалить задачу, сделать коммит и push.
+
 ## Декомпозиция Application: webhook delivery (2026-06-04)
 
 - [x] Проверить git status, активный план и текст задачи.
