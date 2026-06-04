@@ -1,129 +1,139 @@
 # Предложения по модернизации проекта
 
-Файл создан после прохода по очереди задач: активных `.aitasks` нет. Предложения ниже не являются обязательным планом работ; это список улучшений, которые стоит превращать в отдельные задачи по мере приоритета.
+Файл обновлен после выполнения очереди `.aitasks`: активных задач больше нет. Ниже только актуальные предложения; уже выполненные пункты вроде `BotApiController`, `ChatController`, `BotApiRequestParser`, `ReplyMarkup`, структурирования тестового runner и DOM-проверок сюда не повторяются как будущие задачи.
 
 ## Высокий приоритет
 
-### 1. Разделить `Application` на контроллеры и сервисы
+### 1. Дальше декомпозировать `Application`
 
-Сейчас `src/Application.php` одновременно отвечает за routing, parsing request body, Bot API, чат, webhook delivery, генерацию response payload и работу с несколькими репозиториями. Файл уже стал основным местом риска при каждом расширении Bot API.
+`src/Application.php` стал меньше, но все еще совмещает custom router, dashboard/settings, bots/profiles forms, updates/delivery attempts, request inspector, import/export и общие validation helpers.
 
-Предлагаемый шаг:
+Предлагаемый следующий срез:
 
-- вынести Bot API методы в `BotApiController`;
-- вынести UI chat handlers в `ChatController`;
-- вынести webhook-доставку в `WebhookDeliveryService`;
-- оставить `Application` как front router и composition root.
+- `BotAdminController` для `/bots`;
+- `ProfileAdminController` для `/profiles`;
+- `ImportExportController` для `/import-*` и `/export-*`;
+- `InspectorController` для `/updates`, `/delivery-attempts`, `/request-inspector`;
+- оставить `Application` как composition root, bootstrapping и route dispatcher.
 
-Ожидаемый эффект: проще добавлять `editMessageText`, media methods, retry webhook и групповые чаты без случайных регрессий в соседних маршрутах.
+Ожидаемый эффект: меньше риска при добавлении новых UI-экранов и проще поддерживать validation/import logic отдельно от маршрутизации.
 
-### 2. Ввести отдельный парсер Bot API request parameters
+### 2. Разделить `BotApiController` на методы и payload services
 
-Сейчас parsing JSON, form-urlencoded и multipart находится в `Application`, а нормализация параметров размазана по методам. Это уже привело к ошибке с `multipart/form-data`.
-
-Предлагаемый шаг:
-
-- создать `BotApiRequestParser`;
-- покрыть unit/integration тестами JSON, form-urlencoded, multipart text fields, пустое тело и malformed JSON;
-- явно документировать, что файловые multipart-части пока игнорируются.
-
-Ожидаемый эффект: меньше скрытых расхождений с bot frameworks, которые часто отправляют параметры разными content type.
-
-### 3. Добавить `editMessageText`
-
-`editMessageText` указан в roadmap и часто используется вместе с inline keyboard. После появления callback query это следующий естественный метод совместимости.
-
-Предлагаемый scope первой версии:
-
-- принимать `chat_id`, `message_id`, `text`, optional `reply_markup`;
-- менять сохраненное bot-сообщение в `messages`;
-- возвращать Telegram-like `Message`;
-- возвращать 400 при неизвестном сообщении или попытке редактировать пользовательское сообщение;
-- добавить тесты на JSON и form-urlencoded.
-
-### 4. Добавить отдельный экран updates/delivery attempts
-
-Сейчас чат показывает только последний update и последнюю delivery attempt. Для отладки webhook это быстро станет недостаточным.
+`src/BotApiController.php` уже содержит routing Bot API, validation параметров, Long Polling queue, message payload builders и media placeholder builders.
 
 Предлагаемый шаг:
 
-- `/updates?bot_id=...` со списком updates, фильтром по `queue_state`, ссылкой на raw payload;
-- `/delivery-attempts?bot_id=...` со статусом, URL, duration, error, request/response body;
-- кнопка ручного resend для failed webhook delivery.
+- вынести `getUpdates` в `LongPollingController` или `LongPollingService`;
+- вынести создание Telegram-like `Message`, `Chat`, `PhotoSize`, `Document` payload в `BotApiPayloadFactory`;
+- оставить `BotApiController` диспетчером методов и владельцем HTTP status/response.
 
-## Средний приоритет
+Ожидаемый эффект: проще добавлять новые Bot API methods без копирования validation и payload builders.
 
-### 5. Улучшить модель reply markup
+### 3. Реализовать следующий media method: `sendVideo`
 
-Сейчас `reply_markup` хранится в `messages.raw_payload`. Это работает для MVP, но усложнит редактирование сообщений, повторный render и будущие типы кнопок.
-
-Варианты:
-
-- оставить JSON в `raw_payload`, но добавить helper `MessagePayload` для чтения/записи;
-- или добавить отдельное поле `reply_markup` в `messages`.
-
-Первый вариант дешевле и достаточен до появления сложных media/caption flows.
-
-### 6. Сделать тестовый runner более структурным
-
-`tests/bot_api_test.php` уже полезен, но растет как один длинный сценарий.
-
-Предлагаемый шаг:
-
-- выделить `tests/TestHttpClient.php`, `tests/TestCase.php`, fixtures;
-- разделить сценарии: `bot_api_methods_test.php`, `updates_test.php`, `chat_ui_test.php`;
-- сохранить запуск без Composer, если не хочется добавлять зависимость PHPUnit.
-
-### 7. Актуализировать ROADMAP автоматически или чеклистом
-
-README уже отражает тесты и текущий Bot API лучше, чем ROADMAP. Чтобы roadmap не отставал, стоит после каждой задачи из `.aitasks` явно проверять разделы:
-
-- `Bot API surface`;
-- текущий статус этапов;
-- ограничения и следующие методы.
-
-### 8. Добавить проверку HTML UI на Playwright или минимальный DOM-parser
-
-Текущие UI-проверки ищут строки в HTML. Этого хватает для smoke tests, но плохо ловит структуру форм и вложенность.
-
-Варианты:
-
-- без новых зависимостей: PHP `DOMDocument` для проверки форм/кнопок;
-- полноценнее: Playwright через отдельный Node-based тестовый контейнер.
-
-## Низкий приоритет
-
-### 9. Поддержать импорт/экспорт ботов и пользователей
-
-Roadmap уже содержит import/export. Это удобно для повторяемых сценариев тестирования конкретного бота.
+Roadmap уже указывает `sendVideo` как следующий метод. После `sendPhoto` и `sendDocument` его можно добавить тем же ограниченным MVP-подходом.
 
 Минимальный scope:
 
-- JSON export всех bots/profiles без истории;
-- import с проверкой конфликтов token, user_id и chat_id;
-- тесты на round-trip.
+- `POST /bot<TOKEN>/sendVideo`;
+- параметры `chat_id`, `video`, optional `caption`, optional `reply_markup`;
+- строковое/URL значение `video`, без multipart file upload;
+- Telegram-like `Message.video` с `file_id`, `file_unique_id`, `width`, `height`, `duration`;
+- отображение video placeholder в чате;
+- тесты JSON/form-urlencoded и HTML render.
 
-### 10. Улучшить групповые чаты
+### 4. Улучшить webhook retry/backoff
 
-Сейчас групповой сценарий описан как будущий: несколько пользователей с одним `chat_id` без отдельной сущности группы. Для локального тестирования команд и callback в группах нужна явная модель.
+Сейчас webhook delivery делает одну попытку, а failed update можно переотправить вручную. Для локальной отладки ботов полезен управляемый retry без production-инфраструктуры.
+
+Предлагаемый MVP:
+
+- настройка количества retry и задержки в UI;
+- синхронные короткие retry в рамках текущего запроса или явный manual batch retry для failed updates;
+- отдельное логирование попыток без фонового worker на первом шаге;
+- ясное ограничение, что это development helper, а не production scheduler.
+
+## Средний приоритет
+
+### 5. Ввести отдельную модель group chat
+
+Текущая group/supergroup модель работает через несколько `profiles` с общим `chat_id`. Этого достаточно для первых тестов, но не покрывает title, membership, роли и service messages.
 
 Предлагаемый первый шаг:
 
-- добавить `chats` или `groups`;
-- разрешить нескольким profiles быть участниками одного chat;
-- в UI выбирать отправителя внутри group chat;
-- генерировать `message.chat.type=group|supergroup`.
+- добавить сущность `chats` или `groups` с `chat_id`, `type`, `title`;
+- связать profiles с group через membership table;
+- сохранить текущий быстрый сценарий выбора отправителя в `/chat`;
+- обновить import/export format v2 или добавить backward-compatible import.
 
-### 11. Добавить примеры интеграции bot frameworks
+### 6. Расширить import/export до fixtures
 
-README пока содержит общий Docker Compose пример. Для снижения трения стоит добавить короткие примеры:
+Текущий import/export сохраняет bots/profiles без истории. Для повторяемых тестовых сценариев полезны fixture packs.
 
-- PHP SDK;
-- python-telegram-bot или aiogram;
-- grammY или Telegraf.
+Предлагаемый scope:
 
-Важно: примеры должны использовать fake token и service DNS `http://telegram-emulator:8080`, без настоящего Telegram.
+- optional export/import `bot_commands`;
+- optional export/import `groups/chats`, если появится отдельная модель;
+- позже optional `messages`/`updates` без delivery attempts;
+- документировать versioning и конфликтные стратегии до реализации.
+
+### 7. Дробить HTTP scenarios дальше
+
+`tests/scenarios/http_scenarios.php` уже вынесен из entrypoint, но остается крупным файлом.
+
+Предлагаемый следующий срез:
+
+- `chat_ui_scenarios.php`;
+- `webhook_scenarios.php`;
+- `long_polling_scenarios.php`;
+- `import_export_scenarios.php`;
+- общий entrypoint `tests/bot_api_test.php` оставить прежним.
+
+Ожидаемый эффект: легче добавлять новые Bot API методы и быстрее находить failing scenario.
+
+### 8. Уточнить Long Polling timeout модель
+
+`getUpdates.timeout` ограничен 3 секундами из-за single-process PHP server. Это осознанное ограничение, но некоторым bot frameworks важно более похожее long polling поведение.
+
+Варианты:
+
+- оставить текущее ограничение и добавить больше документации для frameworks;
+- разрешить настройку верхней границы timeout в UI/env;
+- перейти на runtime/server mode, где блокирующее ожидание не мешает другим запросам.
+
+## Низкий приоритет
+
+### 9. Поддержать command scopes и language-specific commands
+
+Сейчас `setMyCommands` хранит default-команды без scope и language. Это нормально для MVP, но не покрывает ботов с разными командами для групп, private chats или языков.
+
+Минимальный следующий шаг: сохранить raw `scope` и `language_code`, но сначала решить, как UI будет выбирать набор команд для текущего chat/profile.
+
+### 10. Улучшить инспектор HTTP-логов
+
+Инспектор уже показывает Bot API logs и webhook attempts, но может стать удобнее для ежедневной отладки.
+
+Идеи:
+
+- фильтр по HTTP status и `ok=false`;
+- копирование curl-like request;
+- раскрытие JSON body в pretty tree;
+- связка request inspector с конкретным message/update.
+
+### 11. Добавить machine-readable описание локального Bot API surface
+
+Документация сейчас человекочитаемая. Для bot framework examples и будущих tests можно добавить простой JSON/YAML каталог поддерживаемых методов.
+
+Формат может содержать:
+
+- method name;
+- HTTP methods;
+- required/optional params;
+- supported content types;
+- known limitations;
+- тестовый статус.
 
 ## Ближайшая практичная задача
 
-Если выбирать одну следующую задачу, наиболее полезная: `editMessageText` с тестами. Она логически продолжает уже реализованные inline-кнопки и callback query, закрывает частый Telegram Bot API сценарий и хорошо проверит, насколько текущая модель сообщений готова к редактированию.
+Наиболее полезная следующая задача: базовый `sendVideo` по аналогии с `sendPhoto`/`sendDocument`. Она расширяет уже сложившуюся media-модель, проверит готовность `BotApiPayloadFactory` после возможной декомпозиции и даст понятный пользовательский результат без необходимости сразу поддерживать file upload.

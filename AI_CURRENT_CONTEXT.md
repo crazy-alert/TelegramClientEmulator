@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: после пустой очереди `.aitasks` обновлен `AI_PROPOSALS.md`. Старые уже выполненные предложения удалены из будущего плана; добавлены актуальные направления: дальнейшая декомпозиция `Application`, разбиение `BotApiController` на method/payload services, базовый `sendVideo`, webhook retry/backoff, отдельная модель group chat, fixture import/export, дальнейшее дробление HTTP scenarios, Long Polling timeout, command scopes/language-specific commands, улучшение inspector и machine-readable Bot API surface. Ближайшая практичная задача предложена как базовый `sendVideo`.
+
+Проверки:
+
+- `Select-String` по `AI_PROPOSALS.md` — актуальные разделы и ближайшая задача присутствуют.
+- `git diff --check` — whitespace-ошибок нет, только стандартные CRLF warnings Git на Windows.
+
 2026-06-04: выполнена `.aitasks/task26.md` — выбран подход PHP `DOMDocument`/`DOMXPath` для структурных UI-проверок без Playwright и browser dependencies. В `tests/support/test_helpers.php` добавлены DOM helpers, в `tests/scenarios/http_scenarios.php` добавлена структурная проверка формы `/chat/send`, inline callback формы `/chat/callback`, reply keyboard button и select команд бота. README и `docs/adr-testing.md` обновлены.
 
 Проверки:
