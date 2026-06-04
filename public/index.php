@@ -26,6 +26,7 @@ use App\Application;
 
 require dirname(__DIR__) . '/src/Application.php';
 require dirname(__DIR__) . '/src/BotApiController.php';
+require dirname(__DIR__) . '/src/BotApiParams.php';
 require dirname(__DIR__) . '/src/BotApiRequestParser.php';
 require dirname(__DIR__) . '/src/BotCommandRepository.php';
 require dirname(__DIR__) . '/src/BotRepository.php';

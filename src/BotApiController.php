@@ -164,7 +164,7 @@ final readonly class BotApiController {
      * @return array<string, mixed>
      */
     private function botApiParams(): array {
-        return array_replace($_GET, $_POST);
+        return BotApiParams::all($_GET, $_POST);
     }
 
     private function getMe(string $token): void {
@@ -253,7 +253,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -293,8 +293,8 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
-        $messageId = $this->intParam($params['message_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
+        $messageId = BotApiParams::int($params['message_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -350,7 +350,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -383,14 +383,14 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
         }
 
         $question = trim((string) $params['question']);
-        $options = $this->pollOptionsParam($params['options']);
+        $options = BotApiParams::pollOptions($params['options']);
         if ($options === null || $question === '' || mb_strlen($question) > 300) {
             $this->badRequest('Bad Request: invalid poll parameters');
             return;
@@ -407,14 +407,14 @@ final readonly class BotApiController {
             'question' => $question,
             'options' => $options,
             'total_voter_count' => 0,
-            'is_closed' => $this->isTruthyBotApiParam($params['is_closed'] ?? false),
-            'is_anonymous' => !array_key_exists('is_anonymous', $params) || $this->isTruthyBotApiParam($params['is_anonymous']),
+            'is_closed' => BotApiParams::truthy($params['is_closed'] ?? false),
+            'is_anonymous' => !array_key_exists('is_anonymous', $params) || BotApiParams::truthy($params['is_anonymous']),
             'type' => $pollType,
-            'allows_multiple_answers' => $this->isTruthyBotApiParam($params['allows_multiple_answers'] ?? false),
+            'allows_multiple_answers' => BotApiParams::truthy($params['allows_multiple_answers'] ?? false),
         ];
 
         if ($pollType === 'quiz' && isset($params['correct_option_id']) && trim((string) $params['correct_option_id']) !== '') {
-            $correctOptionId = $this->intParam($params['correct_option_id'], -1);
+            $correctOptionId = BotApiParams::int($params['correct_option_id'], -1);
             if ($correctOptionId < 0 || $correctOptionId >= count($options)) {
                 $this->badRequest('Bad Request: invalid correct_option_id');
                 return;
@@ -442,7 +442,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -475,7 +475,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -513,7 +513,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -545,7 +545,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -613,7 +613,7 @@ final readonly class BotApiController {
             return;
         }
 
-        $chatId = $this->intParam($params['chat_id'], 0);
+        $chatId = BotApiParams::int($params['chat_id'], 0);
         $profile = $this->profileByChatId($chatId);
         if ($profile === null) {
             return;
@@ -676,7 +676,7 @@ final readonly class BotApiController {
         }
 
         $params = $this->botApiParams();
-        $commands = $this->commandsParam($params['commands'] ?? null);
+        $commands = BotApiParams::commands($params['commands'] ?? null);
 
         if ($commands === null) {
             $this->badRequest('Bad Request: parameter "commands" is required');
@@ -758,10 +758,10 @@ final readonly class BotApiController {
         }
 
         $params = $this->botApiParams();
-        $offset = $this->intParam($params['offset'] ?? 0, 0);
-        $limit = max(1, min(100, $this->intParam($params['limit'] ?? 100, 100)));
-        $timeout = max(0, $this->intParam($params['timeout'] ?? 0, 0));
-        $allowedUpdates = $this->allowedUpdatesParam($params['allowed_updates'] ?? null);
+        $offset = BotApiParams::int($params['offset'] ?? 0, 0);
+        $limit = max(1, min(100, BotApiParams::int($params['limit'] ?? 100, 100)));
+        $timeout = max(0, BotApiParams::int($params['timeout'] ?? 0, 0));
+        $allowedUpdates = BotApiParams::allowedUpdates($params['allowed_updates'] ?? null);
         $botId = (int) $bot['id'];
         $waitUntil = microtime(true) + min($timeout, 3);
 
@@ -839,7 +839,7 @@ final readonly class BotApiController {
 
         $this->bots->setWebhook((int) $bot['id'], null, null);
 
-        if ($this->isTruthyBotApiParam($params['drop_pending_updates'] ?? false)) {
+        if (BotApiParams::truthy($params['drop_pending_updates'] ?? false)) {
             $this->updates->dropPendingByBot((int) $bot['id']);
         }
 
@@ -902,89 +902,6 @@ final readonly class BotApiController {
         $host = (string) ($parts['host'] ?? '');
 
         return $host !== '' && in_array($scheme, ['http', 'https'], true);
-    }
-
-    private function isTruthyBotApiParam(mixed $value): bool {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
-    }
-
-    private function intParam(mixed $value, int $default): int {
-        if (is_int($value)) {
-            return $value;
-        }
-
-        $value = trim((string) $value);
-        if (preg_match('/^-?\d+$/', $value) !== 1) {
-            return $default;
-        }
-
-        return (int) $value;
-    }
-
-    /**
-     * @return list<string>|null
-     */
-    private function allowedUpdatesParam(mixed $value): ?array {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-            $value = is_array($decoded) ? $decoded : [];
-        }
-
-        if (!is_array($value) || $value === []) {
-            return null;
-        }
-
-        $allowedUpdates = [];
-        foreach ($value as $item) {
-            if (is_string($item) && $item !== '') {
-                $allowedUpdates[] = $item;
-            }
-        }
-
-        return $allowedUpdates === [] ? null : $allowedUpdates;
-    }
-
-    /**
-     * @return list<array{command: string, description: string}>|null
-     */
-    private function commandsParam(mixed $value): ?array {
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-            $value = is_array($decoded) ? $decoded : null;
-        }
-
-        if (!is_array($value)) {
-            return null;
-        }
-
-        $commands = [];
-        foreach ($value as $item) {
-            if (!is_array($item)) {
-                return null;
-            }
-
-            $command = ltrim(trim((string) ($item['command'] ?? '')), '/');
-            $description = trim((string) ($item['description'] ?? ''));
-
-            if (preg_match('/^[a-z0-9_]{1,32}$/', $command) !== 1 || $description === '' || mb_strlen($description) > 256) {
-                return null;
-            }
-
-            $commands[] = [
-                'command' => $command,
-                'description' => $description,
-            ];
-        }
-
-        return count($commands) > 100 ? null : $commands;
     }
 
     /**
@@ -1217,7 +1134,7 @@ final readonly class BotApiController {
             }
 
             $payload[$field] = $type === 'int'
-                ? $this->intParam($params[$field], 0)
+                ? BotApiParams::int($params[$field], 0)
                 : trim((string) $params[$field]);
         }
 
@@ -1282,8 +1199,8 @@ final readonly class BotApiController {
      * @return array{latitude: float, longitude: float}|null
      */
     private function locationPayload(array $params): ?array {
-        $latitude = $this->floatParam($params['latitude']);
-        $longitude = $this->floatParam($params['longitude']);
+        $latitude = BotApiParams::float($params['latitude']);
+        $longitude = BotApiParams::float($params['longitude']);
         if ($latitude === null || $longitude === null || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
             $this->badRequest('Bad Request: invalid location coordinates');
             return null;
@@ -1293,19 +1210,6 @@ final readonly class BotApiController {
             'latitude' => $latitude,
             'longitude' => $longitude,
         ];
-    }
-
-    private function floatParam(mixed $value): ?float {
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-
-        $value = trim((string) $value);
-        if ($value === '' || !is_numeric($value)) {
-            return null;
-        }
-
-        return (float) $value;
     }
 
     private function isSupportedDiceEmoji(string $emoji): bool {
@@ -1319,33 +1223,4 @@ final readonly class BotApiController {
         ], true);
     }
 
-    /**
-     * @return list<array{text: string, voter_count: int}>|null
-     */
-    private function pollOptionsParam(mixed $value): ?array {
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-            $value = is_array($decoded) ? $decoded : null;
-        }
-
-        if (!is_array($value) || count($value) < 2 || count($value) > 10) {
-            return null;
-        }
-
-        $options = [];
-        foreach ($value as $item) {
-            $text = is_array($item)
-                ? trim((string) ($item['text'] ?? ''))
-                : trim((string) $item);
-            if ($text === '' || mb_strlen($text) > 100) {
-                return null;
-            }
-            $options[] = [
-                'text' => $text,
-                'voter_count' => 0,
-            ];
-        }
-
-        return $options;
-    }
 }

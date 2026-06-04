@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## BotApiParams helper (2026-06-05)
+
+- [x] Проверить текущие helpers `BotApiController` и места использования.
+- [x] Добавить `BotApiParams` для `all`, `int`, `float`, `truthy`, `allowed_updates`, `commands`, `poll options`.
+- [x] Подключить helper в `BotApiController`, оставив тексты HTTP errors прежними.
+- [x] Добавить focused tests для helper.
+- [x] Обновить `AI_PROJECT_MAP.md`.
+- [x] Запустить проверки, обновить контекст, перенести чеклист, удалить task01, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+
 ## Унификация renderer для типов сообщений (2026-06-05)
 
 - [x] Проверить текущую структуру rendering в шаблоне и существующие UI tests.

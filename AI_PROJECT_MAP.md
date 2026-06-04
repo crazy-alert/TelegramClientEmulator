@@ -17,6 +17,7 @@
 - `public/index.php` — front controller.
 - `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`.
 - `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, Telegram-like responses и handlers методов `getMe`, `getUpdates`, `getFile`, `sendMessage`, media/structured methods, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
+- `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
 - `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded`, multipart text fields и multipart file parts при отключенном `enable_post_data_reading`.
 - `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
 - `src/Database.php` — подключение SQLite.
@@ -62,6 +63,7 @@
 - `tests/support/test_helpers.php` — assertions, HTTP client helpers, form/multipart helpers и управление тестовыми runtime/server процессами.
 - `tests/scenarios/unit_scenarios.php` — базовые unit-проверки `UpdateGenerator`.
 - `tests/scenarios/http_scenarios.php` — HTTP-сценарии UI, Bot API, SQLite runtime, webhook delivery, Long Polling и import/export.
+- `tests/bot_api_params_test.php` — focused tests helper `BotApiParams`.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
 - `tests/reply_markup_test.php` — focused tests helper `ReplyMarkup` для inline keyboard, reply keyboard, чтения из `raw_payload` и `remove_keyboard`.
 - `tests/message_renderer_test.php` — focused tests helper `MessageRenderer` для media/update envelope и poll-блоков.
