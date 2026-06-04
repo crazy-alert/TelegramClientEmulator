@@ -1,5 +1,13 @@
 # Завершенные планы работы
 
+## Poll/quiz сообщения (2026-06-05)
+
+- [x] Добавить Bot API route `sendPoll`, parsing/validation `question` и `options`, Telegram-like `Message.poll`.
+- [x] Обновить renderer `/chat` для read-only poll блока.
+- [x] Добавить HTTP tests на success, invalid options, required params и UI rendering.
+- [x] Обновить README/spec/limitations/ROADMAP.
+- [x] Запустить проверки, обновить контекст, удалить task04, сделать коммит и push.
+
 ## Audio/video/voice/sticker Bot API методы (2026-06-05)
 
 - [x] Добавить Bot API routes и payload generation для `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`.

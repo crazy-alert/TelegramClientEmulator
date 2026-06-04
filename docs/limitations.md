@@ -17,6 +17,7 @@
 - `POST /bot<TOKEN>/sendVoice`
 - `POST /bot<TOKEN>/sendVideoNote`
 - `POST /bot<TOKEN>/sendSticker`
+- `POST /bot<TOKEN>/sendPoll`
 - `POST /bot<TOKEN>/sendLocation`
 - `POST /bot<TOKEN>/sendVenue`
 - `POST /bot<TOKEN>/sendContact`
@@ -39,7 +40,7 @@
 - полный Telegram Bot API;
 - подключение к настоящему Telegram;
 - файловые upload и download: multipart file parts, `getFile`, file URL и хранение бинарных файлов;
-- media-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
+- media/structured-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
 - payments, invoices, shipping/pre-checkout queries;
 - Telegram Passport;
 - games;
@@ -60,12 +61,14 @@
 
 `sendLocation`, `sendVenue`, `sendContact` и `sendDice` принимают обязательные параметры Telegram Bot API, сохраняют structured payload в истории чата и возвращают Telegram-like `Message.location`, `Message.venue`, `Message.contact` или `Message.dice`.
 
+`sendPoll` принимает `question`, `options` и базовые optional параметры regular/quiz poll. Эмулятор сохраняет poll как read-only сообщение и возвращает Telegram-like `Message.poll`.
+
 UI чата может отправлять от пользователя photo/document по URL или file_id, location и contact. Эти сообщения создают обычный `message` update для webhook и Long Polling.
 
 Ограничения:
 
 - `sendDice` возвращает детерминированное значение: `4` для обычных dice emoji и `32` для slot machine, чтобы локальные тесты были стабильными;
-- интерактивное голосование, карты и внешние previews пока не моделируются;
+- интерактивное голосование в poll, карты и внешние previews пока не моделируются;
 - multipart upload и локальное media-хранилище выделены в отдельную будущую задачу.
 
 ## Команды бота

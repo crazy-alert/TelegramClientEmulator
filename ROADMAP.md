@@ -132,6 +132,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `POST /bot{token}/sendVoice`
 - `POST /bot{token}/sendVideoNote`
 - `POST /bot{token}/sendSticker`
+- `POST /bot{token}/sendPoll`
 - `POST /bot{token}/sendLocation`
 - `POST /bot{token}/sendVenue`
 - `POST /bot{token}/sendContact`
@@ -146,7 +147,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 ### Следующие методы
 
-- `POST /bot{token}/sendPoll`
+На ближайшие задачи вынесены multipart upload, `getFile`, локальная отдача media и refactor renderer.
 
 Неподдерживаемые методы должны возвращать Telegram-like ошибку:
 
@@ -321,6 +322,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, caption и optional `reply_markup`;
 - базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`;
 - базовые audio/video media методы — реализованы `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` для строкового/URL media без upload;
+- poll/quiz сообщения — реализован базовый `sendPoll` как read-only `Message.poll`;
 - structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
 - прием structured сообщений от пользователя через UI — реализован для photo/document по URL или file_id, location и contact.
 

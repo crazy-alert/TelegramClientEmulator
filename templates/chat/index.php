@@ -128,6 +128,9 @@
                 $dicePayload = is_array($messagePayload) && isset($messagePayload['dice']) && is_array($messagePayload['dice'])
                     ? $messagePayload['dice']
                     : null;
+                $pollPayload = is_array($messagePayload) && isset($messagePayload['poll']) && is_array($messagePayload['poll'])
+                    ? $messagePayload['poll']
+                    : null;
                 $typedMediaLabels = [
                     'video' => 'Video',
                     'animation' => 'Animation',
@@ -202,6 +205,24 @@
                                 <?= e((string) ($dicePayload['emoji'] ?? '')) ?>
                                 · value <?= e((string) ($dicePayload['value'] ?? '')) ?>
                             </div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($pollPayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Poll</strong>
+                            <div><?= e((string) ($pollPayload['question'] ?? '')) ?></div>
+                            <div class="muted"><?= e((string) ($pollPayload['type'] ?? 'regular')) ?></div>
+                            <?php if (isset($pollPayload['options']) && is_array($pollPayload['options'])): ?>
+                                <ol style="margin: 8px 0 0 18px; padding: 0;">
+                                    <?php foreach ($pollPayload['options'] as $option): ?>
+                                        <?php if (!is_array($option)) { continue; } ?>
+                                        <li>
+                                            <?= e((string) ($option['text'] ?? '')) ?>
+                                            <span class="muted">(<?= e((string) ($option['voter_count'] ?? 0)) ?>)</span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                     <?php foreach ($typedMediaLabels as $mediaField => $mediaLabel): ?>

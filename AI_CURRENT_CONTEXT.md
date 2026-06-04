@@ -2,6 +2,15 @@
 
 ## Последнее обновление
 
+2026-06-05: выполнена `.aitasks/task04-poll-and-quiz-messages.md` — добавлен базовый `sendPoll`. Метод принимает `chat_id`, `question`, `options` как JSON array строк или объектов с `text`, basic regular/quiz параметры (`type`, `allows_multiple_answers`, `is_closed`, `is_anonymous`, `correct_option_id`, `explanation`), сохраняет read-only `poll` payload и возвращает Telegram-like `Message.poll`. UI `/chat` отображает poll/quiz компактным read-only блоком с вопросом, типом и вариантами. Интерактивное голосование не реализовано. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP-сценарии.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l src/BotApiController.php && php -l templates/chat/index.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-05: выполнена `.aitasks/task03-audio-video-voice-sticker-bot-api.md` — добавлены placeholder Bot API методы без multipart upload: `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`. Методы принимают строковый URL/file_id параметр соответствующего media-поля, сохраняют media placeholder в `messages.raw_payload`, возвращают Telegram-like `Message.video`/`animation`/`audio`/`voice`/`video_note`/`sticker` и отображаются в `/chat`. Для caption поддержаны `sendVideo`, `sendAnimation`, `sendAudio`; optional metadata вроде `duration`, `width`, `height`, `performer`, `title`, `length`, `emoji` сохраняются в payload. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP-сценарии.
 
 Проверки:

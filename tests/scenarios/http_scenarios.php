@@ -588,6 +588,48 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue('sticker-file-id', $json['result']['sticker']['file_id'], 'sendSticker возвращает sticker.file_id');
     assertSameValue('🙂', $json['result']['sticker']['emoji'], 'sendSticker возвращает emoji');
 
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPoll', json_encode([
+        'chat_id' => 1001,
+        'question' => 'Choose one',
+        'options' => ['A', 'B'],
+        'allows_multiple_answers' => true,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(18, $json['result']['message_id'], 'sendPoll возвращает следующий message_id');
+    assertSameValue('Choose one', $json['result']['poll']['question'], 'sendPoll возвращает question');
+    assertSameValue('regular', $json['result']['poll']['type'], 'sendPoll по умолчанию возвращает regular poll');
+    assertSameValue(true, $json['result']['poll']['allows_multiple_answers'], 'sendPoll возвращает allows_multiple_answers');
+    assertSameValue('A', $json['result']['poll']['options'][0]['text'], 'sendPoll возвращает option text');
+    assertSameValue(0, $json['result']['poll']['options'][0]['voter_count'], 'sendPoll возвращает voter_count');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPoll', json_encode([
+        'chat_id' => 1001,
+        'question' => 'Quiz question',
+        'options' => [
+            ['text' => 'Wrong'],
+            ['text' => 'Right'],
+        ],
+        'type' => 'quiz',
+        'correct_option_id' => 1,
+        'explanation' => 'Because local test',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(19, $json['result']['message_id'], 'sendPoll quiz возвращает следующий message_id');
+    assertSameValue('quiz', $json['result']['poll']['type'], 'sendPoll возвращает quiz type');
+    assertSameValue(1, $json['result']['poll']['correct_option_id'], 'sendPoll возвращает correct_option_id');
+    assertSameValue('Because local test', $json['result']['poll']['explanation'], 'sendPoll возвращает explanation');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPoll', formBody([
+        'chat_id' => '1001',
+        'question' => 'Invalid options',
+        'options' => json_encode(['only one'], JSON_THROW_ON_ERROR),
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: invalid poll parameters', $json['description'], 'sendPoll отклоняет невалидные options');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendPoll', formBody([
+        'chat_id' => '1001',
+        'options' => json_encode(['A', 'B'], JSON_THROW_ON_ERROR),
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "question" is required', $json['description'], 'sendPoll требует question');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
@@ -619,6 +661,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'https://example.test/video-note.mp4'), 'Чат показывает video note placeholder');
     assertTrueValue(str_contains($chat['body'], 'Sticker'), 'Чат показывает sticker-сообщение');
     assertTrueValue(str_contains($chat['body'], 'sticker-file-id'), 'Чат показывает sticker placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Poll'), 'Чат показывает poll-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'Choose one'), 'Чат показывает poll question');
+    assertTrueValue(str_contains($chat['body'], 'Quiz question'), 'Чат показывает quiz question');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
     assertTrueValue(str_contains($chat['body'], 'class="chat-compose"'), 'Чат должен иметь компактную зону reply keyboard и ввода');
     assertTrueValue(str_contains($chat['body'], '@media (max-width: 560px)'), 'Compose-зона должна складываться вертикально только на смартфонах');

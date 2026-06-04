@@ -75,6 +75,11 @@ final readonly class BotApiController {
             return true;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendPoll$#i', $path, $matches) === 1) {
+            $this->sendPoll($matches[1]);
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendLocation$#i', $path, $matches) === 1) {
             $this->sendLocation($matches[1]);
             return true;
@@ -330,6 +335,65 @@ final readonly class BotApiController {
 
         $text = $caption !== '' ? $caption : '[' . $mediaField . ']';
         $this->sendStructuredMessage($bot, $profile, $chatId, $rawPayload, $text);
+    }
+
+    private function sendPoll(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, 'question') || !$this->requireParam($params, 'options')) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $question = trim((string) $params['question']);
+        $options = $this->pollOptionsParam($params['options']);
+        if ($options === null || $question === '' || mb_strlen($question) > 300) {
+            $this->badRequest('Bad Request: invalid poll parameters');
+            return;
+        }
+
+        $pollType = trim((string) ($params['type'] ?? 'regular'));
+        if (!in_array($pollType, ['regular', 'quiz'], true)) {
+            $this->badRequest('Bad Request: invalid poll type');
+            return;
+        }
+
+        $poll = [
+            'id' => substr(hash('sha256', $question . ':' . json_encode($options, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)), 0, 32),
+            'question' => $question,
+            'options' => $options,
+            'total_voter_count' => 0,
+            'is_closed' => $this->isTruthyBotApiParam($params['is_closed'] ?? false),
+            'is_anonymous' => !array_key_exists('is_anonymous', $params) || $this->isTruthyBotApiParam($params['is_anonymous']),
+            'type' => $pollType,
+            'allows_multiple_answers' => $this->isTruthyBotApiParam($params['allows_multiple_answers'] ?? false),
+        ];
+
+        if ($pollType === 'quiz' && isset($params['correct_option_id']) && trim((string) $params['correct_option_id']) !== '') {
+            $correctOptionId = $this->intParam($params['correct_option_id'], -1);
+            if ($correctOptionId < 0 || $correctOptionId >= count($options)) {
+                $this->badRequest('Bad Request: invalid correct_option_id');
+                return;
+            }
+            $poll['correct_option_id'] = $correctOptionId;
+        }
+
+        if (isset($params['explanation']) && trim((string) $params['explanation']) !== '') {
+            $poll['explanation'] = trim((string) $params['explanation']);
+        }
+
+        $this->sendStructuredMessage($bot, $profile, $chatId, ['poll' => $poll], '[poll] ' . $question);
     }
 
     private function sendLocation(string $token): void {
@@ -969,6 +1033,8 @@ final readonly class BotApiController {
             $payload['contact'] = $rawPayload['contact'];
         } elseif (is_array($rawPayload) && isset($rawPayload['dice']) && is_array($rawPayload['dice'])) {
             $payload['dice'] = $rawPayload['dice'];
+        } elseif (is_array($rawPayload) && isset($rawPayload['poll']) && is_array($rawPayload['poll'])) {
+            $payload['poll'] = $rawPayload['poll'];
         } elseif (is_array($rawPayload)) {
             foreach (['video', 'animation', 'audio', 'voice', 'video_note', 'sticker'] as $mediaField) {
                 if (isset($rawPayload[$mediaField]) && is_array($rawPayload[$mediaField])) {
@@ -1162,5 +1228,35 @@ final readonly class BotApiController {
             "\u{1F3B3}", // bowling
             "\u{1F3B0}", // slot machine
         ], true);
+    }
+
+    /**
+     * @return list<array{text: string, voter_count: int}>|null
+     */
+    private function pollOptionsParam(mixed $value): ?array {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : null;
+        }
+
+        if (!is_array($value) || count($value) < 2 || count($value) > 10) {
+            return null;
+        }
+
+        $options = [];
+        foreach ($value as $item) {
+            $text = is_array($item)
+                ? trim((string) ($item['text'] ?? ''))
+                : trim((string) $item);
+            if ($text === '' || mb_strlen($text) > 100) {
+                return null;
+            }
+            $options[] = [
+                'text' => $text,
+                'voter_count' => 0,
+            ];
+        }
+
+        return $options;
     }
 }
