@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task16.md` — принят и задокументирован формат import/export. В `docs/technical-spec.md` добавлен раздел `4.7 Import/export формат`: JSON envelope v1 с `version`, `exported_at`, массивами `bots`/`profiles`, предпочтительной envelope-формой импорта, допустимой bare array-формой, стратегией конфликтов HTTP 409 для `token`, `user_id`, `chat_id`, правилом validate-before-write и стратегией расширения будущими top-level массивами. `ROADMAP.md` обновлен: вопрос формата import/export больше не открыт. В `README.md` добавлена ссылка на описание формата в technical spec.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по `docs/technical-spec.md`, `README.md`, `ROADMAP.md` — endpoints, `version`, `exported_at`, HTTP 409 и принятое решение отражены.
+
 2026-06-04: выполнена `.aitasks/task15.md` — добавлено явное описание ограничений эмулятора. Создан `docs/limitations.md` со списком поддерживаемых Bot API endpoints, правилом HTTP 501 для неподдерживаемых методов, ограничениями media upload/download, command scopes, language-specific commands, webhook retries/timeout, Long Polling timeout и напоминанием, что эмулятор не подключается к настоящему Telegram. В `README.md`, `docs/technical-spec.md`, `ROADMAP.md` и `AI_PROJECT_MAP.md` добавлены ссылки и синхронизированы краткие формулировки.
 
 Проверки:

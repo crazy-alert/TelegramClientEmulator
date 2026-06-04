@@ -243,7 +243,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Экран `/updates` показывает список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
 - Экран `/updates` позволяет очистить pending/confirmed updates выбранного бота после явного подтверждения.
 - Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; bot token и secret token маскируются в HTML-выводе.
-- Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; импорт отклоняет конфликты `token`, `user_id` и `chat_id`.
+- Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; импорт отклоняет конфликты `token`, `user_id` и `chat_id`. Формат описан в `docs/technical-spec.md`.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
 - Failed webhook delivery можно повторить вручную из inspector последнего update.

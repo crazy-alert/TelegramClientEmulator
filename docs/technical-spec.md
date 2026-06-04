@@ -258,7 +258,83 @@ MVP может использовать локальную file-backed database.
 - long polling update queue;
 - emulator settings.
 
-### 4.7 Конфигурация
+### 4.7 Import/export формат
+
+Принятое решение: import/export использует JSON envelope с числовой `version`, временем экспорта `exported_at` и независимыми массивами сущностей. Архивный формат не нужен для текущего scope, потому что бинарные файлы и history export пока не поддерживаются.
+
+Текущие endpoints:
+
+```text
+GET  /export/bots
+GET  /export/profiles
+POST /import/bots
+POST /import/profiles
+```
+
+`GET /export/bots` возвращает:
+
+```json
+{
+  "ok": true,
+  "version": 1,
+  "exported_at": "2026-06-04T12:00:00+10:00",
+  "bots": [
+    {
+      "token": "123456:local-dev-token",
+      "bot_id": 123456,
+      "username": "local_bot",
+      "display_name": "Local Bot",
+      "delivery_mode": "long_polling",
+      "webhook_url": null,
+      "webhook_secret_token": null,
+      "enabled": true
+    }
+  ]
+}
+```
+
+`GET /export/profiles` возвращает:
+
+```json
+{
+  "ok": true,
+  "version": 1,
+  "exported_at": "2026-06-04T12:00:00+10:00",
+  "profiles": [
+    {
+      "user_id": 1001,
+      "username": "dev_user",
+      "first_name": "Dev",
+      "last_name": "User",
+      "chat_id": 1001,
+      "chat_type": "private",
+      "language_code": "ru",
+      "enabled": true
+    }
+  ]
+}
+```
+
+Import принимает как envelope с ключом `bots`/`profiles`, так и bare array соответствующих объектов. Envelope-форма считается предпочтительной для документации и будущей совместимости.
+
+Стратегия конфликтов:
+
+- импорт сначала валидирует весь payload и только потом создает записи;
+- конфликт `token` у ботов возвращает HTTP 409;
+- конфликт `user_id` или `chat_id` у пользователей возвращает HTTP 409;
+- дубликаты внутри одного import payload считаются конфликтом;
+- некорректная структура JSON или невалидные поля возвращают HTTP 400;
+- import не делает merge/update существующих записей, только создает новые;
+- history, messages, updates, delivery attempts и logs не входят в текущий export/import.
+
+Стратегия расширения:
+
+- новые сущности добавляются отдельными top-level массивами, например `groups`, `bot_commands`, `messages`;
+- связи между сущностями должны использовать стабильные доменные ключи (`token`, `user_id`, `chat_id`) или явно документированные external ids, а не внутренние SQLite `id`;
+- при изменении несовместимого формата нужно увеличить `version`;
+- бинарные файлы не добавляются в JSON напрямую; если появится media export, для него нужно отдельное решение по архиву и manifest.
+
+### 4.8 Конфигурация
 
 Переменные окружения:
 
@@ -268,7 +344,7 @@ MVP может использовать локальную file-backed database.
 - `LOG_LEVEL`: по умолчанию `info`.
 - `WEBHOOK_TIMEOUT_MS`: по умолчанию `10000`.
 
-### 4.8 Docker
+### 4.9 Docker
 
 Обязательные deliverables:
 
