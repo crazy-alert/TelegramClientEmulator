@@ -39,6 +39,7 @@ require dirname(__DIR__) . '/src/SettingsRepository.php';
 require dirname(__DIR__) . '/src/UpdateGenerator.php';
 require dirname(__DIR__) . '/src/UpdateRepository.php';
 require dirname(__DIR__) . '/src/View.php';
+require dirname(__DIR__) . '/src/WebhookDeliveryService.php';
 
 if (!function_exists('e')) {
     /**

@@ -22,6 +22,7 @@ final class Application {
     private DeliveryAttemptRepository $deliveryAttempts;
     private SettingsRepository $settings;
     private UpdateGenerator $updateGenerator;
+    private WebhookDeliveryService $webhookDelivery;
     private HttpLogRepository $httpLogs;
     private HttpLogger $httpLogger;
     private View $view;
@@ -41,6 +42,7 @@ final class Application {
         $this->deliveryAttempts = new DeliveryAttemptRepository($this->database->pdo());
         $this->settings = new SettingsRepository($this->database->pdo());
         $this->updateGenerator = new UpdateGenerator();
+        $this->webhookDelivery = new WebhookDeliveryService($this->deliveryAttempts, $this->updates);
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);
         $this->view = new View($this->rootPath . '/templates');
@@ -535,7 +537,7 @@ final class Application {
             ]);
 
             if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
-                $this->deliverWebhookUpdate($createdUpdate, $bot);
+                $this->webhookDelivery->deliver($createdUpdate, $bot, $this->webhookTimeoutSeconds());
             }
         }
 
@@ -576,7 +578,7 @@ final class Application {
         ]);
 
         if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
-            $this->deliverWebhookUpdate($createdUpdate, $bot);
+            $this->webhookDelivery->deliver($createdUpdate, $bot, $this->webhookTimeoutSeconds());
         }
 
         Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
@@ -630,11 +632,11 @@ final class Application {
             return;
         }
 
-        $this->deliverWebhookUpdate([
+        $this->webhookDelivery->deliver([
             'id' => (int) $update['id'],
             'update_id' => (int) $update['update_id'],
             'payload' => (string) $update['payload'],
-        ], $bot);
+        ], $bot, $this->webhookTimeoutSeconds());
 
         Response::redirect('/chat?profile_id=' . (int) $update['profile_id'] . '&bot_id=' . (int) $bot['id']);
     }
@@ -2135,84 +2137,6 @@ final class Application {
         }
 
         return false;
-    }
-
-    /**
-     * Отправляет update на webhook URL и сохраняет результат доставки.
-     *
-     * @param array{id: int, update_id: int, payload: string} $update
-     * @param array<string, mixed> $bot
-     */
-    private function deliverWebhookUpdate(array $update, array $bot): void {
-        $url = (string) $bot['webhook_url'];
-        $headers = [
-            'Content-Type: application/json',
-        ];
-        $secretToken = trim((string) ($bot['webhook_secret_token'] ?? ''));
-        if ($secretToken !== '') {
-            $headers[] = 'X-Telegram-Bot-Api-Secret-Token: ' . $secretToken;
-        }
-
-        $startedAt = microtime(true);
-        $responseBody = null;
-        $responseHeaders = [];
-        $responseStatus = null;
-        $error = null;
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => implode("\r\n", $headers) . "\r\n",
-                'content' => $update['payload'],
-                'ignore_errors' => true,
-                'timeout' => $this->webhookTimeoutSeconds(),
-            ],
-        ]);
-
-        try {
-            $response = file_get_contents($url, false, $context);
-            $responseHeaders = $http_response_header ?? [];
-            $responseStatus = $this->httpStatusFromHeaders($responseHeaders);
-            $responseBody = $response === false ? null : $response;
-
-            if ($response === false) {
-                $error = 'Webhook request failed';
-            } elseif ($responseStatus === null || $responseStatus < 200 || $responseStatus >= 300) {
-                $error = 'Webhook returned HTTP ' . ($responseStatus ?? 'unknown');
-            }
-        } catch (Throwable $exception) {
-            $error = $exception->getMessage();
-        }
-
-        $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
-        $delivered = $error === null;
-
-        $this->deliveryAttempts->create([
-            'update_row_id' => $update['id'],
-            'bot_id' => (int) $bot['id'],
-            'webhook_url' => $url,
-            'request_headers' => json_encode($headers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'request_body' => $update['payload'],
-            'response_status' => $responseStatus,
-            'response_headers' => json_encode($responseHeaders, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'response_body' => $responseBody,
-            'duration_ms' => $durationMs,
-            'error' => $error,
-        ]);
-        $this->updates->markWebhookDelivery((int) $update['id'], $delivered);
-    }
-
-    /**
-     * @param list<string> $headers
-     */
-    private function httpStatusFromHeaders(array $headers): ?int {
-        foreach ($headers as $header) {
-            if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $matches) === 1) {
-                return (int) $matches[1];
-            }
-        }
-
-        return null;
     }
 
     private function webhookTimeoutSeconds(): int {

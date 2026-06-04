@@ -28,6 +28,7 @@
 - `src/HttpLogRepository.php` — read-only выборка Bot API request/response из HTTP JSONL-логов для inspector.
 - `src/Response.php` — HTTP response helpers.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
+- `src/WebhookDeliveryService.php` — одна попытка webhook-доставки update, сохранение delivery attempt и обновление состояния очереди.
 - `src/View.php` — рендеринг полных шаблонов и partial-шаблонов без layout для HTMX.
 
 ## Шаблоны
