@@ -271,7 +271,7 @@
             margin-top: 10px;
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 560px) {
             .chat-compose {
                 grid-template-columns: 1fr;
             }

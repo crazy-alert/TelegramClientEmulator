@@ -2,7 +2,14 @@
 
 ## Последнее обновление
 
-2026-06-04: сделана компактная нижняя зона `/chat` по просьбе пользователя для маленького экрана/телефона. Reply keyboard и textarea объединены в `chat-compose`: на широком экране reply-кнопки занимают левую узкую колонку меньше трети, поле ввода — правую широкую; на экранах до 720px блоки складываются вертикально. Если reply keyboard нет, textarea занимает всю ширину через `chat-compose-single`. Команды бота перенесены в раскрывающийся `details.bot-command-picker`, чтобы `/start` и другие команды не занимали место постоянно. Обновлены DOM-проверки в `tests/scenarios/http_scenarios.php`.
+2026-06-04: уточнен breakpoint компактной compose-зоны `/chat`. Вертикальная раскладка reply keyboard + textarea теперь включается только при `max-width: 560px`, чтобы на небольшом экране ноутбука блоки оставались в одну строку. В `tests/scenarios/http_scenarios.php` добавлена проверка, что `720px` не используется для этой зоны.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l templates/layout.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+
+2026-06-04: сделана компактная нижняя зона `/chat` по просьбе пользователя для маленького экрана/телефона. Reply keyboard и textarea объединены в `chat-compose`: на широком экране reply-кнопки занимают левую узкую колонку меньше трети, поле ввода — правую широкую; на экранах до 560px блоки складываются вертикально. Если reply keyboard нет, textarea занимает всю ширину через `chat-compose-single`. Команды бота перенесены в раскрывающийся `details.bot-command-picker`, чтобы `/start` и другие команды не занимали место постоянно. Обновлены DOM-проверки в `tests/scenarios/http_scenarios.php`.
 
 Проверки:
 
