@@ -359,5 +359,5 @@ Long Polling был реализован до webhook-доставки, пото
 - Формат import/export принят: JSON envelope v1 для bots/profiles без истории; будущие сущности добавляются top-level массивами, архив нужен только при появлении бинарных media.
 - Групповые чаты начаты: несколько сохраненных пользователей могут иметь один group/supergroup `chat_id`, `/chat` выбирает отправителя, update содержит `message.chat.type=group`, история группы читается по `bot_id + chat_id`. Отдельная таблица groups отложена до сценариев membership/title/roles.
 - Режим "один пользователь общается с несколькими ботами в одном экране" не входит в текущий scope; альтернатива — открыть одну пару `profile_id`/`bot_id` на вкладку.
-- Решить, нужен ли micro-framework после роста Bot API surface, или текущий custom router остается достаточным.
+- Micro-framework не внедряется сейчас: решение зафиксировано в `docs/adr-routing.md`, текущий custom router остается до явной необходимости.
 - Определить стратегию тестов: оставить HTTP-проверки в Docker как smoke tests или добавить полноценный test runner.

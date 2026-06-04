@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task19.md` — принято решение по micro-framework. Создан `docs/adr-routing.md`: текущий custom router в `src/Application.php` остается, Slim/Symfony components не внедряются без явной необходимости, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services. В README, technical spec, ROADMAP и project map добавлены ссылки/резюме.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по документации — custom router, Slim, Symfony components, Docker-first и критерии пересмотра отражены.
+
 2026-06-04: выполнена `.aitasks/task18.md` — принято решение по режиму нескольких ботов в одном экране. Multi-bot экран не входит в текущий scope: основной сценарий остается парой `profile_id`/`bot_id`, а текущая альтернатива — открывать одного пользователя с разными ботами в разных вкладках. Решение и причины задокументированы в `docs/technical-spec.md`, `README.md`, `docs/limitations.md` и `ROADMAP.md`.
 
 Проверки:

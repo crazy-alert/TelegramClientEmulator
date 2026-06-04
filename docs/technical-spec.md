@@ -435,6 +435,7 @@ Runtime stack проекта:
 - Некоторые боты зависят от API methods кроме `sendMessage`; неподдерживаемые методы должны возвращать понятные Telegram-like errors и логироваться.
 - Webhook URL чувствителен к Docker network context. В Docker Compose URL обычно должен использовать service DNS, например `http://bot:3000/webhook`, а не `localhost`.
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
+- Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы
