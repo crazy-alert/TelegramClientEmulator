@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task18.md` — принято решение по режиму нескольких ботов в одном экране. Multi-bot экран не входит в текущий scope: основной сценарий остается парой `profile_id`/`bot_id`, а текущая альтернатива — открывать одного пользователя с разными ботами в разных вкладках. Решение и причины задокументированы в `docs/technical-spec.md`, `README.md`, `docs/limitations.md` и `ROADMAP.md`.
+
+Проверки:
+
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+- `Select-String` по документации — решение по multi-bot UI и альтернатива через вкладки отражены.
+
 2026-06-04: выполнена `.aitasks/task17.md` — спроектирована и начата реализация group chat модели. Принято решение не вводить отдельную таблицу `groups` на первом шаге: group/supergroup моделируются несколькими `profiles` с общим `chat_id`, а выбранный profile в `/chat` является отправителем. Для group/supergroup история читается по `bot_id + chat_id`; import разрешает общий `chat_id` только для group/supergroup profiles и сохраняет конфликт для private/channel. `UpdateGenerator` и Bot API ответы бота формируют group-like `Chat` с `type=group|supergroup` и `title`. UI выбора пользователя переименован в `Пользователь / отправитель` и показывает `chat_type`/`chat_id`. Обновлены README, technical spec, limitations, roadmap и project map.
 
 Проверки:
