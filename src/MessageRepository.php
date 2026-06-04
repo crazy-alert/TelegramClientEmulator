@@ -38,6 +38,25 @@ final readonly class MessageRepository {
     }
 
     /**
+     * Возвращает общую историю группового чата для выбранного бота.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findByChat(int $botId, int $chatId): array {
+        $statement = $this->pdo->prepare(
+            'SELECT * FROM messages
+            WHERE bot_id = :bot_id AND chat_id = :chat_id
+            ORDER BY created_at ASC, id ASC'
+        );
+        $statement->execute([
+            'bot_id' => $botId,
+            'chat_id' => $chatId,
+        ]);
+
+        return $statement->fetchAll();
+    }
+
+    /**
      * Создаёт новое сообщение с автоинкрементным telegram_message_id в пределах диалога.
      *
      * @param array<string, mixed> $data Поля: bot_id, profile_id, chat_id, direction, text, raw_payload (опционально).

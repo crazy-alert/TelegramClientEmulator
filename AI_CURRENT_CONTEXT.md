@@ -2,6 +2,14 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task17.md` — спроектирована и начата реализация group chat модели. Принято решение не вводить отдельную таблицу `groups` на первом шаге: group/supergroup моделируются несколькими `profiles` с общим `chat_id`, а выбранный profile в `/chat` является отправителем. Для group/supergroup история читается по `bot_id + chat_id`; import разрешает общий `chat_id` только для group/supergroup profiles и сохраняет конфликт для private/channel. `UpdateGenerator` и Bot API ответы бота формируют group-like `Chat` с `type=group|supergroup` и `title`. UI выбора пользователя переименован в `Пользователь / отправитель` и показывает `chat_type`/`chat_id`. Обновлены README, technical spec, limitations, roadmap и project map.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+- `git diff --check` — whitespace-ошибок нет, только стандартные предупреждения Git о CRLF на Windows.
+
 2026-06-04: выполнена `.aitasks/task16.md` — принят и задокументирован формат import/export. В `docs/technical-spec.md` добавлен раздел `4.7 Import/export формат`: JSON envelope v1 с `version`, `exported_at`, массивами `bots`/`profiles`, предпочтительной envelope-формой импорта, допустимой bare array-формой, стратегией конфликтов HTTP 409 для `token`, `user_id`, `chat_id`, правилом validate-before-write и стратегией расширения будущими top-level массивами. `ROADMAP.md` обновлен: вопрос формата import/export больше не открыт. В `README.md` добавлена ссылка на описание формата в technical spec.
 
 Проверки:

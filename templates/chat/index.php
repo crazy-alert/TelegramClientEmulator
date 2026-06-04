@@ -6,12 +6,13 @@
 <form class="editor" method="get" action="/chat" style="margin-bottom: 18px;">
     <div class="grid">
         <label>
-            Пользователь
+            Пользователь / отправитель
             <select name="profile_id" required>
-                <option value="">Выберите пользователя</option>
+                <option value="">Выберите отправителя</option>
                 <?php foreach ($allUsers as $user): ?>
                     <option value="<?= e($user['id']) ?>" <?= (int) ($selectedProfileId ?? 0) === (int) $user['id'] ? 'selected' : '' ?>>
                         @<?= e($user['username']) ?> · <?= e($user['first_name']) ?> <?= e($user['last_name'] ?? '') ?>
+                        · <?= e($user['chat_type']) ?> #<?= e($user['chat_id']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>

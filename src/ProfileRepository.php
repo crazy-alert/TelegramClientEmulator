@@ -76,6 +76,28 @@ final readonly class ProfileRepository {
         return $statement->fetchColumn() !== false;
     }
 
+    public function hasConflictingChatId(int $chatId, string $chatType): bool {
+        $statement = $this->pdo->prepare('SELECT chat_type FROM profiles WHERE chat_id = :chat_id');
+        $statement->execute(['chat_id' => $chatId]);
+        $existingTypes = $statement->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($existingTypes === []) {
+            return false;
+        }
+
+        if (!$this->isGroupChatType($chatType)) {
+            return true;
+        }
+
+        foreach ($existingTypes as $existingType) {
+            if (!$this->isGroupChatType((string) $existingType)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Создаёт нового пользователя.
      *
@@ -157,5 +179,9 @@ final readonly class ProfileRepository {
             'language_code' => trim((string) ($data['language_code'] ?? 'ru')) ?: 'ru',
             'enabled' => isset($data['enabled']) ? 1 : 0,
         ];
+    }
+
+    private function isGroupChatType(string $chatType): bool {
+        return in_array($chatType, ['group', 'supergroup'], true);
     }
 }

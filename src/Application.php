@@ -448,11 +448,13 @@ final class Application {
         $botCommands = [];
 
         if ($profile !== null && $bot !== null) {
-            $messages = $this->messages->findByDialog(
-                (int) $bot['id'],
-                (int) $profile['id'],
-                (int) $profile['chat_id'],
-            );
+            $messages = $this->isGroupChatType((string) ($profile['chat_type'] ?? 'private'))
+                ? $this->messages->findByChat((int) $bot['id'], (int) $profile['chat_id'])
+                : $this->messages->findByDialog(
+                    (int) $bot['id'],
+                    (int) $profile['id'],
+                    (int) $profile['chat_id'],
+                );
             $latestUpdate = $this->updates->findLatestByBot((int) $bot['id']);
             if ($latestUpdate !== null) {
                 $latestDeliveryAttempt = $this->deliveryAttempts->findLatestByUpdate((int) $latestUpdate['id']);
@@ -997,13 +999,17 @@ final class Application {
                 return;
             }
 
-            if (isset($seenChatIds[$chatId]) || $this->profiles->hasChatId($chatId)) {
+            $chatType = (string) ($profile['chat_type'] ?? 'private');
+            if (
+                $this->hasConflictingImportedChatId($seenChatIds, $chatId, $chatType)
+                || $this->profiles->hasConflictingChatId($chatId, $chatType)
+            ) {
                 Response::json(['ok' => false, 'error' => 'Конфликт chat_id при импорте пользователя'], 409);
                 return;
             }
 
             $seenUserIds[$userId] = true;
-            $seenChatIds[$chatId] = true;
+            $seenChatIds[$chatId][] = $chatType;
             $profilesToCreate[] = $profile;
         }
 
@@ -2230,6 +2236,55 @@ final class Application {
         return max(self::MIN_WEBHOOK_TIMEOUT_MS, min(self::MAX_WEBHOOK_TIMEOUT_MS, $timeoutMs));
     }
 
+    private function isGroupChatType(string $chatType): bool {
+        return in_array($chatType, ['group', 'supergroup'], true);
+    }
+
+    /**
+     * @param array<int, list<string>> $seenChatIds
+     */
+    private function hasConflictingImportedChatId(array $seenChatIds, int $chatId, string $chatType): bool {
+        if (!isset($seenChatIds[$chatId])) {
+            return false;
+        }
+
+        if (!$this->isGroupChatType($chatType)) {
+            return true;
+        }
+
+        foreach ($seenChatIds[$chatId] as $seenChatType) {
+            if (!$this->isGroupChatType($seenChatType)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>
+     */
+    private function chatPayload(array $profile): array {
+        $chatType = (string) ($profile['chat_type'] ?? 'private');
+        $payload = [
+            'id' => (int) ($profile['chat_id'] ?? 0),
+            'type' => $chatType,
+        ];
+
+        if (in_array($chatType, ['group', 'supergroup', 'channel'], true)) {
+            $payload['title'] = 'Chat ' . (string) ($profile['chat_id'] ?? '0');
+
+            return $payload;
+        }
+
+        $payload['username'] = $profile['username'] ?? '';
+        $payload['first_name'] = $profile['first_name'] ?? '';
+        $payload['last_name'] = $profile['last_name'] ?? '';
+
+        return $payload;
+    }
+
     /**
      * @param array<string, mixed> $message
      * @param array<string, mixed> $profile
@@ -2246,13 +2301,7 @@ final class Application {
                 'first_name' => $bot['display_name'],
                 'username' => $bot['username'],
             ],
-            'chat' => [
-                'id' => (int) $profile['chat_id'],
-                'type' => $profile['chat_type'] ?? 'private',
-                'username' => $profile['username'] ?? '',
-                'first_name' => $profile['first_name'] ?? '',
-                'last_name' => $profile['last_name'] ?? '',
-            ],
+            'chat' => $this->chatPayload($profile),
             'date' => strtotime((string) $message['created_at']) ?: time(),
         ];
 

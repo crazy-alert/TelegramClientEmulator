@@ -32,13 +32,7 @@ final readonly class UpdateGenerator {
         $messagePayload = [
             'message_id' => (int) ($message['telegram_message_id'] ?? 0),
             'date' => $timestamp,
-            'chat' => [
-                'id' => $chatId,
-                'type' => $profile['chat_type'] ?? 'private',
-                'username' => $profile['username'] ?? '',
-                'first_name' => $profile['first_name'] ?? '',
-                'last_name' => $profile['last_name'] ?? '',
-            ],
+            'chat' => $this->chatPayload($profile),
             'from' => [
                 'id' => $userId,
                 'is_bot' => false,
@@ -81,13 +75,7 @@ final readonly class UpdateGenerator {
         $messagePayload = [
             'message_id' => (int) ($message['telegram_message_id'] ?? 0),
             'date' => $timestamp,
-            'chat' => [
-                'id' => (int) ($profile['chat_id'] ?? 0),
-                'type' => $profile['chat_type'] ?? 'private',
-                'username' => $profile['username'] ?? '',
-                'first_name' => $profile['first_name'] ?? '',
-                'last_name' => $profile['last_name'] ?? '',
-            ],
+            'chat' => $this->chatPayload($profile),
             'from' => [
                 'id' => (int) ($bot['bot_id'] ?? 0),
                 'is_bot' => true,
@@ -146,5 +134,29 @@ final readonly class UpdateGenerator {
         }
 
         return $entities;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>
+     */
+    private function chatPayload(array $profile): array {
+        $chatType = (string) ($profile['chat_type'] ?? 'private');
+        $payload = [
+            'id' => (int) ($profile['chat_id'] ?? 0),
+            'type' => $chatType,
+        ];
+
+        if (in_array($chatType, ['group', 'supergroup', 'channel'], true)) {
+            $payload['title'] = 'Chat ' . (string) ($profile['chat_id'] ?? '0');
+
+            return $payload;
+        }
+
+        $payload['username'] = $profile['username'] ?? '';
+        $payload['first_name'] = $profile['first_name'] ?? '';
+        $payload['last_name'] = $profile['last_name'] ?? '';
+
+        return $payload;
     }
 }
