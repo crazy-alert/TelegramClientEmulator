@@ -244,6 +244,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'hx-trigger="every 3s"'), 'Чат должен периодически обновлять фрагмент');
     assertTrueValue(str_contains($chat['body'], 'id="chat-messages"'), 'История чата должна иметь контейнер для автопрокрутки');
     assertTrueValue(str_contains($chat['body'], 'data-chat-messages'), 'История чата должна помечаться для JS автопрокрутки');
+    assertTrueValue(str_contains($chat['body'], 'max-height: 750px'), 'История чата должна быть достаточно высокой для небольшого экрана');
     assertTrueValue(str_contains($chat['body'], 'htmx:afterSwap'), 'Layout должен прокручивать историю после HTMX-обновления');
     assertTrueValue(str_contains($chat['body'], 'queue_state</th>'), 'Inspector должен показывать update');
     assertTrueValue(str_contains($chat['body'], '>failed<'), 'Failed webhook должен оставить update в состоянии failed');

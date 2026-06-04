@@ -2,6 +2,13 @@
 
 ## Последнее обновление
 
+2026-06-05: увеличена видимая высота блока истории сообщений `/chat`: `#chat-messages` теперь имеет `max-height: 750px` вместо `500px`, чтобы на небольшом экране было видно больше переписки. В `tests/scenarios/http_scenarios.php` добавлена regression-проверка новой высоты.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l templates/chat/index.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+
 2026-06-04: уточнен breakpoint компактной compose-зоны `/chat`. Вертикальная раскладка reply keyboard + textarea теперь включается только при `max-width: 560px`, чтобы на небольшом экране ноутбука блоки оставались в одну строку. В `tests/scenarios/http_scenarios.php` добавлена проверка, что `720px` не используется для этой зоны.
 
 Проверки:

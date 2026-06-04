@@ -91,7 +91,7 @@
     <?php endif; ?>
 
     <!-- История сообщений -->
-    <div id="chat-messages" class="panel chat-messages" data-chat-messages style="margin-bottom: 18px; min-height: 200px; max-height: 500px; overflow-y: auto;">
+    <div id="chat-messages" class="panel chat-messages" data-chat-messages style="margin-bottom: 18px; min-height: 200px; max-height: 750px; overflow-y: auto;">
         <?php if ($messages === []): ?>
             <p class="muted">Диалог пуст. Отправьте первое сообщение.</p>
         <?php else: ?>
