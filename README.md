@@ -265,6 +265,10 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - `POST /bot<TOKEN>/sendMessage`;
 - `POST /bot<TOKEN>/sendPhoto`;
 - `POST /bot<TOKEN>/sendDocument`;
+- `POST /bot<TOKEN>/sendLocation`;
+- `POST /bot<TOKEN>/sendVenue`;
+- `POST /bot<TOKEN>/sendContact`;
+- `POST /bot<TOKEN>/sendDice`;
 - `POST /bot<TOKEN>/editMessageText`;
 - `GET|POST /bot<TOKEN>/getWebhookInfo`;
 - `POST /bot<TOKEN>/setWebhook`;
@@ -276,7 +280,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Файловые части multipart-запросов пока игнорируются, потому что методы загрузки файлов в эмуляторе не реализованы.
 
-`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `sendPhoto` и `sendDocument` принимают строковое/URL значение `photo`/`document`, optional `caption` и `reply_markup`, сохраняют media placeholder в чате и возвращают Telegram-like `Message.photo`/`Message.document`; файловые upload в multipart пока не поддерживаются. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
+`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `sendPhoto` и `sendDocument` принимают строковое/URL значение `photo`/`document`, optional `caption` и `reply_markup`, сохраняют media placeholder в чате и возвращают Telegram-like `Message.photo`/`Message.document`; файловые upload в multipart пока не поддерживаются. `sendLocation`, `sendVenue`, `sendContact` и `sendDice` сохраняют structured-сообщения бота в историю и возвращают Telegram-like `Message.location`/`Message.venue`/`Message.contact`/`Message.dice`; `sendDice` в эмуляторе возвращает детерминированное значение `4` для обычных dice emoji и `32` для slot machine, чтобы тесты были стабильными. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
 
 Подробный список ограничений, включая media upload, command scopes, language-specific commands, webhook retries и timeout, описан в [ограничениях эмулятора](docs/limitations.md).
 

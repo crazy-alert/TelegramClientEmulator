@@ -91,7 +91,7 @@
 
 Возможности следующих версий:
 
-- Mock attachments: photo, document, voice.
+- Mock attachments: photo, document, location, venue, contact, dice, voice.
 - Дальнейшее развитие group chat: отдельная сущность группы, title, membership, роли и service messages.
 
 Решение по multi-bot UI: отдельный экран, где один пользователь одновременно общается с несколькими ботами, в текущий scope не входит. Причины:
@@ -189,6 +189,10 @@ GET  /bot<TOKEN>/getMe
 POST /bot<TOKEN>/sendMessage
 POST /bot<TOKEN>/sendPhoto
 POST /bot<TOKEN>/sendDocument
+POST /bot<TOKEN>/sendLocation
+POST /bot<TOKEN>/sendVenue
+POST /bot<TOKEN>/sendContact
+POST /bot<TOKEN>/sendDice
 POST /bot<TOKEN>/editMessageText
 POST /bot<TOKEN>/answerCallbackQuery
 POST /bot<TOKEN>/setMyCommands
@@ -236,7 +240,7 @@ POST /bot<TOKEN>/getUpdates
 }
 ```
 
-Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
+Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `sendLocation`, `sendVenue`, `sendContact`, `sendDice`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. `sendPhoto`/`sendDocument` в первой версии принимают только строковое/URL значение `photo`/`document` без файловых upload. `sendLocation`/`sendVenue`/`sendContact`/`sendDice` сохраняют structured payload в истории и возвращают соответствующие Telegram-like поля `Message`; `sendDice` использует детерминированное значение для стабильных локальных тестов. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
 
 Поведение команд и кнопок:
 

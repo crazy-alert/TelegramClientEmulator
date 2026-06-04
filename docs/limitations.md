@@ -11,6 +11,10 @@
 - `POST /bot<TOKEN>/sendMessage`
 - `POST /bot<TOKEN>/sendPhoto`
 - `POST /bot<TOKEN>/sendDocument`
+- `POST /bot<TOKEN>/sendLocation`
+- `POST /bot<TOKEN>/sendVenue`
+- `POST /bot<TOKEN>/sendContact`
+- `POST /bot<TOKEN>/sendDice`
 - `POST /bot<TOKEN>/editMessageText`
 - `GET|POST /bot<TOKEN>/getWebhookInfo`
 - `POST /bot<TOKEN>/setWebhook`
@@ -29,7 +33,7 @@
 - полный Telegram Bot API;
 - подключение к настоящему Telegram;
 - файловые upload и download: multipart file parts, `getFile`, file URL и хранение бинарных файлов;
-- большинство media-методов за пределами базовых `sendPhoto` и `sendDocument`;
+- media-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
 - payments, invoices, shipping/pre-checkout queries;
 - Telegram Passport;
 - games;
@@ -45,6 +49,16 @@
 `sendPhoto` и `sendDocument` принимают строковое или URL значение `photo`/`document`, optional `caption` и optional `reply_markup`. Эмулятор сохраняет media placeholder в истории чата и возвращает Telegram-like `Message.photo` или `Message.document`.
 
 Файловая загрузка через multipart пока не реализована. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части не превращаются в Telegram file object.
+
+## Structured сообщения
+
+`sendLocation`, `sendVenue`, `sendContact` и `sendDice` принимают обязательные параметры Telegram Bot API, сохраняют structured payload в истории чата и возвращают Telegram-like `Message.location`, `Message.venue`, `Message.contact` или `Message.dice`.
+
+Ограничения:
+
+- `sendDice` возвращает детерминированное значение: `4` для обычных dice emoji и `32` для slot machine, чтобы локальные тесты были стабильными;
+- интерактивное голосование, карты и внешние previews пока не моделируются;
+- прием таких сообщений от пользователя через UI выделен в отдельную будущую задачу.
 
 ## Команды бота
 

@@ -124,6 +124,12 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `GET|POST /bot{token}/getMe`
 - `GET|POST /bot{token}/getUpdates`
 - `POST /bot{token}/sendMessage`
+- `POST /bot{token}/sendPhoto`
+- `POST /bot{token}/sendDocument`
+- `POST /bot{token}/sendLocation`
+- `POST /bot{token}/sendVenue`
+- `POST /bot{token}/sendContact`
+- `POST /bot{token}/sendDice`
 - `POST /bot{token}/setWebhook`
 - `POST /bot{token}/deleteWebhook`
 - `GET|POST /bot{token}/getWebhookInfo`
@@ -135,6 +141,12 @@ Update хранит Telegram-like событие, созданное эмуля�
 ### Следующие методы
 
 - `POST /bot{token}/sendVideo`
+- `POST /bot{token}/sendAnimation`
+- `POST /bot{token}/sendAudio`
+- `POST /bot{token}/sendVoice`
+- `POST /bot{token}/sendVideoNote`
+- `POST /bot{token}/sendSticker`
+- `POST /bot{token}/sendPoll`
 
 Неподдерживаемые методы должны возвращать Telegram-like ошибку:
 
@@ -307,7 +319,8 @@ Update хранит Telegram-like событие, созданное эмуля�
 - reply keyboard — реализовано для отправки текстовых кнопок;
 - `editMessageText` — реализовано для текстовых сообщений бота и optional `reply_markup`;
 - базовый `sendPhoto` — реализовано для строкового/URL `photo`, caption и optional `reply_markup`;
-- базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`.
+- базовый `sendDocument` — реализовано для строкового/URL `document`, caption и optional `reply_markup`;
+- structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
 
 Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.
 

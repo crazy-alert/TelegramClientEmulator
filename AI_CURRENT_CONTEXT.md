@@ -2,6 +2,15 @@
 
 ## Последнее обновление
 
+2026-06-05: по запросу пользователя про поддержку картинок, документов, гео и других типов сообщений создана очередь `.aitasks/task01`–`task07`. Выполнена первая задача: добавлены structured Bot API методы без файлового upload — `sendLocation`, `sendVenue`, `sendContact`, `sendDice`. Методы сохраняют structured payload в `messages.raw_payload`, возвращают Telegram-like `Message.location`/`Message.venue`/`Message.contact`/`Message.dice` и отображаются в `/chat` как компактные блоки. `sendDice` сделан детерминированным для стабильных тестов: `4` для обычных dice emoji, `32` для slot machine. Обновлены README, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и HTTP-сценарии.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php -l src/BotApiController.php && php -l templates/chat/index.php && php -l tests/scenarios/http_scenarios.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-05: исправлена автопрокрутка истории сообщений `/chat`. Layout теперь перед HTMX swap запоминает, был ли `#chat-messages` возле нижнего края, и текущий `scrollTop`. После swap история прокручивается вниз только если пользователь был внизу; если пользователь читал старые сообщения выше, прежняя позиция восстанавливается и polling не сбрасывает просмотр вниз. В `tests/scenarios/http_scenarios.php` добавлены проверки на `htmx:beforeSwap`, `isChatMessagesNearBottom`, `shouldStickChatMessagesToBottom` и сохранение `previousChatMessagesScrollTop`.
 
 Проверки:

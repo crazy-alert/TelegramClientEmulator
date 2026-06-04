@@ -107,6 +107,18 @@
                     ? $rawPayload['document']
                     : null;
                 $documentSource = is_array($rawPayload) ? (string) ($rawPayload['document_source'] ?? '') : '';
+                $locationPayload = is_array($rawPayload) && isset($rawPayload['location']) && is_array($rawPayload['location'])
+                    ? $rawPayload['location']
+                    : null;
+                $venuePayload = is_array($rawPayload) && isset($rawPayload['venue']) && is_array($rawPayload['venue'])
+                    ? $rawPayload['venue']
+                    : null;
+                $contactPayload = is_array($rawPayload) && isset($rawPayload['contact']) && is_array($rawPayload['contact'])
+                    ? $rawPayload['contact']
+                    : null;
+                $dicePayload = is_array($rawPayload) && isset($rawPayload['dice']) && is_array($rawPayload['dice'])
+                    ? $rawPayload['dice']
+                    : null;
                 ?>
                 <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
                     <div style="margin-bottom: 4px;">
@@ -132,6 +144,47 @@
                             <?php if ($documentSource !== ''): ?>
                                 <div class="muted" style="overflow-wrap: anywhere;"><code><?= e($documentSource) ?></code></div>
                             <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($locationPayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Location</strong>
+                            <div class="muted">
+                                <?= e((string) ($locationPayload['latitude'] ?? '')) ?>,
+                                <?= e((string) ($locationPayload['longitude'] ?? '')) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($venuePayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Venue</strong>
+                            <div><?= e((string) ($venuePayload['title'] ?? '')) ?></div>
+                            <div class="muted"><?= e((string) ($venuePayload['address'] ?? '')) ?></div>
+                            <?php if (isset($venuePayload['location']) && is_array($venuePayload['location'])): ?>
+                                <div class="muted">
+                                    <?= e((string) ($venuePayload['location']['latitude'] ?? '')) ?>,
+                                    <?= e((string) ($venuePayload['location']['longitude'] ?? '')) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($contactPayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Contact</strong>
+                            <div>
+                                <?= e((string) ($contactPayload['first_name'] ?? '')) ?>
+                                <?= e((string) ($contactPayload['last_name'] ?? '')) ?>
+                            </div>
+                            <div class="muted"><?= e((string) ($contactPayload['phone_number'] ?? '')) ?></div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($dicePayload !== null): ?>
+                        <div style="border: 1px solid #d8e1e8; background: #f4f7f9; border-radius: 8px; padding: 12px; max-width: 420px; margin-bottom: 8px;">
+                            <strong>Dice</strong>
+                            <div class="muted">
+                                <?= e((string) ($dicePayload['emoji'] ?? '')) ?>
+                                · value <?= e((string) ($dicePayload['value'] ?? '')) ?>
+                            </div>
                         </div>
                     <?php endif; ?>
                     <?php if ((string) $msg['text'] !== ''): ?>

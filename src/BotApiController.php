@@ -45,6 +45,26 @@ final readonly class BotApiController {
             return true;
         }
 
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendLocation$#i', $path, $matches) === 1) {
+            $this->sendLocation($matches[1]);
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVenue$#i', $path, $matches) === 1) {
+            $this->sendVenue($matches[1]);
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendContact$#i', $path, $matches) === 1) {
+            $this->sendContact($matches[1]);
+            return true;
+        }
+
+        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendDice$#i', $path, $matches) === 1) {
+            $this->sendDice($matches[1]);
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/editMessageText$#i', $path, $matches) === 1) {
             $this->editMessageText($matches[1]);
             return true;
@@ -247,6 +267,172 @@ final readonly class BotApiController {
 
     private function sendDocument(string $token): void {
         $this->sendMedia($token, 'document');
+    }
+
+    private function sendLocation(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, 'latitude') || !$this->requireParam($params, 'longitude')) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $location = $this->locationPayload($params);
+        if ($location === null) {
+            return;
+        }
+
+        $this->sendStructuredMessage($bot, $profile, $chatId, ['location' => $location], '[location]');
+    }
+
+    private function sendVenue(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (
+            !$this->requireParam($params, 'chat_id')
+            || !$this->requireParam($params, 'latitude')
+            || !$this->requireParam($params, 'longitude')
+            || !$this->requireParam($params, 'title')
+            || !$this->requireParam($params, 'address')
+        ) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $location = $this->locationPayload($params);
+        if ($location === null) {
+            return;
+        }
+
+        $venue = [
+            'location' => $location,
+            'title' => trim((string) $params['title']),
+            'address' => trim((string) $params['address']),
+        ];
+        foreach (['foursquare_id', 'foursquare_type', 'google_place_id', 'google_place_type'] as $optionalField) {
+            if (isset($params[$optionalField]) && trim((string) $params[$optionalField]) !== '') {
+                $venue[$optionalField] = trim((string) $params[$optionalField]);
+            }
+        }
+
+        $this->sendStructuredMessage($bot, $profile, $chatId, ['venue' => $venue], '[venue] ' . $venue['title']);
+    }
+
+    private function sendContact(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'chat_id') || !$this->requireParam($params, 'phone_number') || !$this->requireParam($params, 'first_name')) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $contact = [
+            'phone_number' => trim((string) $params['phone_number']),
+            'first_name' => trim((string) $params['first_name']),
+        ];
+        foreach (['last_name', 'vcard'] as $optionalField) {
+            if (isset($params[$optionalField]) && trim((string) $params[$optionalField]) !== '') {
+                $contact[$optionalField] = trim((string) $params[$optionalField]);
+            }
+        }
+
+        $this->sendStructuredMessage($bot, $profile, $chatId, ['contact' => $contact], '[contact] ' . $contact['first_name']);
+    }
+
+    private function sendDice(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'chat_id')) {
+            return;
+        }
+
+        $chatId = $this->intParam($params['chat_id'], 0);
+        $profile = $this->profileByChatId($chatId);
+        if ($profile === null) {
+            return;
+        }
+
+        $emoji = trim((string) ($params['emoji'] ?? "\u{1F3B2}"));
+        if (!$this->isSupportedDiceEmoji($emoji)) {
+            $this->badRequest('Bad Request: unsupported dice emoji');
+            return;
+        }
+
+        $dice = [
+            'emoji' => $emoji,
+            'value' => $emoji === "\u{1F3B0}" ? 32 : 4,
+        ];
+
+        $this->sendStructuredMessage($bot, $profile, $chatId, ['dice' => $dice], '[dice] ' . $emoji);
+    }
+
+    /**
+     * @param array<string, mixed> $bot
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $rawPayload
+     */
+    private function sendStructuredMessage(array $bot, array $profile, int $chatId, array $rawPayload, string $text): void {
+        $params = $this->botApiParams();
+        $replyMarkup = ReplyMarkup::fromBotApiParam($params['reply_markup'] ?? null);
+        if (array_key_exists('reply_markup', $params) && $replyMarkup === null) {
+            $this->badRequest('Bad Request: object expected as reply markup');
+            return;
+        }
+
+        $rawPayload = ReplyMarkup::withReplyMarkup($rawPayload, $replyMarkup);
+
+        $message = $this->messages->create([
+            'bot_id' => (int) $bot['id'],
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'direction' => 'bot',
+            'text' => $text,
+            'raw_payload' => ReplyMarkup::encodePayload($rawPayload),
+        ]);
+
+        Response::json([
+            'ok' => true,
+            'result' => $this->botMessagePayload($message, $profile, $bot),
+        ]);
     }
 
     private function sendMedia(string $token, string $mediaField): void {
@@ -712,6 +898,14 @@ final readonly class BotApiController {
             if (isset($rawPayload['caption']) && (string) $rawPayload['caption'] !== '') {
                 $payload['caption'] = (string) $rawPayload['caption'];
             }
+        } elseif (is_array($rawPayload) && isset($rawPayload['location']) && is_array($rawPayload['location'])) {
+            $payload['location'] = $rawPayload['location'];
+        } elseif (is_array($rawPayload) && isset($rawPayload['venue']) && is_array($rawPayload['venue'])) {
+            $payload['venue'] = $rawPayload['venue'];
+        } elseif (is_array($rawPayload) && isset($rawPayload['contact']) && is_array($rawPayload['contact'])) {
+            $payload['contact'] = $rawPayload['contact'];
+        } elseif (is_array($rawPayload) && isset($rawPayload['dice']) && is_array($rawPayload['dice'])) {
+            $payload['dice'] = $rawPayload['dice'];
         } else {
             $payload['text'] = $message['text'];
         }
@@ -774,5 +968,47 @@ final readonly class BotApiController {
             'file_unique_id' => substr(sha1($document), 0, 16),
             'file_name' => $fileName === '' ? null : $fileName,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array{latitude: float, longitude: float}|null
+     */
+    private function locationPayload(array $params): ?array {
+        $latitude = $this->floatParam($params['latitude']);
+        $longitude = $this->floatParam($params['longitude']);
+        if ($latitude === null || $longitude === null || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
+            $this->badRequest('Bad Request: invalid location coordinates');
+            return null;
+        }
+
+        return [
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+        ];
+    }
+
+    private function floatParam(mixed $value): ?float {
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !is_numeric($value)) {
+            return null;
+        }
+
+        return (float) $value;
+    }
+
+    private function isSupportedDiceEmoji(string $emoji): bool {
+        return in_array($emoji, [
+            "\u{1F3B2}", // dice
+            "\u{1F3AF}", // darts
+            "\u{1F3C0}", // basketball
+            "\u{26BD}", // football
+            "\u{1F3B3}", // bowling
+            "\u{1F3B0}", // slot machine
+        ], true);
     }
 }

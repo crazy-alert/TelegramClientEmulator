@@ -466,6 +466,51 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
     assertSameValue('Bad Request: chat not found', $json['description'], 'sendDocument проверяет существование чата');
 
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendLocation', json_encode([
+        'chat_id' => 1001,
+        'latitude' => 43.1155,
+        'longitude' => 131.8855,
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(8, $json['result']['message_id'], 'sendLocation возвращает следующий message_id');
+    assertSameValue(43.1155, $json['result']['location']['latitude'], 'sendLocation возвращает latitude');
+    assertSameValue(131.8855, $json['result']['location']['longitude'], 'sendLocation возвращает longitude');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendLocation', formBody([
+        'chat_id' => '1001',
+        'longitude' => '131.8855',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 400, false);
+    assertSameValue('Bad Request: parameter "latitude" is required', $json['description'], 'sendLocation требует latitude');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendVenue', json_encode([
+        'chat_id' => 1001,
+        'latitude' => 43.116,
+        'longitude' => 131.886,
+        'title' => 'Local venue',
+        'address' => 'Local address',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(9, $json['result']['message_id'], 'sendVenue возвращает следующий message_id');
+    assertSameValue('Local venue', $json['result']['venue']['title'], 'sendVenue возвращает title');
+    assertSameValue('Local address', $json['result']['venue']['address'], 'sendVenue возвращает address');
+    assertSameValue(43.116, $json['result']['venue']['location']['latitude'], 'sendVenue возвращает location.latitude');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendContact', json_encode([
+        'chat_id' => 1001,
+        'phone_number' => '+70000000000',
+        'first_name' => 'Contact',
+        'last_name' => 'User',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(10, $json['result']['message_id'], 'sendContact возвращает следующий message_id');
+    assertSameValue('+70000000000', $json['result']['contact']['phone_number'], 'sendContact возвращает phone_number');
+    assertSameValue('Contact', $json['result']['contact']['first_name'], 'sendContact возвращает first_name');
+    assertSameValue('User', $json['result']['contact']['last_name'], 'sendContact возвращает last_name');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/sendDice', formBody([
+        'chat_id' => '1001',
+    ]), ['Content-Type: application/x-www-form-urlencoded']), 200, true);
+    assertSameValue(11, $json['result']['message_id'], 'sendDice возвращает следующий message_id');
+    assertSameValue('🎲', $json['result']['dice']['emoji'], 'sendDice по умолчанию возвращает dice emoji');
+    assertSameValue(4, $json['result']['dice']['value'], 'sendDice возвращает детерминированное значение');
+
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
     assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
@@ -477,6 +522,14 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertTrueValue(str_contains($chat['body'], 'https://example.test/photo.jpg'), 'Чат показывает photo placeholder');
     assertTrueValue(str_contains($chat['body'], 'Document caption'), 'Чат показывает caption document-сообщения');
     assertTrueValue(str_contains($chat['body'], 'https://example.test/manual.pdf'), 'Чат показывает document placeholder');
+    assertTrueValue(str_contains($chat['body'], 'Location'), 'Чат показывает location-сообщение');
+    assertTrueValue(str_contains($chat['body'], '43.1155'), 'Чат показывает latitude location-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'Venue'), 'Чат показывает venue-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'Local venue'), 'Чат показывает title venue-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'Contact'), 'Чат показывает contact-сообщение');
+    assertTrueValue(str_contains($chat['body'], '+70000000000'), 'Чат показывает phone_number contact-сообщения');
+    assertTrueValue(str_contains($chat['body'], 'Dice'), 'Чат показывает dice-сообщение');
+    assertTrueValue(str_contains($chat['body'], 'value 4'), 'Чат показывает value dice-сообщения');
     assertTrueValue(str_contains($chat['body'], 'Reply A'), 'Чат показывает reply keyboard');
     assertTrueValue(str_contains($chat['body'], 'class="chat-compose"'), 'Чат должен иметь компактную зону reply keyboard и ввода');
     assertTrueValue(str_contains($chat['body'], '@media (max-width: 560px)'), 'Compose-зона должна складываться вертикально только на смартфонах');
