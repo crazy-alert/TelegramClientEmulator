@@ -43,7 +43,7 @@
 <?php else: ?>
     <?php if (!$chatFragment): ?>
         <div
-            id="chat-thread"
+            id="chat-live"
             hx-get="/chat/fragment?profile_id=<?= e($profile['id']) ?>&amp;bot_id=<?= e($bot['id']) ?>"
             hx-trigger="every 3s"
             hx-swap="innerHTML"
@@ -194,40 +194,6 @@
         </div>
     <?php endif; ?>
 
-    <?php if (($botCommands ?? []) !== []): ?>
-        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <label style="margin-bottom: 0;">
-                <span class="muted" style="font-size: 13px;">Команды бота</span>
-                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
-                    <option value="" selected disabled>Выберите команду</option>
-                    <?php foreach ($botCommands as $command): ?>
-                        <option value="/<?= e($command['command']) ?>">
-                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-        </form>
-    <?php endif; ?>
-
-    <!-- Поле ввода -->
-    <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
-        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-        <label>
-            Сообщение
-            <textarea name="text" rows="3" required
-                placeholder="Введите сообщение (например, /start)..."
-                style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
-            ></textarea>
-        </label>
-        <div class="actions">
-            <button type="submit">Отправить</button>
-        </div>
-    </form>
-
     <!-- Инспектор последнего Update -->
     <?php if ($latestUpdate !== null): ?>
         <section class="panel">
@@ -288,5 +254,41 @@
     <?php endif; ?>
     <?php if (!$chatFragment): ?>
         </div>
+    <?php endif; ?>
+
+    <?php if (!$chatFragment && ($botCommands ?? []) !== []): ?>
+        <form class="bot-command-picker" method="post" action="/chat/send" style="margin-bottom: 10px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <label style="margin-bottom: 0;">
+                <span class="muted" style="font-size: 13px;">Команды бота</span>
+                <select class="bot-command-select" name="text" required onchange="if (this.value !== '') { this.form.submit(); }">
+                    <option value="" selected disabled>Выберите команду</option>
+                    <?php foreach ($botCommands as $command): ?>
+                        <option value="/<?= e($command['command']) ?>">
+                            /<?= e($command['command']) ?> — <?= e($command['description']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </form>
+    <?php endif; ?>
+
+    <!-- Поле ввода -->
+    <?php if (!$chatFragment): ?>
+        <form class="editor" method="post" action="/chat/send" style="margin-bottom: 18px;">
+            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+            <label>
+                Сообщение
+                <textarea name="text" rows="3" required
+                    placeholder="Введите сообщение (например, /start)..."
+                    style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
+                ></textarea>
+            </label>
+            <div class="actions">
+                <button type="submit">Отправить</button>
+            </div>
+        </form>
     <?php endif; ?>
 <?php endif; ?>

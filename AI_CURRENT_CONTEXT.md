@@ -2,6 +2,14 @@
 
 ## Последнее обновление
 
+2026-06-04: выполнена `.aitasks/task01.md` — исправлен polling вкладки "Чат". Раньше HTMX обновлял контейнер, внутри которого были select команд и textarea, поэтому поле ввода стиралось каждые 3 секунды. В `templates/chat/index.php` polling перенесен на `#chat-live`: `/chat/fragment` теперь возвращает историю/статусы/inspector и reply keyboard, но не textarea и не select команд. В `tests/scenarios/http_scenarios.php` добавлены regression checks, что fragment не содержит `<textarea` и `bot-command-select`, но содержит `#chat-messages`.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
+
 2026-06-04: после пустой очереди `.aitasks` обновлен `AI_PROPOSALS.md`. Старые уже выполненные предложения удалены из будущего плана; добавлены актуальные направления: дальнейшая декомпозиция `Application`, разбиение `BotApiController` на method/payload services, базовый `sendVideo`, webhook retry/backoff, отдельная модель group chat, fixture import/export, дальнейшее дробление HTTP scenarios, Long Polling timeout, command scopes/language-specific commands, улучшение inspector и machine-readable Bot API surface. Ближайшая практичная задача предложена как базовый `sendVideo`.
 
 Проверки:

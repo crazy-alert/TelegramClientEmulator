@@ -239,6 +239,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Чат после failed webhook должен открываться');
     assertTrueValue(str_contains($chat['body'], 'htmx.org@1.9.12'), 'Layout должен подключать HTMX');
+    assertTrueValue(str_contains($chat['body'], 'id="chat-live"'), 'Чат должен иметь live-контейнер для polling-обновлений');
     assertTrueValue(str_contains($chat['body'], 'hx-get="/chat/fragment?profile_id=1&amp;bot_id=1"'), 'Чат должен polling-обновлять выбранную пару');
     assertTrueValue(str_contains($chat['body'], 'hx-trigger="every 3s"'), 'Чат должен периодически обновлять фрагмент');
     assertTrueValue(str_contains($chat['body'], 'id="chat-messages"'), 'История чата должна иметь контейнер для автопрокрутки');
@@ -251,6 +252,9 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     $fragment = httpRequest('GET', $baseUrl . '/chat/fragment?profile_id=1&bot_id=1');
     assertSameValue(200, $fragment['status'], 'HTMX-фрагмент чата должен открываться');
     assertTrueValue(!str_contains($fragment['body'], '<h1>Чат</h1>'), 'HTMX-фрагмент не должен возвращать полную страницу чата');
+    assertTrueValue(!str_contains($fragment['body'], '<textarea'), 'HTMX-фрагмент не должен перерисовывать поле ввода сообщения');
+    assertTrueValue(!str_contains($fragment['body'], 'bot-command-select'), 'HTMX-фрагмент не должен перерисовывать select команд бота');
+    assertTrueValue(str_contains($fragment['body'], 'id="chat-messages"'), 'HTMX-фрагмент должен возвращать историю сообщений');
     assertTrueValue(str_contains($fragment['body'], 'queue_state</th>'), 'HTMX-фрагмент должен сохранять inspector');
     assertTrueValue(str_contains($fragment['body'], '/updates/1/resend'), 'HTMX-фрагмент должен сохранять кнопку resend');
 
