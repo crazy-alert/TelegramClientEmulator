@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## `getFile` и локальная отдача media (2026-06-05)
+
+- [x] Проверить текущий `MediaStorage`, routing и Bot API routes.
+- [x] Добавить lookup по `local-media:<sha256>` и безопасное разрешение `file_path`.
+- [x] Реализовать `GET|POST /bot<TOKEN>/getFile`.
+- [x] Реализовать локальную отдачу `GET /file/bot<TOKEN>/<file_path>` с проверкой token и path traversal.
+- [x] Добавить HTTP tests для success, unknown `file_id`, unknown token и path traversal.
+- [x] Обновить README, technical spec, limitations и ROADMAP.
+- [x] Запустить проверки, обновить контекст, перенести чеклист, удалить task06, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+
 ## Multipart upload и локальное media-хранилище (2026-06-05)
 
 - [x] Проверить текущий multipart parsing, media payload и UI-формы.

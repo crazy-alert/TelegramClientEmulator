@@ -2,20 +2,17 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task05-file-upload-and-local-media-storage.md`.
+2026-06-05: выполнена `.aitasks/task06-getfile-and-media-download.md`.
 
 Что сделано:
 
-- Добавлено локальное media-хранилище `App\MediaStorage`.
-- `MEDIA_DIR` задает путь хранения, по умолчанию `<DATA_DIR>/media`.
-- `MEDIA_MAX_BYTES` задает лимит одного upload-файла, по умолчанию `10485760`.
-- Multipart parser теперь возвращает текстовые поля и файловые части в internal-ключе `BotApiRequestParser::FILES_KEY`.
-- `sendPhoto` и `sendDocument` принимают multipart upload в каноничных полях `photo` и `document`.
-- Строковые URL/file_id для `sendPhoto` и `sendDocument` сохранены без изменения.
-- UI `/chat` в блоке `Вложения` умеет прикреплять локальный файл для photo/document; файл имеет приоритет над строковым URL/file_id.
-- Для upload возвращаются стабильные `file_id` вида `local-media:<sha256>` и `file_unique_id` от содержимого.
-- Имена файлов очищаются от path traversal и небезопасных символов.
-- Документация обновлена: `README.md`, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md`, `.env.example`, `docker-compose.yml`.
+- `GET|POST /bot<TOKEN>/getFile` возвращает Telegram-like `File` для локально сохраненных media.
+- `GET /file/bot<TOKEN>/<file_path>` отдает байты файла из `MEDIA_DIR`.
+- File endpoint проверяет bot token и не отдает неизвестные файлы.
+- `MediaStorage` умеет искать `local-media:<sha256>`, возвращать `file_path`, безопасно разрешать путь и определять content-type.
+- Защита от path traversal: download принимает только basename внутри `MEDIA_DIR`, без `/`, `\` и `..`.
+- Тесты покрывают upload -> `getFile` -> download, unknown `file_id`, unknown token и path traversal.
+- Документация обновлена: `README.md`, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md`.
 
 Проверки:
 
@@ -28,14 +25,13 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task06-getfile-and-media-download.md`
 - `task07-message-type-renderer-refactor.md`
 
-Следующий шаг: взять `task06-getfile-and-media-download.md`, обновить `AI_WORK_PLAN.md` и реализовать `getFile`/локальную отдачу media.
+Следующий шаг: взять `task07-message-type-renderer-refactor.md`, обновить `AI_WORK_PLAN.md` и выполнить refactor renderer.
 
 ## Важные решения
 
 - Проект Docker-first; на хосте может не быть `php`, проверки запускать через `docker compose run`.
 - `enable_post_data_reading=Off`, поэтому multipart body парсится вручную из `php://input`.
-- `getFile` и download URL еще не реализованы; это следующая задача.
+- File download реализован только для локальных `local-media:<sha256>` файлов, сохраненных эмулятором.
 - Не добавлять неканоничные Telegram Bot API aliases/shortcuts без явного запроса.

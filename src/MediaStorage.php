@@ -67,6 +67,63 @@ final readonly class MediaStorage {
         return $this->mediaDir;
     }
 
+    /**
+     * @return array{file_id: string, file_unique_id: string, file_size: int, file_path: string}|null
+     */
+    public function findByFileId(string $fileId): ?array {
+        $hash = $this->hashFromFileId($fileId);
+        if ($hash === null) {
+            return null;
+        }
+
+        $filePath = $this->firstStoredFilePath($hash);
+        if ($filePath === null) {
+            return null;
+        }
+
+        $size = filesize($filePath);
+        if ($size === false) {
+            return null;
+        }
+
+        return [
+            'file_id' => $fileId,
+            'file_unique_id' => substr($hash, 0, 16),
+            'file_size' => $size,
+            'file_path' => basename($filePath),
+        ];
+    }
+
+    public function resolveDownloadPath(string $filePath): ?string {
+        if (!$this->isSafeRelativeFilePath($filePath)) {
+            return null;
+        }
+
+        $path = $this->mediaDir . DIRECTORY_SEPARATOR . $filePath;
+        if (!is_file($path)) {
+            return null;
+        }
+
+        $realMediaDir = realpath($this->mediaDir);
+        $realPath = realpath($path);
+        if ($realMediaDir === false || $realPath === false || dirname($realPath) !== $realMediaDir) {
+            return null;
+        }
+
+        return $realPath;
+    }
+
+    public function contentType(string $path): string {
+        if (function_exists('mime_content_type')) {
+            $mimeType = mime_content_type($path);
+            if (is_string($mimeType) && $mimeType !== '') {
+                return $mimeType;
+            }
+        }
+
+        return 'application/octet-stream';
+    }
+
     private function ensureMediaDir(): void {
         if (is_dir($this->mediaDir)) {
             return;
@@ -84,5 +141,37 @@ final readonly class MediaStorage {
         $fileName = trim($fileName, '._-');
 
         return $fileName === '' ? 'file' : substr($fileName, 0, 120);
+    }
+
+    private function hashFromFileId(string $fileId): ?string {
+        if (preg_match('/^local-media:([a-f0-9]{64})$/', $fileId, $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[1];
+    }
+
+    private function firstStoredFilePath(string $hash): ?string {
+        $paths = glob($this->mediaDir . DIRECTORY_SEPARATOR . $hash . '*');
+        if (!is_array($paths)) {
+            return null;
+        }
+
+        sort($paths);
+        foreach ($paths as $path) {
+            if (is_file($path) && str_starts_with(basename($path), $hash)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function isSafeRelativeFilePath(string $filePath): bool {
+        if ($filePath === '' || str_contains($filePath, '/') || str_contains($filePath, '\\') || str_contains($filePath, '..')) {
+            return false;
+        }
+
+        return basename($filePath) === $filePath;
     }
 }

@@ -174,6 +174,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && preg_match('#^/file/bot([^/]+)/(.+)$#', $path, $matches) === 1) {
+            $this->downloadMedia($matches[1], rawurldecode($matches[2]));
+            return;
+        }
+
         if ($method === 'GET' && $path === '/delivery-attempts') {
             $this->deliveryAttemptsIndex();
             return;
@@ -541,6 +546,40 @@ final class Application {
             'selectedMethod' => $methodFilter,
             'hasTokenFilter' => $tokenFilter !== '',
         ]);
+    }
+
+    private function downloadMedia(string $token, string $filePath): void {
+        if ($this->bots->findByToken($token) === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'Бот не найден',
+            ], 404);
+            return;
+        }
+
+        $resolvedPath = $this->mediaStorage->resolveDownloadPath($filePath);
+        if ($resolvedPath === null) {
+            Response::json([
+                'ok' => false,
+                'error_code' => 404,
+                'description' => 'File not found',
+            ], 404);
+            return;
+        }
+
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
+        if (!headers_sent()) {
+            http_response_code(200);
+            header('Content-Type: ' . $this->mediaStorage->contentType($resolvedPath));
+            header('Content-Length: ' . (string) filesize($resolvedPath));
+            header('Content-Disposition: inline; filename="' . basename($resolvedPath) . '"');
+        }
+
+        readfile($resolvedPath);
     }
 
     private function importExportIndex(): void {

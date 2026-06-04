@@ -1063,6 +1063,26 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     assertSameValue('text/plain', $json['result']['document']['mime_type'], 'sendDocument должен возвращать mime_type');
     assertSameValue(strlen($documentBytes), $json['result']['document']['file_size'], 'sendDocument должен возвращать размер локального файла');
 
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getFile?file_id=' . rawurlencode('local-media:' . $documentHash)), 200, true);
+    assertSameValue('local-media:' . $documentHash, $json['result']['file_id'], 'getFile должен возвращать локальный file_id');
+    assertSameValue(substr($documentHash, 0, 16), $json['result']['file_unique_id'], 'getFile должен возвращать стабильный file_unique_id');
+    assertSameValue(strlen($documentBytes), $json['result']['file_size'], 'getFile должен возвращать размер файла');
+    assertTrueValue(str_starts_with($json['result']['file_path'], $documentHash), 'getFile должен возвращать file_path внутри media storage');
+    $documentFilePath = $json['result']['file_path'];
+
+    $download = httpRequest('GET', $baseUrl . '/file/bot' . $token . '/' . rawurlencode($documentFilePath));
+    assertSameValue(200, $download['status'], 'Локальная ссылка getFile должна отдавать файл');
+    assertSameValue($documentBytes, $download['body'], 'Локальная ссылка должна вернуть сохраненные байты');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getFile?file_id=' . rawurlencode('local-media:' . str_repeat('0', 64))), 400, false);
+    assertSameValue('Bad Request: file not found', $json['description'], 'getFile должен отклонять неизвестный file_id');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/file/bot' . $token . '/' . rawurlencode('../report.txt')), 404, false);
+    assertSameValue('File not found', $json['description'], 'Локальная отдача должна отклонять path traversal');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/file/bot000000:unknown-local-dev-token/' . rawurlencode($documentFilePath)), 404, false);
+    assertSameValue('Бот не найден', $json['description'], 'Локальная отдача должна проверять bot token');
+
     $boundary = '----TelegramClientEmulatorUiUploadPhoto';
     $response = httpRequest('POST', $baseUrl . '/chat/send', multipartBody([
         'profile_id' => '1',

@@ -235,6 +235,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Формы ботов и пользователей показывают основные ошибки рядом с полями и возвращают HTTP 422 без записи некорректных данных.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`.
+- Bot API: `GET|POST /bot<TOKEN>/getFile` для локально сохраненных media.
 - Bot API: `POST /bot<TOKEN>/sendMessage` сохраняет текстовый ответ бота в историю локального чата.
 - Bot API: `sendMessage` поддерживает `reply_markup` для показа `inline_keyboard` и `keyboard` в интерфейсе чата.
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo`.
@@ -266,6 +267,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 - `GET|POST /bot<TOKEN>/getMe`;
 - `GET|POST /bot<TOKEN>/getUpdates`;
+- `GET|POST /bot<TOKEN>/getFile`;
 - `POST /bot<TOKEN>/sendMessage`;
 - `POST /bot<TOKEN>/sendPhoto`;
 - `POST /bot<TOKEN>/sendDocument`;
@@ -289,7 +291,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - `POST /bot<TOKEN>/deleteMyCommands`;
 - `POST /bot<TOKEN>/answerCallbackQuery`.
 
-Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Для `sendPhoto` и `sendDocument` дополнительно поддерживаются файловые части multipart-запросов в каноничных полях `photo` и `document`; файлы сохраняются в локальном `MEDIA_DIR`, а ответ получает стабильные `file_id` вида `local-media:<sha256>` и `file_unique_id`.
+Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Для `sendPhoto` и `sendDocument` дополнительно поддерживаются файловые части multipart-запросов в каноничных полях `photo` и `document`; файлы сохраняются в локальном `MEDIA_DIR`, а ответ получает стабильные `file_id` вида `local-media:<sha256>` и `file_unique_id`. `getFile` возвращает Telegram-like `File` с локальным `file_path`; скачать файл можно по `GET /file/bot<TOKEN>/<file_path>` внутри того же Docker-first workflow.
 
 `sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `sendPhoto` и `sendDocument` принимают строковое/URL значение соответствующего media-поля или multipart upload, сохраняют media placeholder в чате и возвращают Telegram-like `Message.*`. `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` пока принимают только строковое/URL media-значение без файлового upload. `sendPoll` принимает `question`, `options` и базовые quiz/regular параметры, сохраняет read-only poll в истории и возвращает Telegram-like `Message.poll`; интерактивное голосование пока не моделируется. `sendLocation`, `sendVenue`, `sendContact` и `sendDice` сохраняют structured-сообщения бота в историю и возвращают Telegram-like `Message.location`/`Message.venue`/`Message.contact`/`Message.dice`; `sendDice` в эмуляторе возвращает детерминированное значение `4` для обычных dice emoji и `32` для slot machine, чтобы тесты были стабильными. UI чата также умеет отправлять от пользователя photo/document по URL, file_id или локальному файлу, location и contact через компактный раскрывающийся блок `Вложения`; такие сообщения создают Telegram-like `message.photo`/`message.document`/`message.location`/`message.contact` updates для webhook и Long Polling. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
 

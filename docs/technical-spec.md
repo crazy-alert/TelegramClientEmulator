@@ -186,6 +186,7 @@
 
 ```text
 GET  /bot<TOKEN>/getMe
+GET  /bot<TOKEN>/getFile
 POST /bot<TOKEN>/sendMessage
 POST /bot<TOKEN>/sendPhoto
 POST /bot<TOKEN>/sendDocument
@@ -210,6 +211,7 @@ POST /bot<TOKEN>/deleteWebhook
 GET  /bot<TOKEN>/getWebhookInfo
 GET  /bot<TOKEN>/getUpdates
 POST /bot<TOKEN>/getUpdates
+GET  /file/bot<TOKEN>/<file_path>
 ```
 
 Фигурные скобки не должны попадать в реальный URL. Эмулятор должен повторять форму настоящего Telegram Bot API: token идет сразу после `/bot`, без дополнительного `/` между `bot` и token.
@@ -229,6 +231,7 @@ POST /bot<TOKEN>/getUpdates
 - Принимать JSON и form-encoded requests, если это практично.
 - Принимать текстовые поля `multipart/form-data` для совместимости с bot frameworks, которые отправляют Bot API параметры как multipart даже без файлов.
 - Для `sendPhoto` и `sendDocument` принимать файловые части multipart в каноничных полях `photo` и `document`, сохранять их в локальном media-хранилище и возвращать стабильные `file_id`/`file_unique_id`.
+- `getFile` должен возвращать Telegram-like `File` только для локально сохраненных media; локальная отдача доступна по `GET /file/bot<TOKEN>/<file_path>`.
 - Сохранять сообщение бота в истории диалога пользователя.
 - Сохранять и возвращать `reply_markup` для `inline_keyboard` и `keyboard`, чтобы интерфейс чата мог показать кнопки.
 - Возвращать Telegram-like response:

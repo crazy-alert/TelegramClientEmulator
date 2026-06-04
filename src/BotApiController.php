@@ -33,6 +33,11 @@ final readonly class BotApiController {
             return true;
         }
 
+        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getFile$#i', $path, $matches) === 1) {
+            $this->getFile($matches[1]);
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendMessage$#i', $path, $matches) === 1) {
             $this->sendMessage($matches[1]);
             return true;
@@ -207,6 +212,31 @@ final readonly class BotApiController {
         Response::json([
             'ok' => true,
             'result' => $result,
+        ]);
+    }
+
+    private function getFile(string $token): void {
+        $bot = $this->bots->findByToken($token);
+
+        if ($bot === null) {
+            $this->botNotFound();
+            return;
+        }
+
+        $params = $this->botApiParams();
+        if (!$this->requireParam($params, 'file_id')) {
+            return;
+        }
+
+        $file = $this->mediaStorage->findByFileId(trim((string) $params['file_id']));
+        if ($file === null) {
+            $this->badRequest('Bad Request: file not found');
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'result' => $file,
         ]);
     }
 

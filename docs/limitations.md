@@ -8,6 +8,7 @@
 
 - `GET|POST /bot<TOKEN>/getMe`
 - `GET|POST /bot<TOKEN>/getUpdates`
+- `GET|POST /bot<TOKEN>/getFile`
 - `POST /bot<TOKEN>/sendMessage`
 - `POST /bot<TOKEN>/sendPhoto`
 - `POST /bot<TOKEN>/sendDocument`
@@ -39,7 +40,7 @@
 
 - полный Telegram Bot API;
 - подключение к настоящему Telegram;
-- файловые download: `getFile` и локальные file URL;
+- download для внешних/неизвестных Telegram `file_id`;
 - media/structured-методы за пределами базовых `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact` и `sendDice`;
 - payments, invoices, shipping/pre-checkout queries;
 - Telegram Passport;
@@ -57,11 +58,14 @@
 
 `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` пока принимают только строковое или URL значение соответствующего media-поля, optional caption там, где он есть в Bot API, и optional `reply_markup`. Для `setWebhook` и других POST-методов текстовые поля `multipart/form-data` поддерживаются, но файловые части используются только в media-методах, где это явно реализовано.
 
+`getFile` возвращает Telegram-like `File` только для локально сохраненных `local-media:<sha256>` файлов. Скачать такой файл можно по `GET /file/bot<TOKEN>/<file_path>`; endpoint проверяет bot token и отдает только файлы из `MEDIA_DIR`.
+
 Ограничения:
 
-- локальная отдача файлов, `getFile` и download URL пока не реализованы;
+- внешние Telegram `file_id` и URL не скачиваются;
 - размер одного upload ограничен `MEDIA_MAX_BYTES`, по умолчанию `10485760` байт;
 - имена файлов очищаются от путей и небезопасных символов; path traversal не сохраняется;
+- `file_path` не принимает вложенные директории и `..`;
 - бинарные файлы не входят в import/export JSON.
 
 ## Structured сообщения
@@ -76,7 +80,7 @@ UI чата может отправлять от пользователя photo/
 
 - `sendDice` возвращает детерминированное значение: `4` для обычных dice emoji и `32` для slot machine, чтобы локальные тесты были стабильными;
 - интерактивное голосование в poll, карты и внешние previews пока не моделируются;
-- download локальных media-файлов выделен в отдельную будущую задачу.
+- полноценные previews и загрузка внешних media URL не моделируются.
 
 ## Команды бота
 
