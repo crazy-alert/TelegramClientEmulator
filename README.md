@@ -267,7 +267,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 ## Bot API и тесты
 
-Текущая поддерживаемая поверхность Bot API:
+Текущая поддерживаемая поверхность Bot API описана также в машинно-читаемом каталоге [`docs/bot-api-surface.json`](docs/bot-api-surface.json):
 
 - `GET|POST /bot<TOKEN>/getMe`;
 - `GET|POST /bot<TOKEN>/getUpdates`;

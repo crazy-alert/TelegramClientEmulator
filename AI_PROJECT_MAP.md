@@ -71,6 +71,7 @@
 - `tests/scenarios/http_scenarios.php` — оркестратор HTTP smoke-сценариев; тематические фазы лежат в `tests/scenarios/*_scenarios.php` для setup, import/export, Bot API, webhook, chat UI, Long Polling, group chat, media и fixture pack.
 - `tests/bot_api_params_test.php` — focused tests helper `BotApiParams`.
 - `tests/bot_api_payload_factory_test.php` — focused tests фабрики `BotApiPayloadFactory` для `Message`, `Chat` и media payload.
+- `tests/bot_api_surface_catalog_test.php` — focused tests машинно-читаемого каталога `docs/bot-api-surface.json`.
 - `tests/long_polling_service_test.php` — focused tests сервиса `LongPollingService` для offset, negative offset, limit и `allowed_updates`.
 - `tests/chat_repository_test.php` — focused tests синхронизации group/supergroup `chats` и `chat_members` из profiles.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.

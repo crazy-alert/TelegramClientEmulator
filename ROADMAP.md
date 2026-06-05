@@ -346,6 +346,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - документация Docker Compose сценариев — добавлена в README;
 - примеры интеграции для PHP, Python и Node.js bot frameworks — добавлены в `docs/framework-examples.md`;
 - описание ограничений эмулятора — добавлено в `docs/limitations.md`.
+- machine-readable Bot API surface catalog — добавлен в `docs/bot-api-surface.json`.
 
 Критерий готовности: новый разработчик может поднять проект и подключить своего бота по README без устных пояснений.
 

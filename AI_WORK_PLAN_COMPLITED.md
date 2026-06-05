@@ -1,5 +1,23 @@
 # Завершенные планы работы
 
+## Machine-readable Bot API surface catalog (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Сверить фактически поддерживаемые Bot API routes и ограничения.
+- [x] Создать JSON-каталог с методами, HTTP verbs, params, content types, media upload, limitations и test status.
+- [x] Добавить focused test для структуры каталога и ключевых методов.
+- [x] Обновить README/docs со ссылкой на каталог.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task12, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/bot_api_surface_catalog_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_surface_catalog_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php -r "json_decode(file_get_contents('docs/bot-api-surface.json'), true, 512, JSON_THROW_ON_ERROR); echo 'OK: catalog JSON valid'.PHP_EOL;"`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Улучшение inspector HTTP-логов (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

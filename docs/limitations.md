@@ -4,7 +4,7 @@
 
 ## Поддерживаемая поверхность Bot API
 
-Сейчас эмулятор поддерживает только эти Bot API endpoints:
+Сейчас эмулятор поддерживает только эти Bot API endpoints. Машинно-читаемый каталог поверхности находится в `docs/bot-api-surface.json`:
 
 - `GET|POST /bot<TOKEN>/getMe`
 - `GET|POST /bot<TOKEN>/getUpdates`

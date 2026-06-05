@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-06-05",
+  "description": "Машинно-читаемый каталог локально поддерживаемой поверхности Telegram Bot API эмулятора.",
+  "unsupported_methods": {
+    "http_status": 501,
+    "ok": false,
+    "error_code": 501,
+    "description": "Unsupported Bot API method"
+  },
+  "methods": [
+    {
+      "name": "getMe",
+      "http_methods": ["GET", "POST"],
+      "required_params": [],
+      "optional_params": [],
+      "content_types": ["query", "application/json", "application/x-www-form-urlencoded"],
+      "media_upload": false,
+      "limitations": ["Возвращает локальный профиль бота, без обращения к Telegram."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "getUpdates",
+      "http_methods": ["GET", "POST"],
+      "required_params": [],
+      "optional_params": ["offset", "limit", "timeout", "allowed_updates"],
+      "content_types": ["query", "application/json", "application/x-www-form-urlencoded"],
+      "media_upload": false,
+      "limitations": ["При активном webhook возвращает HTTP 409.", "timeout ограничивается LONG_POLLING_MAX_TIMEOUT_SECONDS."],
+      "test_status": "http_smoke_and_focused"
+    },
+    {
+      "name": "getFile",
+      "http_methods": ["GET", "POST"],
+      "required_params": ["file_id"],
+      "optional_params": [],
+      "content_types": ["query", "application/json", "application/x-www-form-urlencoded"],
+      "media_upload": false,
+      "limitations": ["Работает только с локальными file_id вида local-media:<sha256>."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendMessage",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "text"],
+      "optional_params": ["reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Поддерживается локальная запись ответа бота в историю чата."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendPhoto",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "photo"],
+      "optional_params": ["caption", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["photo"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendDocument",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "document"],
+      "optional_params": ["caption", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["document"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendVideo",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "video"],
+      "optional_params": ["caption", "duration", "width", "height", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["video"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendAnimation",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "animation"],
+      "optional_params": ["caption", "duration", "width", "height", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["animation"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendAudio",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "audio"],
+      "optional_params": ["caption", "duration", "performer", "title", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["audio"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendVoice",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "voice"],
+      "optional_params": ["caption", "duration", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["voice"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendVideoNote",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "video_note"],
+      "optional_params": ["duration", "length", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["video_note"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendSticker",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "sticker"],
+      "optional_params": ["emoji", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": true,
+      "media_fields": ["sticker"],
+      "limitations": ["Внешние URL и неизвестные file_id не скачиваются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendPoll",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "question", "options"],
+      "optional_params": ["type", "allows_multiple_answers", "correct_option_id", "explanation", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Poll сохраняется как read-only message; интерактивное голосование не моделируется."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendLocation",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "latitude", "longitude"],
+      "optional_params": ["reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Live location параметры не моделируются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendVenue",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "latitude", "longitude", "title", "address"],
+      "optional_params": ["reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Foursquare/Google place metadata не моделируется."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendContact",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "phone_number", "first_name"],
+      "optional_params": ["last_name", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["vCard не моделируется."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "sendDice",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id"],
+      "optional_params": ["emoji", "reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Значение dice детерминировано для стабильных локальных тестов."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "editMessageText",
+      "http_methods": ["POST"],
+      "required_params": ["chat_id", "message_id", "text"],
+      "optional_params": ["reply_markup"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Редактируются только сообщения бота в локальной истории."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "getWebhookInfo",
+      "http_methods": ["GET", "POST"],
+      "required_params": [],
+      "optional_params": [],
+      "content_types": ["query", "application/json", "application/x-www-form-urlencoded"],
+      "media_upload": false,
+      "limitations": ["Возвращает локальное состояние webhook."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "setWebhook",
+      "http_methods": ["POST"],
+      "required_params": ["url"],
+      "optional_params": ["secret_token", "drop_pending_updates"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Сертификаты и max_connections не моделируются."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "deleteWebhook",
+      "http_methods": ["POST"],
+      "required_params": [],
+      "optional_params": ["drop_pending_updates"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Удаляет локальный webhook URL и optional pending updates."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "setMyCommands",
+      "http_methods": ["POST"],
+      "required_params": ["commands"],
+      "optional_params": ["scope", "language_code"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Admin-only scopes сохраняются, но роли администраторов в UI не моделируются."],
+      "test_status": "http_smoke_and_focused"
+    },
+    {
+      "name": "getMyCommands",
+      "http_methods": ["GET", "POST"],
+      "required_params": [],
+      "optional_params": ["scope", "language_code"],
+      "content_types": ["query", "application/json", "application/x-www-form-urlencoded"],
+      "media_upload": false,
+      "limitations": ["Bot API запрос выбирает exact scope/language; UI использует отдельный fallback."],
+      "test_status": "http_smoke_and_focused"
+    },
+    {
+      "name": "deleteMyCommands",
+      "http_methods": ["POST"],
+      "required_params": [],
+      "optional_params": ["scope", "language_code"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Удаляет exact scope/language набор команд."],
+      "test_status": "http_smoke"
+    },
+    {
+      "name": "answerCallbackQuery",
+      "http_methods": ["POST"],
+      "required_params": ["callback_query_id"],
+      "optional_params": ["text", "show_alert", "url", "cache_time"],
+      "content_types": ["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+      "media_upload": false,
+      "limitations": ["Подтверждение callback сохраняется минимально, без отдельной модели уведомлений."],
+      "test_status": "http_smoke"
+    }
+  ]
+}
