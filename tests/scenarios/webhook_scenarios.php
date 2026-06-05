@@ -105,7 +105,12 @@ function runWebhookScenarios(array $context): void {
 
     $updatesPage = httpRequest('GET', $baseUrl . '/updates');
     assertSameValue(200, $updatesPage['status'], 'Экран updates должен открываться');
-    assertTrueValue(str_contains($updatesPage['body'], '<h1>Updates</h1>'), 'Экран updates должен иметь заголовок');
+    $updatesDom = htmlDocument($updatesPage['body']);
+    assertDomXPathExists(
+        $updatesDom,
+        '//nav//a[contains(concat(" ", normalize-space(@class), " "), " active ") and @href="/updates" and normalize-space(.)="Updates"]',
+        'DOM: экран updates должен подсвечивать активную вкладку навигации',
+    );
     assertTrueValue(str_contains($updatesPage['body'], '100000001'), 'Экран updates должен показывать update_id');
     assertTrueValue(str_contains($updatesPage['body'], '>delivered<'), 'Экран updates должен показывать queue_state');
     assertTrueValue(str_contains($updatesPage['body'], '/chat?profile_id=1&amp;bot_id=1'), 'Экран updates должен содержать ссылку в чат');

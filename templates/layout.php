@@ -1,3 +1,25 @@
+<?php
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$navItems = [
+    ['href' => '/', 'label' => 'Панель'],
+    ['href' => '/chat', 'label' => 'Чат'],
+    ['href' => '/updates', 'label' => 'Updates'],
+    ['href' => '/request-inspector', 'label' => 'Inspector'],
+    ['href' => '/import-export', 'label' => 'Import/export'],
+    ['href' => '/bots', 'label' => 'Боты'],
+    ['href' => '/group-chats', 'label' => 'Группы'],
+    ['href' => '/profiles', 'label' => 'Пользователи'],
+    ['href' => '/delivery-attempts', 'label' => 'Webhook attempts'],
+    ['href' => '/health', 'label' => 'Health'],
+];
+$isActiveNav = static function (string $href) use ($currentPath): bool {
+    if ($href === '/') {
+        return $currentPath === '/' || $currentPath === '/index.php';
+    }
+
+    return $currentPath === $href || str_starts_with($currentPath, $href . '/');
+};
+?>
 <!doctype html>
 <html lang="ru">
 <head>
@@ -45,7 +67,8 @@
         nav {
             display: flex;
             align-items: center;
-            gap: 18px;
+            flex-wrap: wrap;
+            gap: 8px;
             min-height: 56px;
         }
 
@@ -53,15 +76,34 @@
             margin-right: 12px;
         }
 
+        nav a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 6px 10px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: #536471;
+        }
+
+        nav a:hover {
+            background: #eef4f8;
+            text-decoration: none;
+        }
+
+        nav a.active {
+            border-color: #2481cc;
+            background: #2481cc;
+            color: #ffffff;
+        }
+
         main {
-            padding-top: 28px;
+            padding-top: 18px;
             padding-bottom: 48px;
         }
 
         h1 {
-            margin: 0 0 20px;
-            font-size: 28px;
-            font-weight: 700;
+            display: none;
         }
 
         h2 {
@@ -224,6 +266,23 @@
             min-width: 0;
         }
 
+        .chat-context {
+            padding: 10px 12px;
+            margin-bottom: 12px;
+        }
+
+        .chat-context summary {
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .chat-context form.editor,
+        .chat-context .panel {
+            margin-top: 10px;
+            margin-bottom: 0;
+            padding: 12px;
+        }
+
         .chat-reply-keyboard {
             display: grid;
             gap: 6px;
@@ -334,16 +393,11 @@
 <header>
     <nav>
         <strong>Telegram Bot Emulator</strong>
-        <a href="/">Панель</a>
-        <a href="/chat">Чат</a>
-        <a href="/updates">Updates</a>
-        <a href="/request-inspector">Inspector</a>
-        <a href="/import-export">Import/export</a>
-        <a href="/bots">Боты</a>
-        <a href="/group-chats">Группы</a>
-        <a href="/profiles">Пользователи</a>
-        <a href="/delivery-attempts">Webhook attempts</a>
-        <a href="/health">Health</a>
+        <?php foreach ($navItems as $navItem): ?>
+            <a href="<?= e($navItem['href']) ?>" class="<?= $isActiveNav($navItem['href']) ? 'active' : '' ?>">
+                <?= e($navItem['label']) ?>
+            </a>
+        <?php endforeach; ?>
     </nav>
 </header>
 <main>

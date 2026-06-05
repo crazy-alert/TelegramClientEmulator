@@ -1,39 +1,59 @@
 <?php $chatFragment = (bool) ($chatFragment ?? false); ?>
 
 <?php if (!$chatFragment): ?>
-<h1>Чат</h1>
+<details class="panel chat-context" <?= $profile === null || $bot === null ? 'open' : '' ?>>
+    <summary>Контекст чата</summary>
+    <form class="editor" method="get" action="/chat">
+        <div class="grid">
+            <label>
+                Пользователь / отправитель
+                <select name="profile_id" required>
+                    <option value="">Выберите отправителя</option>
+                    <?php foreach ($allUsers as $user): ?>
+                        <option value="<?= e($user['id']) ?>" <?= (int) ($selectedProfileId ?? 0) === (int) $user['id'] ? 'selected' : '' ?>>
+                            @<?= e($user['username']) ?> · <?= e($user['first_name']) ?> <?= e($user['last_name'] ?? '') ?>
+                            · <?= e($user['chat_type']) ?> #<?= e($user['chat_id']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
 
-<form class="editor" method="get" action="/chat" style="margin-bottom: 18px;">
-    <div class="grid">
-        <label>
-            Пользователь / отправитель
-            <select name="profile_id" required>
-                <option value="">Выберите отправителя</option>
-                <?php foreach ($allUsers as $user): ?>
-                    <option value="<?= e($user['id']) ?>" <?= (int) ($selectedProfileId ?? 0) === (int) $user['id'] ? 'selected' : '' ?>>
-                        @<?= e($user['username']) ?> · <?= e($user['first_name']) ?> <?= e($user['last_name'] ?? '') ?>
-                        · <?= e($user['chat_type']) ?> #<?= e($user['chat_id']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-
-        <label>
-            Бот
-            <select name="bot_id" required>
-                <option value="">Выберите бота</option>
-                <?php foreach ($allBots as $availableBot): ?>
-                    <option value="<?= e($availableBot['id']) ?>" <?= (int) ($selectedBotId ?? 0) === (int) $availableBot['id'] ? 'selected' : '' ?>>
-                        @<?= e($availableBot['username']) ?> · <?= e($availableBot['display_name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-    </div>
-    <div class="actions">
-        <button type="submit">Открыть чат</button>
-    </div>
-</form>
+            <label>
+                Бот
+                <select name="bot_id" required>
+                    <option value="">Выберите бота</option>
+                    <?php foreach ($allBots as $availableBot): ?>
+                        <option value="<?= e($availableBot['id']) ?>" <?= (int) ($selectedBotId ?? 0) === (int) $availableBot['id'] ? 'selected' : '' ?>>
+                            @<?= e($availableBot['username']) ?> · <?= e($availableBot['display_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
+        <div class="actions">
+            <button type="submit">Открыть чат</button>
+        </div>
+    </form>
+    <?php if ($profile !== null && $bot !== null): ?>
+        <div class="panel">
+            <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
+            (<?= e($profile['first_name']) ?> <?= e($profile['last_name'] ?? '') ?>,
+            ID: <?= e($profile['user_id']) ?>,
+            чат: <?= e($profile['chat_type']) ?> #<?= e($profile['chat_id']) ?>)
+            &nbsp;·&nbsp;
+            <strong>Бот:</strong> <?= e($bot['display_name']) ?>
+            (@<?= e($bot['username']) ?>,
+            режим: <?= e($bot['delivery_mode']) ?>,
+            очередь Long Polling: <?= e($pendingUpdateCount ?? 0) ?>)
+            <form method="post" action="/chat/clear" onsubmit="return confirm('Очистить историю и updates только этого диалога?');" style="margin-top: 12px;">
+                <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                <input type="hidden" name="confirm_clear" value="1">
+                <button type="submit" class="danger">Очистить диалог</button>
+            </form>
+        </div>
+    <?php endif; ?>
+</details>
 <?php endif; ?>
 
 <?php if ($profile === null || $bot === null): ?>
@@ -64,24 +84,6 @@
     };
     ?>
     <?php if (!$chatFragment): ?>
-    <div class="panel" style="margin-bottom: 12px;">
-        <strong>Пользователь:</strong> @<?= e($profile['username']) ?>
-        (<?= e($profile['first_name']) ?> <?= e($profile['last_name'] ?? '') ?>,
-        ID: <?= e($profile['user_id']) ?>,
-        чат: <?= e($profile['chat_type']) ?> #<?= e($profile['chat_id']) ?>)
-        &nbsp;·&nbsp;
-        <strong>Бот:</strong> <?= e($bot['display_name']) ?>
-        (@<?= e($bot['username']) ?>,
-        режим: <?= e($bot['delivery_mode']) ?>,
-        очередь Long Polling: <?= e($pendingUpdateCount ?? 0) ?>)
-        <form method="post" action="/chat/clear" onsubmit="return confirm('Очистить историю и updates только этого диалога?');" style="margin-top: 12px;">
-            <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
-            <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
-            <input type="hidden" name="confirm_clear" value="1">
-            <button type="submit" class="danger">Очистить диалог</button>
-        </form>
-    </div>
-
         <div
             id="chat-live"
             hx-get="/chat/fragment?profile_id=<?= e($profile['id']) ?>&amp;bot_id=<?= e($bot['id']) ?>"

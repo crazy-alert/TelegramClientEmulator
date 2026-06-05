@@ -49,10 +49,27 @@ function runChatUiScenarios(array $context): void {
     assertTrueValue(str_contains($chat['body'], '<details class="panel bot-command-picker">'), 'Команды бота должны быть спрятаны в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], '<details class="panel chat-structured-inputs">'), 'Вложения пользователя должны быть спрятаны в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], '<details class="panel chat-update-inspector">'), 'Последний update inspector должен быть спрятан в раскрывающийся блок');
+    assertTrueValue(str_contains($chat['body'], '<details class="panel chat-context"'), 'Контекст чата должен быть спрятан в один раскрывающийся блок');
+    assertTrueValue(!str_contains($chat['body'], '<h1>Чат</h1>'), 'Страница чата не должна показывать отдельный заголовок Чат');
     assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
     assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
     $chatDom = htmlDocument($chat['body']);
+    assertDomXPathExists(
+        $chatDom,
+        '//nav//a[contains(concat(" ", normalize-space(@class), " "), " active ") and @href="/chat" and normalize-space(.)="Чат"]',
+        'DOM: активная вкладка Чат должна подсвечиваться в навигации',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//details[contains(concat(" ", normalize-space(@class), " "), " chat-context ")]//form[contains(concat(" ", normalize-space(@class), " "), " editor ") and @method="get" and @action="/chat"]',
+        'DOM: форма выбора чата должна быть внутри details.chat-context',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//details[contains(concat(" ", normalize-space(@class), " "), " chat-context ")]//div[contains(concat(" ", normalize-space(@class), " "), " panel ")]//form[@method="post" and @action="/chat/clear"]',
+        'DOM: панель текущего диалога и очистка должны быть внутри того же details.chat-context',
+    );
     assertDomXPathExists(
         $chatDom,
         '//div[contains(concat(" ", normalize-space(@class), " "), " chat-compose ")]//form[contains(concat(" ", normalize-space(@class), " "), " chat-message-form ")]//textarea[@name="text"]',

@@ -2,23 +2,23 @@
 
 ## Последнее обновление
 
-2026-06-06: выполнена `.aitasks/task07-split-message-scenarios.md`.
+2026-06-06: выполнена компактная навигация и вкладка `/chat`.
 
 Что сделано:
 
-- Крупный `tests/scenarios/bot_api_message_scenarios.php` превращен в wrapper.
-- Message core сценарии вынесены в `tests/scenarios/bot_api_message_core_scenarios.php`.
-- Media method сценарии вынесены в `tests/scenarios/bot_api_media_method_scenarios.php`.
-- Structured method сценарии вынесены в `tests/scenarios/bot_api_structured_method_scenarios.php`.
-- `tests/bot_api_test.php` не менялся; общий entrypoint `runBotApiMessageScenarios()` сохранен.
-- В failure messages добавлены короткие префиксы `[message core]`, `[media methods]`, `[structured methods]`.
+- В `templates/layout.php` навигация стала button-like, текущая вкладка подсвечивается классом `active`.
+- Видимые `h1` заголовки страниц скрыты глобально; текущий раздел теперь показывается через активную вкладку навигации.
+- В `templates/chat/index.php` удален отдельный заголовок `Чат`.
+- Форма выбора отправителя/бота и панель текущего диалога на `/chat` перенесены в один `details.panel.chat-context`.
+- `tests/scenarios/chat_ui_scenarios.php` проверяет активную вкладку `/chat` и единый spoiler для контекста.
+- `tests/scenarios/webhook_scenarios.php` проверяет активную вкладку `/updates` вместо видимого h1.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_message_scenarios.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_message_core_scenarios.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_media_method_scenarios.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_structured_method_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/chat/index.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/chat_ui_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/webhook_scenarios.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
