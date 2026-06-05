@@ -29,6 +29,7 @@ function main(): int {
         'LOG_DIR' => $logDir,
         'APP_HOST' => '127.0.0.1',
         'APP_PORT' => (string) $port,
+        'LONG_POLLING_MAX_TIMEOUT_SECONDS' => '1',
     ]);
 
     $process = proc_open($command, [

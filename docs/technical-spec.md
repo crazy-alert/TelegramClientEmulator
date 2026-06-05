@@ -179,7 +179,7 @@
 - Хранить очередь updates отдельно для каждого бота.
 - Возвращать только updates с `update_id >= offset`, как в Telegram Bot API.
 - После получения offset больше `update_id` считать соответствующие updates подтвержденными и скрывать их из следующих ответов.
-- `timeout` в MVP можно реализовать через короткое ожидание на сервере; позже добавить более точное блокирующее ожидание.
+- `timeout` реализован через короткое ожидание на сервере и ограничивается `LONG_POLLING_MAX_TIMEOUT_SECONDS`; позже можно добавить более точное блокирующее ожидание в другой runtime/server model.
 - В интерфейсе показывать размер очереди Long Polling и последние выданные updates.
 
 ### 4.5 Локальный Bot API mock
@@ -263,7 +263,7 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Создание Telegram-like `Message`, `Chat` и media objects для ответов локального Bot API нормализует `BotApiPayloadFactory`. `BotApiController` отвечает за маршруты, валидацию параметров, HTTP-ошибки и запись сообщений, но не должен заново реализовывать низкоуровневую сборку этих payload.
 
-Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания.
+Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания, ограниченный `LONG_POLLING_MAX_TIMEOUT_SECONDS`.
 
 UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery и маскирование секретов inspector-вывода.
 
@@ -421,6 +421,7 @@ Import принимает как envelope с ключом `bots`/`profiles`, т�
 - `MEDIA_MAX_BYTES`: максимальный размер одного upload-файла, по умолчанию `10485760`.
 - `LOG_LEVEL`: по умолчанию `info`.
 - `WEBHOOK_TIMEOUT_MS`: по умолчанию `10000`.
+- `LONG_POLLING_MAX_TIMEOUT_SECONDS`: верхняя граница ожидания `getUpdates.timeout` в single-process server, по умолчанию `3`, допустимый диапазон `0`–`30`.
 
 ### 4.9 Docker
 

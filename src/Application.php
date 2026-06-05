@@ -12,6 +12,9 @@ final class Application {
     private const DEFAULT_WEBHOOK_TIMEOUT_MS = 10000;
     private const MIN_WEBHOOK_TIMEOUT_MS = 1000;
     private const MAX_WEBHOOK_TIMEOUT_MS = 60000;
+    private const DEFAULT_LONG_POLLING_MAX_TIMEOUT_SECONDS = 3;
+    private const MIN_LONG_POLLING_MAX_TIMEOUT_SECONDS = 0;
+    private const MAX_LONG_POLLING_MAX_TIMEOUT_SECONDS = 30;
 
     private Database $database;
     private BotApiController $botApi;
@@ -69,6 +72,7 @@ final class Application {
             $this->mediaStorage,
             $this->botApiPayloads,
             $this->longPolling,
+            $this->longPollingMaxTimeoutSeconds(),
         );
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);
@@ -1192,6 +1196,18 @@ final class Application {
         $timeoutMs = $this->intParam(getenv('WEBHOOK_TIMEOUT_MS') ?: self::DEFAULT_WEBHOOK_TIMEOUT_MS, self::DEFAULT_WEBHOOK_TIMEOUT_MS);
 
         return max(self::MIN_WEBHOOK_TIMEOUT_MS, min(self::MAX_WEBHOOK_TIMEOUT_MS, $timeoutMs));
+    }
+
+    private function longPollingMaxTimeoutSeconds(): int {
+        $timeout = $this->intParam(
+            getenv('LONG_POLLING_MAX_TIMEOUT_SECONDS') ?: self::DEFAULT_LONG_POLLING_MAX_TIMEOUT_SECONDS,
+            self::DEFAULT_LONG_POLLING_MAX_TIMEOUT_SECONDS,
+        );
+
+        return max(
+            self::MIN_LONG_POLLING_MAX_TIMEOUT_SECONDS,
+            min(self::MAX_LONG_POLLING_MAX_TIMEOUT_SECONDS, $timeout),
+        );
     }
 
     private function isGroupChatType(string $chatType): bool {

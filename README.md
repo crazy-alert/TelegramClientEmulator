@@ -93,6 +93,7 @@ services:
       MEDIA_MAX_BYTES: "10485760"
       LOG_DIR: "/app/var/logs"
       WEBHOOK_TIMEOUT_MS: "10000"
+      LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
     expose:
       - "8080"
     ports:
@@ -118,6 +119,8 @@ Token, bot id, username бота, transport mode и webhook URL настраив
 Точные имена переменных окружения зависят от bot framework. Если библиотека сама добавляет `/bot<TOKEN>/<METHOD>` к API root, используйте `http://telegram-emulator:8080`. Если библиотека ожидает Telegram-style base URL до token и сама дописывает token без дополнительного `/`, используйте `http://telegram-emulator:8080/bot`. Не передавайте в HTTP-клиент URL с буквальными `{token}` или `{method}`: многие клиенты отклоняют такие строки как malformed URL.
 
 `WEBHOOK_TIMEOUT_MS` задает начальный timeout webhook-доставки в миллисекундах. Если переменная не задана, используется `10000`. На панели `/` timeout можно переопределить через UI без изменения файлов; значение хранится в SQLite и должно быть в диапазоне `1000`–`60000` мс.
+
+`LONG_POLLING_MAX_TIMEOUT_SECONDS` задает верхнюю границу ожидания для `getUpdates.timeout` в single-process PHP server. По умолчанию используется `3`, допустимый диапазон — `0`–`30` секунд. Это локальная защита отзывчивости UI: если бот запросит `timeout=60`, эмулятор будет ждать не дольше этой границы.
 
 `MEDIA_DIR` задает директорию локального media-хранилища для multipart upload, по умолчанию используется `<DATA_DIR>/media`. `MEDIA_MAX_BYTES` ограничивает размер одного загружаемого файла, значение по умолчанию — `10485760` байт. При стандартном volume `./:/app` файлы сохраняются в `data/media/` и игнорируются git вместе с runtime-данными.
 
@@ -176,6 +179,7 @@ services:
       DATA_DIR: "/app/data"
       LOG_DIR: "/app/var/logs"
       WEBHOOK_TIMEOUT_MS: "10000"
+      LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
     ports:
       - "8080:8080"
     volumes:
@@ -234,7 +238,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Управление пользователями: `/profiles`.
 - Формы ботов и пользователей показывают основные ошибки рядом с полями и возвращают HTTP 422 без записи некорректных данных.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
-- Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`.
+- Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`; `timeout` ограничивается `LONG_POLLING_MAX_TIMEOUT_SECONDS`, чтобы не блокировать single-process server надолго.
 - Bot API: `GET|POST /bot<TOKEN>/getFile` для локально сохраненных media.
 - Bot API: `POST /bot<TOKEN>/sendMessage` сохраняет текстовый ответ бота в историю локального чата.
 - Bot API: `sendMessage` поддерживает `reply_markup` для показа `inline_keyboard` и `keyboard` в интерфейсе чата.

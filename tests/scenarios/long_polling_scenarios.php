@@ -125,6 +125,13 @@ function runLongPollingScenarios(array $context): void {
     $nextOffset = ((int) $json['result'][0]['update_id']) + 1;
     assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=' . $nextOffset), 200, true);
 
+    $startedAt = microtime(true);
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?timeout=5'), 200, true);
+    $elapsed = microtime(true) - $startedAt;
+    assertSameValue([], $json['result'], 'getUpdates timeout с пустой очередью должен вернуть пустой result');
+    assertTrueValue($elapsed >= 0.8, 'getUpdates должен учитывать ненулевой timeout при пустой очереди');
+    assertTrueValue($elapsed < 2.5, 'getUpdates должен ограничивать timeout env-верхней границей для single-process server');
+
     $response = httpRequest('POST', $baseUrl . '/chat/callback', formBody([
         'profile_id' => '1',
         'bot_id' => '1',

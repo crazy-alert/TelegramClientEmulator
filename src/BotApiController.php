@@ -21,6 +21,7 @@ final readonly class BotApiController {
         private MediaStorage $mediaStorage,
         private BotApiPayloadFactory $payloadFactory,
         private LongPollingService $longPolling,
+        private int $longPollingMaxTimeoutSeconds,
     ) {
     }
 
@@ -781,7 +782,7 @@ final readonly class BotApiController {
         $timeout = max(0, BotApiParams::int($params['timeout'] ?? 0, 0));
         $allowedUpdates = BotApiParams::allowedUpdates($params['allowed_updates'] ?? null);
         $botId = (int) $bot['id'];
-        $waitUntil = microtime(true) + min($timeout, 3);
+        $waitUntil = microtime(true) + min($timeout, $this->longPollingMaxTimeoutSeconds);
 
         do {
             $result = $this->longPolling->result($botId, $offset, $limit, $allowedUpdates);

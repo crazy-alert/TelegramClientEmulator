@@ -1,5 +1,25 @@
 # Завершенные планы работы
 
+## Long Polling timeout model (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Изучить текущий `getUpdates` timeout, `LongPollingService`, env/UI настройки и тесты.
+- [x] Выбрать минимальную timeout policy для single-process PHP server.
+- [x] Реализовать настройку верхней границы timeout, если она действительно нужна.
+- [x] Добавить/обновить tests для timeout policy.
+- [x] Обновить документацию и ROADMAP при необходимости.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task09, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotApiController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/long_polling_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Fixture packs import/export (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий контекст.
