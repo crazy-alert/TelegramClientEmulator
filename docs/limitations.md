@@ -120,12 +120,12 @@ Webhook-доставка делает одну попытку на новый up
 
 ## Групповые чаты
 
-Групповой чат в текущей модели представлен несколькими profiles с одинаковым `chat_id` и `chat_type=group` или `chat_type=supergroup`. В `/chat` выбранный пользователь является отправителем сообщения, а история для group/supergroup читается по `bot_id + chat_id`.
+Групповой чат в текущей модели представлен записью `chats` и membership-связями `chat_members`, которые синхронизируются из profiles. Для совместимости import/export и UI-форм несколько profiles по-прежнему могут иметь одинаковый `chat_id` и `chat_type=group` или `chat_type=supergroup`. В `/chat` выбранный пользователь является отправителем сообщения, а история для group/supergroup читается по `bot_id + chat_id`.
 
 Ограничения:
 
-- отдельной таблицы `groups` пока нет;
-- title группы генерируется как `Chat <chat_id>`;
+- отдельного UI управления membership пока нет;
+- title группы пока генерируется как `Chat <chat_id>`;
 - membership, роли, администраторы и service messages пока не моделируются;
 - import разрешает общий `chat_id` только для group/supergroup profiles.
 

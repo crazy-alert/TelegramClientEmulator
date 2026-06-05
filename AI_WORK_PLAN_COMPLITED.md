@@ -1,5 +1,23 @@
 # Завершенные планы работы
 
+## Нормализованная модель group chat (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Изучить текущую модель profiles/chat_id, миграции, import/export, `/chat` и group tests.
+- [x] Спроектировать минимальную схему `chats`/membership без поломки backward-compatible import/export.
+- [x] Реализовать схему и один UI/API group-сценарий минимальными правками.
+- [x] Добавить focused/integration tests.
+- [x] Обновить документацию и карту проекта.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task07, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/chat_repository_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## Webhook retry/backoff helper (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

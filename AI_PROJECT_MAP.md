@@ -27,9 +27,10 @@
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
+- `src/ChatRepository.php` — read-only доступ к нормализованным `chats` и `chat_members`.
 - `src/UpdateRepository.php` — очередь updates, выборка pending/failed updates, UI-список updates с context и очистка updates.
 - `src/MessageRepository.php` — история сообщений диалогов, group/supergroup выборка по `bot_id + chat_id` и очистка сообщений выбранного диалога.
-- `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
+- `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`) и синхронизация `chats/chat_members` из profile `chat_id/chat_type`.
 - `src/DeliveryAttemptRepository.php` — webhook delivery attempts и UI-выборки с context.
 - `src/HttpLogger.php` — запись HTTP request/response событий в JSONL.
 - `src/HttpLogRepository.php` — read-only выборка Bot API request/response из HTTP JSONL-логов для inspector.
@@ -57,6 +58,7 @@
 
 - `migrations/001_initial_schema.sql` — базовая схема SQLite.
 - `migrations/002_bot_commands.sql` — таблица команд бота.
+- `migrations/003_chats_and_members.sql` — нормализованные `chats` и `chat_members`, backfill из profiles.
 - `data/` — локальные runtime-данные, игнорируются git.
 - `var/` — служебная runtime-директория.
 
@@ -69,6 +71,7 @@
 - `tests/bot_api_params_test.php` — focused tests helper `BotApiParams`.
 - `tests/bot_api_payload_factory_test.php` — focused tests фабрики `BotApiPayloadFactory` для `Message`, `Chat` и media payload.
 - `tests/long_polling_service_test.php` — focused tests сервиса `LongPollingService` для offset, negative offset, limit и `allowed_updates`.
+- `tests/chat_repository_test.php` — focused tests синхронизации group/supergroup `chats` и `chat_members` из profiles.
 - `tests/request_parser_test.php` — focused tests parser для JSON, form-urlencoded, multipart text fields, пустого тела и malformed JSON.
 - `tests/reply_markup_test.php` — focused tests helper `ReplyMarkup` для inline keyboard, reply keyboard, чтения из `raw_payload` и `remove_keyboard`.
 - `tests/message_renderer_test.php` — focused tests helper `MessageRenderer` для media/update envelope и poll-блоков.

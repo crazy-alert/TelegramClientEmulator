@@ -2,19 +2,20 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task06-webhook-retry-backoff.md`.
+2026-06-05: выполнена `.aitasks/task07-group-chat-model.md`.
 
 Что сделано:
 
-- Добавлен ручной batch retry failed webhook updates через `POST /updates/retry-failed`.
-- На экране `/updates` для выбранного бота появилась форма retry с `retry_limit` и `retry_delay_ms`.
-- `InspectorController` синхронно повторяет failed webhook updates выбранного бота без scheduler/worker и редиректит на `/delivery-attempts`.
-- `UpdateRepository` умеет выбирать failed webhook updates выбранного бота с лимитом.
-- Добавлен HTTP smoke-сценарий `tests/scenarios/webhook_retry_scenarios.php` для failed и successful batch retry.
-- Обновлены `README.md`, `docs/technical-spec.md`, `docs/limitations.md` и `AI_PROJECT_MAP.md`.
+- Добавлена миграция `003_chats_and_members.sql` с таблицами `chats` и `chat_members`, включая backfill из `profiles`.
+- Добавлен `ChatRepository` для read-only доступа к нормализованным chats/members.
+- `ProfileRepository` синхронизирует `chats/chat_members` при create/update/delete профилей.
+- `profiles.chat_id/chat_type` сохранены как backward-compatible поверхность UI и import/export.
+- Добавлен focused test `tests/chat_repository_test.php`.
+- Обновлены `README.md`, `docs/technical-spec.md`, `docs/limitations.md`, `ROADMAP.md` и `AI_PROJECT_MAP.md`.
 
 Проверки:
 
+- `docker compose run --rm --no-deps telegram-emulator php tests/chat_repository_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
@@ -23,19 +24,19 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task07-group-chat-model.md`
 - `task08-fixture-packs-import-export.md`
 - `task09-long-polling-timeout-model.md`
 - `task10-command-scopes-language.md`
 - `task11-http-log-inspector.md`
 - `task12-bot-api-surface-catalog.md`
 
-Следующий шаг: взять `task07-group-chat-model.md`, обновить `AI_WORK_PLAN.md` и проверить текущую модель group/supergroup chat.
+Следующий шаг: взять `task08-fixture-packs-import-export.md`, обновить `AI_WORK_PLAN.md` и проверить текущий import/export формат.
 
 ## Важные решения
 
 - Проект Docker-first; на хосте может не быть `php`, проверки запускать через `docker compose run`.
 - Не добавлять неканоничные Telegram Bot API aliases/shortcuts без явного запроса.
+- Group chat модель теперь нормализована через `chats/chat_members`, но `profiles.chat_id/chat_type` остаются совместимым вводом и export/import v1.
 - Webhook batch retry является локальным development helper: синхронный UI-запрос, лимит до 50 updates, задержка до 5000 мс между попытками, без production scheduler и фоновых workers.
 - `tests/bot_api_test.php` остается главным HTTP smoke entrypoint; `tests/scenarios/http_scenarios.php` только оркестрирует тематические фазы.
 - `BotApiParams` отвечает за parsing/нормализацию параметров, но не за HTTP response policy.

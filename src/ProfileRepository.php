@@ -104,6 +104,7 @@ final readonly class ProfileRepository {
      * @param array<string, mixed> $data Входные данные формы (user_id, username, chat_id и др.).
      */
     public function create(array $data): void {
+        $payload = $this->normalize($data);
         $statement = $this->pdo->prepare(
             'INSERT INTO profiles (
                 name, active_bot_id, user_id, username, first_name, last_name,
@@ -114,7 +115,8 @@ final readonly class ProfileRepository {
             )'
         );
 
-        $statement->execute($this->normalize($data));
+        $statement->execute($payload);
+        $this->syncChatMembership((int) $this->pdo->lastInsertId(), $payload);
     }
 
     /**
@@ -143,12 +145,16 @@ final readonly class ProfileRepository {
         );
 
         $statement->execute($payload);
+        $this->syncChatMembership($id, $payload);
     }
 
     /**
      * Удаляет пользователя по идентификатору.
      */
     public function delete(int $id): void {
+        $deleteMembership = $this->pdo->prepare('DELETE FROM chat_members WHERE profile_id = :id');
+        $deleteMembership->execute(['id' => $id]);
+
         $statement = $this->pdo->prepare('DELETE FROM profiles WHERE id = :id');
         $statement->execute(['id' => $id]);
     }
@@ -183,5 +189,71 @@ final readonly class ProfileRepository {
 
     private function isGroupChatType(string $chatType): bool {
         return in_array($chatType, ['group', 'supergroup'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function syncChatMembership(int $profileId, array $profile): void {
+        $chatId = (int) $profile['chat_id'];
+        $chatType = (string) $profile['chat_type'];
+        $title = $this->chatTitle($profile);
+
+        $upsertChat = $this->pdo->prepare(
+            'INSERT INTO chats (chat_id, type, title)
+            VALUES (:chat_id, :type, :title)
+            ON CONFLICT(chat_id) DO UPDATE SET
+                type = excluded.type,
+                title = excluded.title,
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $upsertChat->execute([
+            'chat_id' => $chatId,
+            'type' => $chatType,
+            'title' => $title,
+        ]);
+
+        $chatRowId = $this->chatRowId($chatId);
+        if ($chatRowId === null) {
+            return;
+        }
+
+        $deleteOldMemberships = $this->pdo->prepare(
+            'DELETE FROM chat_members WHERE profile_id = :profile_id AND chat_row_id <> :chat_row_id'
+        );
+        $deleteOldMemberships->execute([
+            'profile_id' => $profileId,
+            'chat_row_id' => $chatRowId,
+        ]);
+
+        $upsertMember = $this->pdo->prepare(
+            'INSERT INTO chat_members (chat_row_id, profile_id, role)
+            VALUES (:chat_row_id, :profile_id, \'member\')
+            ON CONFLICT(chat_row_id, profile_id) DO NOTHING'
+        );
+        $upsertMember->execute([
+            'chat_row_id' => $chatRowId,
+            'profile_id' => $profileId,
+        ]);
+    }
+
+    private function chatRowId(int $chatId): ?int {
+        $statement = $this->pdo->prepare('SELECT id FROM chats WHERE chat_id = :chat_id');
+        $statement->execute(['chat_id' => $chatId]);
+        $id = $statement->fetchColumn();
+
+        return $id === false ? null : (int) $id;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function chatTitle(array $profile): string {
+        $chatType = (string) $profile['chat_type'];
+        if ($this->isGroupChatType($chatType) || $chatType === 'channel') {
+            return 'Chat ' . (string) $profile['chat_id'];
+        }
+
+        return trim((string) $profile['first_name'] . ' ' . (string) ($profile['last_name'] ?? ''));
     }
 }

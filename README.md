@@ -249,7 +249,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Экран `/updates` позволяет очистить pending/confirmed updates выбранного бота после явного подтверждения.
 - Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; bot token и secret token маскируются в HTML-выводе.
 - Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; импорт отклоняет конфликты `token`, `user_id` и private `chat_id`, но разрешает нескольким group/supergroup пользователям общий `chat_id`. Формат описан в `docs/technical-spec.md`.
-- Групповой чат моделируется несколькими пользователями с одинаковым `chat_id` и `chat_type=group|supergroup`; выбранный пользователь в `/chat` является отправителем сообщения.
+- Групповой чат моделируется отдельной записью `chats` и membership-связями `chat_members`, которые синхронизируются из profiles. Для совместимости import/export и UI-форм несколько пользователей по-прежнему могут иметь одинаковый `chat_id` и `chat_type=group|supergroup`; выбранный пользователь в `/chat` является отправителем сообщения.
 - Режим нескольких ботов в одном экране не входит в текущий scope: для сравнения нескольких ботов откройте один `profile_id` с разными `bot_id` в разных вкладках.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
@@ -303,10 +303,10 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 
 ```bash
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
-docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php"
+docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php && php tests/chat_repository_test.php"
 ```
 
-Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; `tests/bot_api_test.php` остается entrypoint, helpers вынесены в `tests/support/`, а HTTP smoke-фазы — в тематические файлы `tests/scenarios/*_scenarios.php` через оркестратор `tests/scenarios/http_scenarios.php`. Runner проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и структурные HTML-проверки через `DOMDocument`/`DOMXPath`. Небольшие focused tests вроде `tests/bot_api_params_test.php`, `tests/bot_api_payload_factory_test.php`, `tests/long_polling_service_test.php`, `tests/request_parser_test.php`, `tests/reply_markup_test.php` и `tests/message_renderer_test.php` проверяют изолированные компоненты без HTTP server.
+Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; `tests/bot_api_test.php` остается entrypoint, helpers вынесены в `tests/support/`, а HTTP smoke-фазы — в тематические файлы `tests/scenarios/*_scenarios.php` через оркестратор `tests/scenarios/http_scenarios.php`. Runner проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и структурные HTML-проверки через `DOMDocument`/`DOMXPath`. Небольшие focused tests вроде `tests/bot_api_params_test.php`, `tests/bot_api_payload_factory_test.php`, `tests/long_polling_service_test.php`, `tests/request_parser_test.php`, `tests/reply_markup_test.php`, `tests/message_renderer_test.php` и `tests/chat_repository_test.php` проверяют изолированные компоненты без HTTP server.
 
 Синтаксис PHP-файлов:
 
