@@ -76,7 +76,7 @@
 
 `sendPoll` принимает `question`, `options` и базовые optional параметры regular/quiz poll. Эмулятор сохраняет poll как read-only сообщение и возвращает Telegram-like `Message.poll`.
 
-UI чата может отправлять от пользователя photo/document по URL, file_id или локальному файлу, location и contact. Эти сообщения создают обычный `message` update для webhook и Long Polling.
+UI чата может отправлять от пользователя photo, document, video, animation, audio, voice, video note и sticker по URL, file_id или локальному файлу, а также poll, location, venue, contact и dice. Эти сообщения создают обычный `message` update для webhook и Long Polling.
 
 Ограничения:
 

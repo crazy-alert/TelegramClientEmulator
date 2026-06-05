@@ -101,6 +101,7 @@ final class Application {
             $this->updateGenerator,
             $this->webhookDelivery,
             $this->mediaStorage,
+            $this->botApiPayloads,
             $this->view,
             fn(): int => $this->webhookTimeoutSeconds(),
         );

@@ -83,11 +83,52 @@ function runChatUiScenarios(array $context): void {
         '//details[contains(concat(" ", normalize-space(@class), " "), " chat-structured-inputs ")]//input[@type="hidden" and @name="message_type" and @value="location"]',
         'DOM: вложения должны содержать форму location',
     );
+    foreach (['video', 'animation', 'audio', 'voice', 'video_note', 'sticker', 'poll', 'venue', 'dice'] as $messageType) {
+        assertDomXPathExists(
+            $chatDom,
+            '//details[contains(concat(" ", normalize-space(@class), " "), " chat-structured-inputs ")]//input[@type="hidden" and @name="message_type" and @value="' . $messageType . '"]',
+            'DOM: вложения должны содержать форму ' . $messageType,
+        );
+    }
     assertDomXPathExists(
         $chatDom,
         '//details[contains(concat(" ", normalize-space(@class), " "), " chat-update-inspector ")]/summary[contains(normalize-space(.), "Последний Update")]',
         'DOM: последний update inspector должен быть details/summary',
     );
+
+    foreach ([
+        [
+            'message_type' => 'dice',
+            'emoji' => 'dice',
+            'value' => '5',
+        ],
+        [
+            'message_type' => 'venue',
+            'latitude' => '43.1155',
+            'longitude' => '131.8855',
+            'title' => 'UI venue',
+            'address' => 'UI address',
+        ],
+        [
+            'message_type' => 'poll',
+            'question' => 'UI poll',
+            'options' => "One\nTwo",
+        ],
+    ] as $payload) {
+        $response = httpRequest('POST', $baseUrl . '/chat/send', formBody(array_merge([
+            'profile_id' => '1',
+            'bot_id' => '1',
+        ], $payload)), ['Content-Type: application/x-www-form-urlencoded']);
+        assertSameValue(303, $response['status'], '/chat/send должен принимать UI message_type=' . $payload['message_type']);
+    }
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Страница чата после UI structured messages должна открываться');
+    assertTrueValue(str_contains($chat['body'], 'value 5'), 'UI dice должен сохраняться в истории сообщений');
+    assertTrueValue(str_contains($chat['body'], 'UI venue'), 'UI venue должен сохраняться в истории сообщений');
+    assertTrueValue(str_contains($chat['body'], 'UI poll'), 'UI poll должен сохраняться в истории сообщений');
+
+    assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getUpdates?offset=200000000'), 200, true);
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '1',

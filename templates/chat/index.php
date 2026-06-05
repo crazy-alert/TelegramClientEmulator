@@ -278,6 +278,49 @@
                     </label>
                     <button type="submit" class="secondary">Document</button>
                 </form>
+                <?php foreach ([
+                    'video' => ['label' => 'Video', 'accept' => 'video/*'],
+                    'animation' => ['label' => 'Animation', 'accept' => 'image/gif,video/*'],
+                    'audio' => ['label' => 'Audio', 'accept' => 'audio/*'],
+                    'voice' => ['label' => 'Voice', 'accept' => 'audio/*'],
+                    'video_note' => ['label' => 'Video note', 'accept' => 'video/*'],
+                    'sticker' => ['label' => 'Sticker', 'accept' => 'image/*'],
+                ] as $mediaType => $mediaConfig): ?>
+                    <form method="post" action="/chat/send" enctype="multipart/form-data">
+                        <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                        <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                        <input type="hidden" name="message_type" value="<?= e($mediaType) ?>">
+                        <label>
+                            <?= e($mediaConfig['label']) ?> URL/file_id
+                            <input type="text" name="<?= e($mediaType) ?>" placeholder="https://example.test/<?= e($mediaType) ?>">
+                        </label>
+                        <label>
+                            <?= e($mediaConfig['label']) ?> file
+                            <input type="file" name="<?= e($mediaType) ?>_file" accept="<?= e($mediaConfig['accept']) ?>">
+                        </label>
+                        <?php if (in_array($mediaType, ['video', 'animation', 'audio'], true)): ?>
+                            <label>
+                                Caption
+                                <input type="text" name="caption">
+                            </label>
+                        <?php endif; ?>
+                        <button type="submit" class="secondary"><?= e($mediaConfig['label']) ?></button>
+                    </form>
+                <?php endforeach; ?>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="poll">
+                    <label>
+                        Question
+                        <input type="text" name="question" placeholder="Choose one">
+                    </label>
+                    <label>
+                        Options
+                        <textarea name="options" rows="3" placeholder="A&#10;B"></textarea>
+                    </label>
+                    <button type="submit" class="secondary">Poll</button>
+                </form>
                 <form method="post" action="/chat/send">
                     <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
                     <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
@@ -291,6 +334,28 @@
                         <input type="text" name="longitude" placeholder="131.8855">
                     </label>
                     <button type="submit" class="secondary">Location</button>
+                </form>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="venue">
+                    <label>
+                        Latitude
+                        <input type="text" name="latitude" placeholder="43.1155">
+                    </label>
+                    <label>
+                        Longitude
+                        <input type="text" name="longitude" placeholder="131.8855">
+                    </label>
+                    <label>
+                        Title
+                        <input type="text" name="title" placeholder="Local venue">
+                    </label>
+                    <label>
+                        Address
+                        <input type="text" name="address" placeholder="Local address">
+                    </label>
+                    <button type="submit" class="secondary">Venue</button>
                 </form>
                 <form method="post" action="/chat/send">
                     <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
@@ -309,6 +374,20 @@
                         <input type="text" name="last_name">
                     </label>
                     <button type="submit" class="secondary">Contact</button>
+                </form>
+                <form method="post" action="/chat/send">
+                    <input type="hidden" name="profile_id" value="<?= e($profile['id']) ?>">
+                    <input type="hidden" name="bot_id" value="<?= e($bot['id']) ?>">
+                    <input type="hidden" name="message_type" value="dice">
+                    <label>
+                        Emoji
+                        <input type="text" name="emoji" placeholder="dice">
+                    </label>
+                    <label>
+                        Value
+                        <input type="number" name="value" min="1" max="6" value="4">
+                    </label>
+                    <button type="submit" class="secondary">Dice</button>
                 </form>
             </div>
         </details>

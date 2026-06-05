@@ -23,6 +23,7 @@ final readonly class ChatController {
         private UpdateGenerator $updateGenerator,
         private WebhookDeliveryService $webhookDelivery,
         private MediaStorage $mediaStorage,
+        private BotApiPayloadFactory $payloadFactory,
         private View $view,
         private Closure $webhookTimeoutSeconds,
     ) {
@@ -249,6 +250,37 @@ final readonly class ChatController {
             ];
         }
 
+        if (in_array($messageType, ['video', 'animation', 'audio', 'voice', 'video_note', 'sticker'], true)) {
+            return $this->typedMediaMessageData($messageType);
+        }
+
+        if ($messageType === 'poll') {
+            $question = trim((string) ($_POST['question'] ?? ''));
+            $options = $this->pollOptionsFromPost();
+            if ($question === '' || count($options) < 2) {
+                return null;
+            }
+
+            return [
+                'text' => '[poll] ' . $question,
+                'raw_payload' => $this->encodePayload([
+                    'poll' => [
+                        'id' => substr(sha1($question . json_encode($options, JSON_THROW_ON_ERROR)), 0, 16),
+                        'question' => $question,
+                        'options' => array_map(
+                            fn(string $option): array => ['text' => $option, 'voter_count' => 0],
+                            $options,
+                        ),
+                        'total_voter_count' => 0,
+                        'is_closed' => false,
+                        'is_anonymous' => true,
+                        'type' => (string) ($_POST['poll_type'] ?? 'regular') === 'quiz' ? 'quiz' : 'regular',
+                        'allows_multiple_answers' => false,
+                    ],
+                ]),
+            ];
+        }
+
         if ($messageType === 'location') {
             $latitude = $this->floatPostParam('latitude');
             $longitude = $this->floatPostParam('longitude');
@@ -262,6 +294,30 @@ final readonly class ChatController {
                     'location' => [
                         'latitude' => $latitude,
                         'longitude' => $longitude,
+                    ],
+                ]),
+            ];
+        }
+
+        if ($messageType === 'venue') {
+            $latitude = $this->floatPostParam('latitude');
+            $longitude = $this->floatPostParam('longitude');
+            $title = trim((string) ($_POST['title'] ?? ''));
+            $address = trim((string) ($_POST['address'] ?? ''));
+            if ($latitude === null || $longitude === null || $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180 || $title === '' || $address === '') {
+                return null;
+            }
+
+            return [
+                'text' => '[venue] ' . $title,
+                'raw_payload' => $this->encodePayload([
+                    'venue' => [
+                        'location' => [
+                            'latitude' => $latitude,
+                            'longitude' => $longitude,
+                        ],
+                        'title' => $title,
+                        'address' => $address,
                     ],
                 ]),
             ];
@@ -286,6 +342,24 @@ final readonly class ChatController {
             return [
                 'text' => '[contact] ' . $firstName,
                 'raw_payload' => $this->encodePayload(['contact' => $contact]),
+            ];
+        }
+
+        if ($messageType === 'dice') {
+            $emoji = trim((string) ($_POST['emoji'] ?? ''));
+            $value = $this->intPostParam('value', 1);
+            if ($emoji === '') {
+                $emoji = 'dice';
+            }
+
+            return [
+                'text' => '[dice] value ' . $value,
+                'raw_payload' => $this->encodePayload([
+                    'dice' => [
+                        'emoji' => $emoji,
+                        'value' => max(1, min(6, $value)),
+                    ],
+                ]),
             ];
         }
 
@@ -416,6 +490,51 @@ final readonly class ChatController {
     }
 
     /**
+     * @return array{text: string, raw_payload: string|null}|null
+     */
+    private function typedMediaMessageData(string $mediaField): ?array {
+        $media = trim((string) ($_POST[$mediaField] ?? ''));
+        $storedMedia = $this->storeUploadedFile($mediaField . '_file');
+        if ($storedMedia !== null) {
+            $media = $storedMedia['file_id'];
+        }
+
+        if ($media === '') {
+            return null;
+        }
+
+        $caption = trim((string) ($_POST['caption'] ?? ''));
+        $rawPayload = [
+            $mediaField => $this->payloadFactory->typedMedia($mediaField, $media, $_POST, $storedMedia),
+            $mediaField . '_source' => $media,
+        ];
+        if ($caption !== '' && in_array($mediaField, ['video', 'animation', 'audio'], true)) {
+            $rawPayload['caption'] = $caption;
+        }
+
+        return [
+            'text' => $caption !== '' ? $caption : '[' . $mediaField . ']',
+            'raw_payload' => $this->encodePayload($rawPayload),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function pollOptionsFromPost(): array {
+        $rawOptions = str_replace(',', "\n", (string) ($_POST['options'] ?? ''));
+        $options = [];
+        foreach (preg_split('/\R/u', $rawOptions) ?: [] as $option) {
+            $option = trim($option);
+            if ($option !== '') {
+                $options[] = $option;
+            }
+        }
+
+        return array_slice($options, 0, 10);
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function photoSizesPayload(string $photo, ?array $storedMedia = null): array {
@@ -510,6 +629,20 @@ final readonly class ChatController {
         }
 
         return (float) $value;
+    }
+
+    private function intPostParam(string $name, int $default): int {
+        $value = $_POST[$name] ?? null;
+        if (is_int($value)) {
+            return $value;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || preg_match('/^-?\d+$/', $value) !== 1) {
+            return $default;
+        }
+
+        return (int) $value;
     }
 
     private function webhookTimeoutSeconds(): int {

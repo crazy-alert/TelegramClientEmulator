@@ -2,21 +2,23 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task03-bot-api-route-registry.md`.
+2026-06-05: выполнена `.aitasks/task04-chat-all-attachments-ui.md`.
 
 Что сделано:
 
-- В `src/BotApiController.php` добавлен route registry с canonical method name, HTTP verbs, handler и `media_field` для typed media.
-- `BotApiController::handle()` теперь парсит `/bot<TOKEN>/<METHOD>` один раз и делегирует handler через registry.
-- Сохранено старое поведение: case-insensitive method lookup и HTTP 501 для unknown method или неподходящего HTTP verb.
-- `tests/bot_api_surface_catalog_test.php` теперь сверяет `docs/bot-api-surface.json` с `BotApiController::routeDefinitions()`, включая HTTP verbs.
-- `AI_PROJECT_MAP.md` обновлен под route registry.
+- `ChatController::messageDataFromPost()` расширен для пользовательских `message_type`: `video`, `animation`, `audio`, `voice`, `video_note`, `sticker`, `poll`, `venue`, `dice`.
+- `ChatController` переиспользует `BotApiPayloadFactory` для typed media payload.
+- В `/chat` раскрывающийся блок `Вложения` получил компактные формы для всех новых типов.
+- `tests/scenarios/chat_ui_scenarios.php` проверяет DOM-наличие новых форм и создание dice/venue/poll через `/chat/send`.
+- `README.md`, `docs/limitations.md` и `docs/technical-spec.md` обновлены под полный UI attachments scope.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php -l src/BotApiController.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/bot_api_surface_catalog_test.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_surface_catalog_test.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatController.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/chat/index.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/chat_ui_scenarios.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
@@ -24,12 +26,11 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task04-chat-all-attachments-ui.md`
 - `task05-group-chat-admin-ui.md`
 - `task06-webhook-dev-retry-backoff.md`
 - `task07-split-message-scenarios.md`
 
-Следующий шаг: взять `.aitasks/task04-chat-all-attachments-ui.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
+Следующий шаг: взять `.aitasks/task05-group-chat-admin-ui.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
 
 ## Важные решения
 

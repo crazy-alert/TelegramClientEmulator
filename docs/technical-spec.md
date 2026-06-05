@@ -92,7 +92,7 @@
 
 Возможности следующих версий:
 
-- Mock attachments: photo, document, location, venue, contact, dice, voice.
+- Mock attachments: photo, document, video, animation, audio, voice, video note, sticker, poll, location, venue, contact, dice.
 - Дальнейшее развитие group chat: управление title, ролями, service messages и отдельным UI membership поверх уже существующих `chats/chat_members`.
 
 Решение по multi-bot UI: отдельный экран, где один пользователь одновременно общается с несколькими ботами, в текущий scope не входит. Причины:
@@ -255,7 +255,7 @@ GET  /file/bot<TOKEN>/<file_path>
 
 Текущий эмулятор реализует MVP-методы `getMe`, `getUpdates`, `sendMessage`, `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`, `sendPoll`, `sendLocation`, `sendVenue`, `sendContact`, `sendDice`, `editMessageText`, `getWebhookInfo`, `setWebhook`, `deleteWebhook`, `setMyCommands`, `getMyCommands`, `deleteMyCommands` и `answerCallbackQuery`. Машинно-читаемый каталог локальной surface хранится в `docs/bot-api-surface.json`. `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают строковое/URL значение или multipart upload в соответствующем media-поле. `sendPoll` сохраняет read-only regular/quiz poll и возвращает `Message.poll`, но интерактивное голосование пока не моделируется. `sendLocation`/`sendVenue`/`sendContact`/`sendDice` сохраняют structured payload в истории и возвращают соответствующие Telegram-like поля `Message`; `sendDice` использует детерминированное значение для стабильных локальных тестов. Остальные методы Telegram Bot API пока должны возвращать явный Telegram-like ответ `ok=false` с HTTP 501, а не молчаливую заглушку. Подробный список текущих ограничений ведется в `docs/limitations.md`.
 
-UI `/chat` принимает от пользователя structured-сообщения: photo/document по строковому URL, file_id или локальному файлу, location и contact. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
+UI `/chat` принимает от пользователя structured/media-сообщения: photo, document, video, animation, audio, voice, video note и sticker по строковому URL, file_id или локальному файлу, а также poll, location, venue, contact и dice. Такие сообщения сохраняются в истории, отображаются в чате и создают одинаковый Telegram-like update payload для webhook и Long Polling.
 
 Отображение structured/media payload в `/chat` нормализует helper `MessageRenderer`: он превращает raw payload или update envelope в единый список UI-блоков (`title`, `source`, `lines`, `items`). Шаблон отвечает за HTML-вывод этих блоков и не должен повторно определять типы сообщений.
 

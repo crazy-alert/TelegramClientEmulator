@@ -1,5 +1,25 @@
 # Завершенные планы работы
 
+## Chat UI all attachments (2026-06-05)
+
+- [x] Прочитать task-файл и текущий `ChatController::messageDataFromPost()`.
+- [x] Добавить поддержку `video`, `animation`, `audio`, `voice`, `video_note`, `sticker`, `poll`, `venue`, `dice` в `/chat/send`.
+- [x] Добавить компактные формы в раскрывающийся блок `Вложения`.
+- [x] Добавить DOM/HTTP checks для новых форм и создания structured updates.
+- [x] Обновить README/docs.
+- [x] Запустить проверки.
+- [x] Обновить `AI_CURRENT_CONTEXT.md`, удалить task-файл, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/chat/index.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/chat_ui_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Bot API route registry (2026-06-05)
 
 - [x] Прочитать task-файл и текущий `BotApiController::handle()`.
