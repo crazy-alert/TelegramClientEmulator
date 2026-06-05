@@ -28,6 +28,31 @@ final readonly class ChatRepository {
     /**
      * @return list<array<string, mixed>>
      */
+    public function all(): array {
+        $statement = $this->pdo->query('SELECT * FROM chats ORDER BY id ASC');
+
+        return $statement->fetchAll();
+    }
+
+    public function upsertMetadata(int $chatId, string $type, ?string $title): void {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO chats (chat_id, type, title)
+            VALUES (:chat_id, :type, :title)
+            ON CONFLICT(chat_id) DO UPDATE SET
+                type = excluded.type,
+                title = excluded.title,
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $statement->execute([
+            'chat_id' => $chatId,
+            'type' => $type,
+            'title' => $title,
+        ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function membersByChatId(int $chatId): array {
         $statement = $this->pdo->prepare(
             'SELECT

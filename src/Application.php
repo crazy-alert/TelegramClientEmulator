@@ -20,6 +20,7 @@ final class Application {
     private ChatController $chat;
     private BotRepository $bots;
     private BotCommandRepository $botCommands;
+    private ChatRepository $chats;
     private ProfileRepository $profiles;
     private MessageRepository $messages;
     private UpdateRepository $updates;
@@ -43,6 +44,7 @@ final class Application {
         $this->database = new Database($this->dataDir);
         $this->bots = new BotRepository($this->database->pdo());
         $this->botCommands = new BotCommandRepository($this->database->pdo());
+        $this->chats = new ChatRepository($this->database->pdo());
         $this->profiles = new ProfileRepository($this->database->pdo());
         $this->messages = new MessageRepository($this->database->pdo());
         $this->updates = new UpdateRepository($this->database->pdo());
@@ -210,6 +212,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'GET' && $path === '/export/fixture-pack') {
+            $this->exportFixturePack();
+            return;
+        }
+
         if ($method === 'POST' && $path === '/import/bots') {
             $this->importBots();
             return;
@@ -217,6 +224,11 @@ final class Application {
 
         if ($method === 'POST' && $path === '/import/profiles') {
             $this->importProfiles();
+            return;
+        }
+
+        if ($method === 'POST' && $path === '/import/fixture-pack') {
+            $this->importFixturePack();
             return;
         }
 
@@ -496,6 +508,32 @@ final class Application {
         ]);
     }
 
+    private function exportFixturePack(): void {
+        Response::json([
+            'ok' => true,
+            'version' => 2,
+            'kind' => 'telegram-emulator-fixture-pack',
+            'exported_at' => date('c'),
+            'bots' => array_map(
+                fn(array $bot): array => $this->exportBotPayload($bot),
+                $this->bots->all(),
+            ),
+            'profiles' => array_map(
+                fn(array $profile): array => $this->exportProfilePayload($profile),
+                $this->profiles->all(),
+            ),
+            'chats' => array_map(
+                fn(array $chat): array => $this->exportChatPayload($chat),
+                $this->chats->all(),
+            ),
+            'bot_commands' => $this->botCommands->allWithBotTokens(),
+            'media_manifest' => [
+                'included' => false,
+                'note' => 'Binary media files are not embedded in JSON fixture packs.',
+            ],
+        ]);
+    }
+
     private function importBots(): void {
         $payload = $this->importPayload('bots');
         if (!is_array($payload)) {
@@ -584,6 +622,108 @@ final class Application {
         Response::json(['ok' => true, 'created' => count($profilesToCreate)]);
     }
 
+    private function importFixturePack(): void {
+        $payload = $this->fixturePackPayload();
+        if ($payload === null) {
+            return;
+        }
+
+        $bots = $payload['bots'] ?? [];
+        $profiles = $payload['profiles'] ?? [];
+        $botCommands = $payload['bot_commands'] ?? [];
+        $chats = $payload['chats'] ?? [];
+
+        if (!is_array($bots) || !array_is_list($bots)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался массив bots'], 400);
+            return;
+        }
+
+        if (!is_array($profiles) || !array_is_list($profiles)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался массив profiles'], 400);
+            return;
+        }
+
+        if (!is_array($botCommands) || !array_is_list($botCommands)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался массив bot_commands'], 400);
+            return;
+        }
+
+        if (!is_array($chats) || !array_is_list($chats)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался массив chats'], 400);
+            return;
+        }
+
+        $botsToCreate = $this->validatedImportBots($bots);
+        if ($botsToCreate === null) {
+            return;
+        }
+
+        $profilesToCreate = $this->validatedImportProfiles($profiles);
+        if ($profilesToCreate === null) {
+            return;
+        }
+
+        $commandsToImport = $this->validatedImportBotCommands($botCommands, $botsToCreate);
+        if ($commandsToImport === null) {
+            return;
+        }
+
+        if (!$this->validFixtureChats($chats, $profilesToCreate)) {
+            return;
+        }
+
+        foreach ($botsToCreate as $bot) {
+            $this->bots->create($bot);
+        }
+
+        foreach ($profilesToCreate as $profile) {
+            $this->profiles->create($profile);
+        }
+
+        foreach ($chats as $chat) {
+            $this->chats->upsertMetadata(
+                (int) $chat['chat_id'],
+                (string) $chat['type'],
+                $this->fixtureChatTitle($chat),
+            );
+        }
+
+        foreach ($commandsToImport as $commandGroup) {
+            $bot = $this->bots->findByToken($commandGroup['bot_token']);
+            if ($bot !== null) {
+                $this->botCommands->replaceForBot((int) $bot['id'], $commandGroup['commands']);
+            }
+        }
+
+        Response::json([
+            'ok' => true,
+            'created' => [
+                'bots' => count($botsToCreate),
+                'profiles' => count($profilesToCreate),
+                'bot_commands' => count($commandsToImport),
+                'chats' => count($chats),
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function fixturePackPayload(): ?array {
+        $raw = trim((string) ($_POST['payload'] ?? ''));
+        if ($raw === '') {
+            $raw = $this->rawBody();
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || array_is_list($decoded)) {
+            Response::json(['ok' => false, 'error' => 'Ожидался JSON fixture pack object'], 400);
+            return null;
+        }
+
+        return $decoded;
+    }
+
     /**
      * @return list<array<string, mixed>>|null
      */
@@ -609,6 +749,179 @@ final class Application {
         }
 
         return $items;
+    }
+
+    /**
+     * @param list<mixed> $bots
+     * @return list<array<string, mixed>>|null
+     */
+    private function validatedImportBots(array $bots): ?array {
+        $botsToCreate = [];
+        $seenTokens = [];
+        foreach ($bots as $index => $bot) {
+            if (!is_array($bot)) {
+                Response::json(['ok' => false, 'error' => 'bots[' . $index . '] должен быть объектом'], 400);
+                return null;
+            }
+
+            $bot = $this->normalizedImportEnabled($bot);
+            $errors = $this->validateBotForm($bot);
+            if ($errors !== []) {
+                Response::json(['ok' => false, 'error' => 'Некорректный bot payload', 'details' => $errors], 400);
+                return null;
+            }
+
+            $token = trim((string) ($bot['token'] ?? ''));
+            if ($token === '' || isset($seenTokens[$token]) || $this->bots->hasToken($token)) {
+                Response::json(['ok' => false, 'error' => 'Конфликт token при импорте бота'], 409);
+                return null;
+            }
+
+            $seenTokens[$token] = true;
+            $botsToCreate[] = $bot;
+        }
+
+        return $botsToCreate;
+    }
+
+    /**
+     * @param list<mixed> $profiles
+     * @return list<array<string, mixed>>|null
+     */
+    private function validatedImportProfiles(array $profiles): ?array {
+        $profilesToCreate = [];
+        $seenUserIds = [];
+        $seenChatIds = [];
+        foreach ($profiles as $index => $profile) {
+            if (!is_array($profile)) {
+                Response::json(['ok' => false, 'error' => 'profiles[' . $index . '] должен быть объектом'], 400);
+                return null;
+            }
+
+            $profile = $this->normalizedImportEnabled($profile);
+            $errors = $this->validateProfileForm($profile);
+            if ($errors !== []) {
+                Response::json(['ok' => false, 'error' => 'Некорректный profile payload', 'details' => $errors], 400);
+                return null;
+            }
+
+            $userId = (int) $profile['user_id'];
+            $chatId = (int) $profile['chat_id'];
+            if (isset($seenUserIds[$userId]) || $this->profiles->hasUserId($userId)) {
+                Response::json(['ok' => false, 'error' => 'Конфликт user_id при импорте пользователя'], 409);
+                return null;
+            }
+
+            $chatType = (string) ($profile['chat_type'] ?? 'private');
+            if (
+                $this->hasConflictingImportedChatId($seenChatIds, $chatId, $chatType)
+                || $this->profiles->hasConflictingChatId($chatId, $chatType)
+            ) {
+                Response::json(['ok' => false, 'error' => 'Конфликт chat_id при импорте пользователя'], 409);
+                return null;
+            }
+
+            $seenUserIds[$userId] = true;
+            $seenChatIds[$chatId][] = $chatType;
+            $profilesToCreate[] = $profile;
+        }
+
+        return $profilesToCreate;
+    }
+
+    /**
+     * @param list<mixed> $botCommands
+     * @param list<array<string, mixed>> $botsToCreate
+     * @return list<array{bot_token: string, commands: list<array{command: string, description: string}>}>|null
+     */
+    private function validatedImportBotCommands(array $botCommands, array $botsToCreate): ?array {
+        $availableTokens = [];
+        foreach ($botsToCreate as $bot) {
+            $availableTokens[(string) $bot['token']] = true;
+        }
+
+        $commandsToImport = [];
+        $seenTokens = [];
+        foreach ($botCommands as $index => $commandGroup) {
+            if (!is_array($commandGroup)) {
+                Response::json(['ok' => false, 'error' => 'bot_commands[' . $index . '] должен быть объектом'], 400);
+                return null;
+            }
+
+            $token = trim((string) ($commandGroup['bot_token'] ?? ''));
+            if ($token === '' || isset($seenTokens[$token]) || !isset($availableTokens[$token])) {
+                Response::json(['ok' => false, 'error' => 'Некорректный bot_token в bot_commands'], 400);
+                return null;
+            }
+
+            $commands = BotApiParams::commands($commandGroup['commands'] ?? null);
+            if ($commands === null) {
+                Response::json(['ok' => false, 'error' => 'Некорректные commands в bot_commands'], 400);
+                return null;
+            }
+
+            $seenTokens[$token] = true;
+            $commandsToImport[] = [
+                'bot_token' => $token,
+                'commands' => $commands,
+            ];
+        }
+
+        return $commandsToImport;
+    }
+
+    /**
+     * @param list<mixed> $chats
+     * @param list<array<string, mixed>> $profilesToCreate
+     */
+    private function validFixtureChats(array $chats, array $profilesToCreate): bool {
+        $profileChatTypes = [];
+        foreach ($profilesToCreate as $profile) {
+            $profileChatTypes[(int) $profile['chat_id']] = (string) $profile['chat_type'];
+        }
+
+        $seenChatIds = [];
+        foreach ($chats as $index => $chat) {
+            if (!is_array($chat)) {
+                Response::json(['ok' => false, 'error' => 'chats[' . $index . '] должен быть объектом'], 400);
+                return false;
+            }
+
+            $chatId = $this->intParam($chat['chat_id'] ?? 0, 0);
+            $chatType = (string) ($chat['type'] ?? '');
+            if ($chatId === 0 || !in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)) {
+                Response::json(['ok' => false, 'error' => 'Некорректный chat payload'], 400);
+                return false;
+            }
+
+            if (isset($seenChatIds[$chatId])) {
+                Response::json(['ok' => false, 'error' => 'Дубликат chat_id в chats'], 409);
+                return false;
+            }
+
+            if ($this->chats->findByChatId($chatId) !== null) {
+                Response::json(['ok' => false, 'error' => 'Конфликт chat_id при импорте chats'], 409);
+                return false;
+            }
+
+            if (isset($profileChatTypes[$chatId]) && $profileChatTypes[$chatId] !== $chatType) {
+                Response::json(['ok' => false, 'error' => 'Конфликт chat type между chats и profiles'], 409);
+                return false;
+            }
+
+            $seenChatIds[$chatId] = true;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $chat
+     */
+    private function fixtureChatTitle(array $chat): ?string {
+        $title = trim((string) ($chat['title'] ?? ''));
+
+        return $title === '' ? null : $title;
     }
 
     /**
@@ -657,6 +970,18 @@ final class Application {
             'chat_type' => $profile['chat_type'],
             'language_code' => $profile['language_code'],
             'enabled' => ((int) $profile['enabled']) === 1,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $chat
+     * @return array<string, mixed>
+     */
+    private function exportChatPayload(array $chat): array {
+        return [
+            'chat_id' => (int) $chat['chat_id'],
+            'type' => $chat['type'],
+            'title' => $chat['title'],
         ];
     }
 

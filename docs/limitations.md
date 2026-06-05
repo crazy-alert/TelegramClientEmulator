@@ -68,7 +68,7 @@
 - размер одного upload ограничен `MEDIA_MAX_BYTES`, по умолчанию `10485760` байт;
 - имена файлов очищаются от путей и небезопасных символов; path traversal не сохраняется;
 - `file_path` не принимает вложенные директории и `..`;
-- бинарные файлы не входят в import/export JSON.
+- бинарные файлы не входят в import/export JSON; fixture pack v2 экспортирует только `media_manifest` с `included=false`.
 
 ## Structured сообщения
 

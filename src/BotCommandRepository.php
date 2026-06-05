@@ -70,4 +70,34 @@ final readonly class BotCommandRepository {
             $statement->fetchAll(),
         );
     }
+
+    /**
+     * @return list<array{bot_token: string, commands: list<array{command: string, description: string}>}>
+     */
+    public function allWithBotTokens(): array {
+        $statement = $this->pdo->query(
+            'SELECT
+                bots.token AS bot_token,
+                bot_commands.command,
+                bot_commands.description
+            FROM bot_commands
+            INNER JOIN bots ON bots.id = bot_commands.bot_id
+            ORDER BY bots.id ASC, bot_commands.position ASC, bot_commands.id ASC'
+        );
+
+        $groups = [];
+        foreach ($statement->fetchAll() as $row) {
+            $token = (string) $row['bot_token'];
+            $groups[$token] ??= [
+                'bot_token' => $token,
+                'commands' => [],
+            ];
+            $groups[$token]['commands'][] = [
+                'command' => (string) $row['command'],
+                'description' => (string) $row['description'],
+            ];
+        }
+
+        return array_values($groups);
+    }
 }

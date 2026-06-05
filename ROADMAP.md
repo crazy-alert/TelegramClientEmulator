@@ -302,7 +302,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - inline validation форм ботов и пользователей — реализовано для основных ошибок;
 - вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
 - inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts;
-- import/export ботов и пользователей — реализовано для JSON без истории сообщений;
+- import/export ботов и пользователей — реализовано для JSON без истории сообщений; fixture pack v2 добавлен для повторяемых тестовых сценариев с `bot_commands`, `chats` и `media_manifest`;
 - очистка истории по пользователю или боту — реализована для диалога и pending/confirmed updates выбранного бота.
 
 Критерий готовности: основной workflow выполняется из браузера без ручного редактирования файлов и без перезагрузки страницы для частых действий.
@@ -375,7 +375,7 @@ Long Polling был реализован до webhook-доставки, пото
 
 ## 8. Открытые решения
 
-- Формат import/export принят: JSON envelope v1 для bots/profiles без истории; будущие сущности добавляются top-level массивами, архив нужен только при появлении бинарных media.
+- Формат import/export принят: JSON envelope v1 для bots/profiles без истории; fixture pack v2 использует top-level массивы `bots`, `profiles`, `chats`, `bot_commands` и `media_manifest`. Архив нужен только при появлении экспорта бинарных media.
 - Групповые чаты начаты: несколько сохраненных пользователей могут иметь один group/supergroup `chat_id`, `/chat` выбирает отправителя, update содержит `message.chat.type=group`, история группы читается по `bot_id + chat_id`. Добавлены нормализованные `chats` и `chat_members`, которые синхронизируются из profiles; отдельный UI для membership/title/roles пока отложен.
 - Режим "один пользователь общается с несколькими ботами в одном экране" не входит в текущий scope; альтернатива — открыть одну пару `profile_id`/`bot_id` на вкладку.
 - Micro-framework не внедряется сейчас: решение зафиксировано в `docs/adr-routing.md`, текущий custom router остается до явной необходимости.

@@ -9,6 +9,7 @@
         <div class="actions">
             <a class="button secondary" href="/export/bots">Скачать bots JSON</a>
             <a class="button secondary" href="/export/profiles">Скачать profiles JSON</a>
+            <a class="button secondary" href="/export/fixture-pack">Скачать fixture pack JSON</a>
         </div>
     </section>
 
@@ -53,6 +54,24 @@
         </label>
         <div class="actions">
             <button type="submit">Импортировать пользователей</button>
+        </div>
+    </form>
+
+    <form class="editor" method="post" action="/import/fixture-pack">
+        <h2>Импорт fixture pack</h2>
+        <label>
+            JSON
+            <textarea
+                name="payload"
+                rows="12"
+                required
+                placeholder='{"kind":"telegram-emulator-fixture-pack","version":2,"bots":[],"profiles":[],"chats":[],"bot_commands":[],"media_manifest":{"included":false}}'
+                style="width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border: 1px solid #c8d3dc; border-radius: 6px;"
+            ></textarea>
+        </label>
+        <p class="muted">Fixture pack импортирует настройки ботов, пользователей, chats и bot_commands. Бинарные media-файлы в JSON не входят.</p>
+        <div class="actions">
+            <button type="submit">Импортировать fixture pack</button>
         </div>
     </form>
 </div>

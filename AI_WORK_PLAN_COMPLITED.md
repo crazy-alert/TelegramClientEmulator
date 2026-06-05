@@ -1,5 +1,32 @@
 # Завершенные планы работы
 
+## Fixture packs import/export (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий контекст.
+- [x] Изучить текущие import/export routes, repositories и тесты.
+- [x] Спроектировать backward-compatible fixture pack без бинарных media в JSON.
+- [x] Реализовать optional `bot_commands` и структуру optional `chats`.
+- [x] Добавить round-trip/conflict tests.
+- [x] Обновить документацию и roadmap при необходимости.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task08, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatRepository.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotCommandRepository.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/fixture_pack_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/chat_repository_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `git diff --check`
+
 ## Нормализованная модель group chat (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

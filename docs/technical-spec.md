@@ -304,6 +304,8 @@ GET  /export/bots
 GET  /export/profiles
 POST /import/bots
 POST /import/profiles
+GET  /export/fixture-pack
+POST /import/fixture-pack
 ```
 
 `GET /export/bots` возвращает:
@@ -352,6 +354,43 @@ POST /import/profiles
 
 Import принимает как envelope с ключом `bots`/`profiles`, так и bare array соответствующих объектов. Envelope-форма считается предпочтительной для документации и будущей совместимости.
 
+`GET /export/fixture-pack` возвращает повторяемый набор тестовых фикстур:
+
+```json
+{
+  "ok": true,
+  "version": 2,
+  "kind": "telegram-emulator-fixture-pack",
+  "exported_at": "2026-06-04T12:00:00+10:00",
+  "bots": [],
+  "profiles": [],
+  "chats": [
+    {
+      "chat_id": -100777,
+      "type": "group",
+      "title": "Fixture Group"
+    }
+  ],
+  "bot_commands": [
+    {
+      "bot_token": "777777:fixture-local-dev-token",
+      "commands": [
+        {
+          "command": "start",
+          "description": "Start fixture"
+        }
+      ]
+    }
+  ],
+  "media_manifest": {
+    "included": false,
+    "note": "Binary media files are not embedded in JSON fixture packs."
+  }
+}
+```
+
+`POST /import/fixture-pack` принимает JSON object с optional массивами `bots`, `profiles`, `chats` и `bot_commands`. `bot_commands` связываются с ботами по `bot_token` и импортируются только для ботов, создаваемых этим же fixture pack. `chats` валидируются по стабильной паре `chat_id` + `type` и сохраняют metadata чата, включая `title`; `chat_members` синхронизируются из импортированных profiles. Бинарные media-файлы не принимаются в JSON: `media_manifest` сейчас только явно фиксирует, что media не встроены.
+
 Стратегия конфликтов:
 
 - импорт сначала валидирует весь payload и только потом создает записи;
@@ -366,7 +405,7 @@ Import принимает как envelope с ключом `bots`/`profiles`, т�
 
 Стратегия расширения:
 
-- новые сущности добавляются отдельными top-level массивами, например `groups`, `bot_commands`, `messages`; текущий export profiles пока не экспортирует `chats/chat_members` отдельно, чтобы сохранить совместимость `version=1`;
+- новые сущности добавляются отдельными top-level массивами в fixture pack v2, например `chats`, `bot_commands`, будущие `messages`; текущий export profiles не экспортирует `chats/chat_members` отдельно, чтобы сохранить совместимость `version=1`;
 - связи между сущностями должны использовать стабильные доменные ключи (`token`, `user_id`, `chat_id`) или явно документированные external ids, а не внутренние SQLite `id`;
 - при изменении несовместимого формата нужно увеличить `version`;
 - бинарные файлы не добавляются в JSON напрямую; если появится media export, для него нужно отдельное решение по архиву и manifest.

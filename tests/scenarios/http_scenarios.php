@@ -14,6 +14,7 @@ require_once __DIR__ . '/imported_dialog_scenarios.php';
 require_once __DIR__ . '/bot_api_surface_scenarios.php';
 require_once __DIR__ . '/group_chat_scenarios.php';
 require_once __DIR__ . '/media_scenarios.php';
+require_once __DIR__ . '/fixture_pack_scenarios.php';
 require_once __DIR__ . '/callback_error_scenarios.php';
 
 function runHttpTests(string $baseUrl, int $receiverPort): void {
@@ -36,5 +37,6 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     runBotApiSurfaceScenarios($context);
     runGroupChatScenarios($context);
     runMediaScenarios($context);
+    runFixturePackScenarios($context);
     runCallbackErrorScenarios($context);
 }

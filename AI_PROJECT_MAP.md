@@ -67,7 +67,7 @@
 - `tests/bot_api_test.php` — entrypoint интеграционного теста Bot API через встроенный PHP HTTP server.
 - `tests/support/test_helpers.php` — assertions, HTTP client helpers, form/multipart helpers и управление тестовыми runtime/server процессами.
 - `tests/scenarios/unit_scenarios.php` — базовые unit-проверки `UpdateGenerator`.
-- `tests/scenarios/http_scenarios.php` — оркестратор HTTP smoke-сценариев; тематические фазы лежат в `tests/scenarios/*_scenarios.php` для setup, import/export, Bot API, webhook, chat UI, Long Polling, group chat и media.
+- `tests/scenarios/http_scenarios.php` — оркестратор HTTP smoke-сценариев; тематические фазы лежат в `tests/scenarios/*_scenarios.php` для setup, import/export, Bot API, webhook, chat UI, Long Polling, group chat, media и fixture pack.
 - `tests/bot_api_params_test.php` — focused tests helper `BotApiParams`.
 - `tests/bot_api_payload_factory_test.php` — focused tests фабрики `BotApiPayloadFactory` для `Message`, `Chat` и media payload.
 - `tests/long_polling_service_test.php` — focused tests сервиса `LongPollingService` для offset, negative offset, limit и `allowed_updates`.
