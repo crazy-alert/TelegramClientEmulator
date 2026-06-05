@@ -302,7 +302,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - HTMX polling для обновления чата — реализовано через `/chat/fragment`;
 - inline validation форм ботов и пользователей — реализовано для основных ошибок;
 - вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
-- inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts;
+- inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts, включая status/ok=false фильтры, curl-like view и pretty JSON;
 - import/export ботов и пользователей — реализовано для JSON без истории сообщений; fixture pack v2 добавлен для повторяемых тестовых сценариев с `bot_commands`, `chats` и `media_manifest`;
 - очистка истории по пользователю или боту — реализована для диалога и pending/confirmed updates выбранного бота.
 

@@ -1,5 +1,16 @@
 <h1>Request inspector</h1>
 
+<?php
+$prettyJson = static function (?string $value): string {
+    $value = (string) ($value ?? '');
+    $decoded = json_decode($value, true);
+
+    return is_array($decoded)
+        ? (json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: $value)
+        : $value;
+};
+?>
+
 <form class="editor" method="get" action="/request-inspector" style="margin-bottom: 18px;">
     <div class="grid">
         <label>
@@ -10,6 +21,16 @@
         <label>
             Bot API method
             <input name="method" value="<?= e($selectedMethod ?? '') ?>" placeholder="sendMessage">
+        </label>
+
+        <label>
+            HTTP status
+            <input name="response_status" value="<?= e($selectedResponseStatus ?? '') ?>" placeholder="400">
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 8px; margin-top: 28px;">
+            <input type="checkbox" name="ok_false" value="1" <?= ($onlyOkFalse ?? false) ? 'checked' : '' ?>>
+            Только ok=false / ошибки
         </label>
     </div>
     <div class="actions">
@@ -54,19 +75,26 @@
                             <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e(json_encode($event['request_headers'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '') ?></code></pre>
                         </details>
                         <details style="margin-top: 8px;">
-                            <summary>Body</summary>
-                            <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($event['request_body']) ?></code></pre>
+                            <summary>curl</summary>
+                            <pre class="copy-friendly" style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($event['curl'] ?? '') ?></code></pre>
+                        </details>
+                        <details style="margin-top: 8px;">
+                            <summary>Body pretty JSON</summary>
+                            <pre class="json-pretty" style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($event['request_body_pretty'] ?? $event['request_body']) ?></code></pre>
                         </details>
                     </td>
                     <td>
                         HTTP <?= e($event['response_status']) ?>
+                        <?php if (($event['response_ok'] ?? null) === false): ?>
+                            <span class="muted">ok=false</span>
+                        <?php endif; ?>
                         <details style="margin-top: 8px;">
                             <summary>Headers</summary>
                             <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e(json_encode($event['response_headers'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '') ?></code></pre>
                         </details>
                         <details style="margin-top: 8px;">
-                            <summary>Body</summary>
-                            <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($event['response_body']) ?></code></pre>
+                            <summary>Body pretty JSON</summary>
+                            <pre class="json-pretty" style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($event['response_body_pretty'] ?? $event['response_body']) ?></code></pre>
                         </details>
                     </td>
                 </tr>
@@ -101,6 +129,11 @@
                     <td>
                         <code><?= e($attempt['update_id']) ?></code><br>
                         <span class="muted"><?= e($attempt['queue_state']) ?></span>
+                        <div style="margin-top: 6px;">
+                            <a href="/updates?update_id=<?= e($attempt['update_id']) ?>">Update</a>
+                            <span class="muted">·</span>
+                            <a href="/delivery-attempts?update_id=<?= e($attempt['update_id']) ?>">Attempts</a>
+                        </div>
                     </td>
                     <td>
                         <code><?= e($attempt['webhook_url']) ?></code>
@@ -109,16 +142,16 @@
                             <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($attempt['request_headers'] ?? '') ?></code></pre>
                         </details>
                         <details style="margin-top: 8px;">
-                            <summary>Request body</summary>
-                            <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($attempt['request_body']) ?></code></pre>
+                            <summary>Request body pretty JSON</summary>
+                            <pre class="json-pretty" style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($prettyJson($attempt['request_body'] ?? '')) ?></code></pre>
                         </details>
                     </td>
                     <td>
                         HTTP <?= e($attempt['response_status'] ?? '') ?><br>
                         <span class="muted"><?= e($attempt['duration_ms'] ?? '') ?> ms</span>
                         <details style="margin-top: 8px;">
-                            <summary>Response body</summary>
-                            <pre style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($attempt['response_body'] ?? '') ?></code></pre>
+                            <summary>Response body pretty JSON</summary>
+                            <pre class="json-pretty" style="background: #f4f7f9; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px;"><code><?= e($prettyJson($attempt['response_body'] ?? '')) ?></code></pre>
                         </details>
                     </td>
                 </tr>

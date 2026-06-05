@@ -1,5 +1,26 @@
 # Завершенные планы работы
 
+## Улучшение inspector HTTP-логов (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Изучить текущий inspector, HTTP log repository, шаблоны и тесты.
+- [x] Спроектировать минимальные фильтры status/ok=false без потери маскирования секретов.
+- [x] Добавить copy-friendly curl-like блок и pretty JSON view.
+- [x] Добавить связь с message/update context, если она доступна без тяжелой реконструкции.
+- [x] Добавить UI/DOM tests.
+- [x] Обновить документацию при необходимости.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task11, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/HttpLogRepository.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/InspectorController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/request-inspector/index.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/webhook_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Command scopes и language-specific commands (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

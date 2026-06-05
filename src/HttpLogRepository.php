@@ -15,7 +15,13 @@ final readonly class HttpLogRepository {
     /**
      * @return list<array<string, mixed>>
      */
-    public function botApiEvents(?string $tokenFilter = null, ?string $methodFilter = null, int $limit = 100): array {
+    public function botApiEvents(
+        ?string $tokenFilter = null,
+        ?string $methodFilter = null,
+        ?int $responseStatusFilter = null,
+        bool $onlyOkFalse = false,
+        int $limit = 100,
+    ): array {
         $events = [];
         $tokenFilter = trim((string) $tokenFilter);
         $methodFilter = trim((string) $methodFilter);
@@ -42,6 +48,14 @@ final readonly class HttpLogRepository {
                 }
 
                 if ($methodFilter !== '' && strcasecmp((string) $event['bot_api_method'], $methodFilter) !== 0) {
+                    continue;
+                }
+
+                if ($responseStatusFilter !== null && (int) $event['response_status'] !== $responseStatusFilter) {
+                    continue;
+                }
+
+                if ($onlyOkFalse && ($event['response_ok'] ?? null) !== false) {
                     continue;
                 }
 
@@ -83,6 +97,13 @@ final readonly class HttpLogRepository {
         $token = $matches[1];
         $method = $matches[2];
 
+        $requestHeaders = $this->maskedHeaders($request['headers'] ?? []);
+        $requestBody = $this->maskSecrets((string) ($request['body'] ?? ''));
+        $responseHeaders = $this->maskedHeaders($response['headers'] ?? []);
+        $responseBody = $this->maskSecrets((string) ($response['body'] ?? ''));
+        $responseStatus = (int) ($response['status'] ?? 0);
+        $responseDecoded = json_decode($responseBody, true);
+
         return [
             'timestamp' => (string) ($event['timestamp'] ?? ''),
             'duration_ms' => (int) ($event['duration_ms'] ?? 0),
@@ -92,11 +113,15 @@ final readonly class HttpLogRepository {
             'bot_api_method' => $method,
             'uri' => $this->maskSecrets((string) ($request['uri'] ?? $path)),
             'query' => $this->maskSecrets((string) ($request['query'] ?? '')),
-            'request_headers' => $this->maskedHeaders($request['headers'] ?? []),
-            'request_body' => $this->maskSecrets((string) ($request['body'] ?? '')),
-            'response_status' => (int) ($response['status'] ?? 0),
-            'response_headers' => $this->maskedHeaders($response['headers'] ?? []),
-            'response_body' => $this->maskSecrets((string) ($response['body'] ?? '')),
+            'request_headers' => $requestHeaders,
+            'request_body' => $requestBody,
+            'request_body_pretty' => $this->prettyJson($requestBody),
+            'curl' => $this->curlCommand((string) ($request['method'] ?? 'GET'), $this->maskSecrets((string) ($request['uri'] ?? $path)), $requestHeaders, $requestBody),
+            'response_status' => $responseStatus,
+            'response_ok' => is_array($responseDecoded) && array_key_exists('ok', $responseDecoded) ? (bool) $responseDecoded['ok'] : null,
+            'response_headers' => $responseHeaders,
+            'response_body' => $responseBody,
+            'response_body_pretty' => $this->prettyJson($responseBody),
             'error' => is_array($event['error'] ?? null) ? $event['error'] : null,
         ];
     }
@@ -135,5 +160,42 @@ final readonly class HttpLogRepository {
 
     private function maskToken(string $token): string {
         return $this->maskSecrets($token);
+    }
+
+    private function prettyJson(string $value): string {
+        $decoded = json_decode($value, true);
+        if (!is_array($decoded)) {
+            return $value;
+        }
+
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: $value;
+    }
+
+    /**
+     * @param array<string, string> $headers
+     */
+    private function curlCommand(string $method, string $uri, array $headers, string $body): string {
+        $parts = [
+            'curl',
+            '-X',
+            $this->shellQuote(strtoupper($method)),
+            $this->shellQuote($uri),
+        ];
+
+        foreach ($headers as $name => $value) {
+            $parts[] = '-H';
+            $parts[] = $this->shellQuote($name . ': ' . $value);
+        }
+
+        if ($body !== '') {
+            $parts[] = '--data';
+            $parts[] = $this->shellQuote($body);
+        }
+
+        return implode(' ', $parts);
+    }
+
+    private function shellQuote(string $value): string {
+        return "'" . str_replace("'", "'\\''", $value) . "'";
     }
 }

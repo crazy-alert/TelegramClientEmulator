@@ -191,19 +191,30 @@ final readonly class InspectorController {
     private function requestInspector(): void {
         $tokenFilter = trim((string) ($_GET['token'] ?? ''));
         $methodFilter = trim((string) ($_GET['method'] ?? ''));
+        $responseStatus = $this->intParam($_GET['response_status'] ?? 0, 0);
+        $onlyOkFalse = (string) ($_GET['ok_false'] ?? '') === '1';
+        $webhookAttempts = array_map(
+            fn(array $attempt): array => $this->maskedWebhookAttempt($attempt),
+            $this->deliveryAttempts->allWithContext(null, null, 50),
+        );
+        $webhookAttempts = array_values(array_filter(
+            $webhookAttempts,
+            fn(array $attempt): bool => $this->matchesInspectorFilters($attempt, $responseStatus, $onlyOkFalse),
+        ));
 
         $this->render('request-inspector/index', [
             'title' => 'Request inspector',
             'botApiEvents' => $this->httpLogs->botApiEvents(
                 $tokenFilter === '' ? null : $tokenFilter,
                 $methodFilter === '' ? null : $methodFilter,
+                $responseStatus > 0 ? $responseStatus : null,
+                $onlyOkFalse,
                 100,
             ),
-            'webhookAttempts' => array_map(
-                fn(array $attempt): array => $this->maskedWebhookAttempt($attempt),
-                $this->deliveryAttempts->allWithContext(null, null, 50),
-            ),
+            'webhookAttempts' => $webhookAttempts,
             'selectedMethod' => $methodFilter,
+            'selectedResponseStatus' => $responseStatus > 0 ? (string) $responseStatus : '',
+            'onlyOkFalse' => $onlyOkFalse,
             'hasTokenFilter' => $tokenFilter !== '',
         ]);
     }
@@ -241,6 +252,22 @@ final readonly class InspectorController {
         $masked = preg_replace('/(X-Telegram-Bot-Api-Secret-Token:\s*)[^\r\n",]+/i', '$1***', $masked) ?? $masked;
 
         return preg_replace('/("(?:webhook_)?secret_token"\s*:\s*")[^"]+(")/i', '$1***$2', $masked) ?? $masked;
+    }
+
+    /**
+     * @param array<string, mixed> $attempt
+     */
+    private function matchesInspectorFilters(array $attempt, int $responseStatus, bool $onlyOkFalse): bool {
+        $status = (int) ($attempt['response_status'] ?? 0);
+        if ($responseStatus > 0 && $status !== $responseStatus) {
+            return false;
+        }
+
+        if ($onlyOkFalse && $status < 400 && trim((string) ($attempt['error'] ?? '')) === '') {
+            return false;
+        }
+
+        return true;
     }
 
     private function intParam(mixed $value, int $default): int {

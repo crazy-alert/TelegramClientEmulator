@@ -265,7 +265,7 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания, ограниченный `LONG_POLLING_MAX_TIMEOUT_SECONDS`.
 
-UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery и маскирование секретов inspector-вывода.
+UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery и маскирование секретов inspector-вывода. Request inspector поддерживает фильтры по HTTP status и `ok=false`, curl-like view, pretty JSON view и ссылки к update/delivery context.
 
 Поведение команд и кнопок:
 

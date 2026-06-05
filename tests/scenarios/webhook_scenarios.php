@@ -127,6 +127,17 @@ function runWebhookScenarios(array $context): void {
     assertTrueValue(!str_contains($inspector['body'], $token), 'Inspector не должен раскрывать raw bot token');
     assertTrueValue(!str_contains($inspector['body'], 'test-secret'), 'Inspector не должен раскрывать webhook secret token');
     assertTrueValue(str_contains($inspector['body'], 'HTTP 200'), 'Inspector должен показывать response status');
+    assertTrueValue(str_contains($inspector['body'], 'Body pretty JSON'), 'Inspector должен показывать pretty JSON секции');
+    assertTrueValue(str_contains($inspector['body'], 'curl -X'), 'Inspector должен показывать copy-friendly curl блок');
+    assertTrueValue(str_contains($inspector['body'], '/updates?update_id=100000001'), 'Inspector должен связывать webhook attempt с update context');
+
+    $inspector = httpRequest('GET', $baseUrl . '/request-inspector?response_status=400&ok_false=1');
+    assertSameValue(200, $inspector['status'], 'Request inspector с фильтрами status/ok=false должен открываться');
+    assertTrueValue(str_contains($inspector['body'], 'value="400"'), 'Inspector должен сохранять фильтр HTTP status');
+    assertTrueValue(str_contains($inspector['body'], 'checked'), 'Inspector должен сохранять фильтр ok=false');
+    assertTrueValue(str_contains($inspector['body'], 'ok=false'), 'Inspector должен показывать ok=false ответы');
+    assertTrueValue(str_contains($inspector['body'], 'HTTP 400'), 'Inspector должен фильтровать HTTP status');
+    assertTrueValue(!str_contains($inspector['body'], $token), 'Inspector с фильтрами не должен раскрывать raw bot token');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/deleteWebhook', formBody([
         'drop_pending_updates' => 'true',
