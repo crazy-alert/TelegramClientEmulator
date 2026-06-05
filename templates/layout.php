@@ -303,6 +303,19 @@
             font-size: 13px;
         }
 
+        .chat-update-inspector {
+            padding: 10px 12px;
+        }
+
+        .chat-update-inspector summary {
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .chat-update-inspector table {
+            margin-top: 10px;
+        }
+
         @media (max-width: 560px) {
             .chat-compose {
                 grid-template-columns: 1fr;

@@ -1,5 +1,21 @@
 # Завершенные планы работы
 
+## Сворачивание chat update inspector (2026-06-05)
+
+- [x] Проверить текущую разметку чата и связанные стили.
+- [x] Свернуть блок последнего update inspector в `details/summary` без изменения данных inspector.
+- [x] Добавить или обновить focused test на chat UI-разметку.
+- [x] Запустить проверки.
+- [x] Обновить `AI_CURRENT_CONTEXT.md`, перенести чеклист в `AI_WORK_PLAN_COMPLITED.md`, удалить задачу и сделать коммит.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/chat/index.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/chat_ui_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Machine-readable Bot API surface catalog (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

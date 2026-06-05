@@ -315,8 +315,8 @@
     <?php endif; ?>
 
     <?php if (!$chatFragment && $latestUpdate !== null): ?>
-        <section class="panel" style="margin-top: 18px;">
-            <h2>Последний Update (inspector)</h2>
+        <details class="panel chat-update-inspector">
+            <summary>Последний Update (inspector)</summary>
             <table>
                 <tr>
                     <th>update_id</th>
@@ -369,6 +369,6 @@
                     </form>
                 <?php endif; ?>
             <?php endif; ?>
-        </section>
+        </details>
     <?php endif; ?>
 <?php endif; ?>

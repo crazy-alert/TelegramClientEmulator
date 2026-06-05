@@ -48,6 +48,7 @@ function runChatUiScenarios(array $context): void {
     assertTrueValue(str_contains($chat['body'], 'class="bot-command-select"'), 'Команды бота должны быть доступны через select');
     assertTrueValue(str_contains($chat['body'], '<details class="panel bot-command-picker">'), 'Команды бота должны быть спрятаны в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], '<details class="panel chat-structured-inputs">'), 'Вложения пользователя должны быть спрятаны в раскрывающийся блок');
+    assertTrueValue(str_contains($chat['body'], '<details class="panel chat-update-inspector">'), 'Последний update inspector должен быть спрятан в раскрывающийся блок');
     assertTrueValue(str_contains($chat['body'], 'onchange="if (this.value !== \'\') { this.form.submit(); }"'), 'Выбор команды должен сразу отправлять форму');
     assertTrueValue(!str_contains($chat['body'], '<h2>Команды бота</h2>'), 'Команды бота не должны занимать отдельную верхнюю панель');
 
@@ -81,6 +82,11 @@ function runChatUiScenarios(array $context): void {
         $chatDom,
         '//details[contains(concat(" ", normalize-space(@class), " "), " chat-structured-inputs ")]//input[@type="hidden" and @name="message_type" and @value="location"]',
         'DOM: вложения должны содержать форму location',
+    );
+    assertDomXPathExists(
+        $chatDom,
+        '//details[contains(concat(" ", normalize-space(@class), " "), " chat-update-inspector ")]/summary[contains(normalize-space(.), "Последний Update")]',
+        'DOM: последний update inspector должен быть details/summary',
     );
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
