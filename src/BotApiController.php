@@ -11,6 +11,34 @@ use RuntimeException;
  */
 final readonly class BotApiController {
 
+    private const ROUTES = [
+        'getme' => ['name' => 'getMe', 'http_methods' => ['GET', 'POST'], 'handler' => 'getMe'],
+        'getupdates' => ['name' => 'getUpdates', 'http_methods' => ['GET', 'POST'], 'handler' => 'getUpdates'],
+        'getfile' => ['name' => 'getFile', 'http_methods' => ['GET', 'POST'], 'handler' => 'getFile'],
+        'sendmessage' => ['name' => 'sendMessage', 'http_methods' => ['POST'], 'handler' => 'sendMessage'],
+        'sendphoto' => ['name' => 'sendPhoto', 'http_methods' => ['POST'], 'handler' => 'sendPhoto'],
+        'senddocument' => ['name' => 'sendDocument', 'http_methods' => ['POST'], 'handler' => 'sendDocument'],
+        'sendvideo' => ['name' => 'sendVideo', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'video'],
+        'sendanimation' => ['name' => 'sendAnimation', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'animation'],
+        'sendaudio' => ['name' => 'sendAudio', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'audio'],
+        'sendvoice' => ['name' => 'sendVoice', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'voice'],
+        'sendvideonote' => ['name' => 'sendVideoNote', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'video_note'],
+        'sendsticker' => ['name' => 'sendSticker', 'http_methods' => ['POST'], 'handler' => 'sendTypedMedia', 'media_field' => 'sticker'],
+        'sendpoll' => ['name' => 'sendPoll', 'http_methods' => ['POST'], 'handler' => 'sendPoll'],
+        'sendlocation' => ['name' => 'sendLocation', 'http_methods' => ['POST'], 'handler' => 'sendLocation'],
+        'sendvenue' => ['name' => 'sendVenue', 'http_methods' => ['POST'], 'handler' => 'sendVenue'],
+        'sendcontact' => ['name' => 'sendContact', 'http_methods' => ['POST'], 'handler' => 'sendContact'],
+        'senddice' => ['name' => 'sendDice', 'http_methods' => ['POST'], 'handler' => 'sendDice'],
+        'editmessagetext' => ['name' => 'editMessageText', 'http_methods' => ['POST'], 'handler' => 'editMessageText'],
+        'getwebhookinfo' => ['name' => 'getWebhookInfo', 'http_methods' => ['GET', 'POST'], 'handler' => 'getWebhookInfo'],
+        'setmycommands' => ['name' => 'setMyCommands', 'http_methods' => ['POST'], 'handler' => 'setMyCommands'],
+        'getmycommands' => ['name' => 'getMyCommands', 'http_methods' => ['GET', 'POST'], 'handler' => 'getMyCommands'],
+        'deletemycommands' => ['name' => 'deleteMyCommands', 'http_methods' => ['POST'], 'handler' => 'deleteMyCommands'],
+        'answercallbackquery' => ['name' => 'answerCallbackQuery', 'http_methods' => ['POST'], 'handler' => 'answerCallbackQuery'],
+        'setwebhook' => ['name' => 'setWebhook', 'http_methods' => ['POST'], 'handler' => 'setWebhook'],
+        'deletewebhook' => ['name' => 'deleteWebhook', 'http_methods' => ['POST'], 'handler' => 'deleteWebhook'],
+    ];
+
     public function __construct(
         private BotRepository $bots,
         private BotCommandRepository $botCommands,
@@ -25,142 +53,50 @@ final readonly class BotApiController {
     ) {
     }
 
+    /**
+     * @return array<string, array{name: string, http_methods: list<string>}>
+     */
+    public static function routeDefinitions(): array {
+        return array_map(
+            fn(array $route): array => [
+                'name' => $route['name'],
+                'http_methods' => $route['http_methods'],
+            ],
+            self::ROUTES,
+        );
+    }
+
     public function handle(string $method, string $path): bool {
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getMe$#i', $path, $matches) === 1) {
-            $this->getMe($matches[1]);
-            return true;
-        }
+        if (preg_match('#^/bot([^/]+)/([A-Za-z0-9]+)$#i', $path, $matches) === 1) {
+            $route = self::ROUTES[strtolower($matches[2])] ?? null;
+            if ($route === null || !in_array($method, $route['http_methods'], true)) {
+                $this->unsupportedMethod();
+                return true;
+            }
 
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getUpdates$#i', $path, $matches) === 1) {
-            $this->getUpdates($matches[1]);
-            return true;
-        }
+            if (($route['handler'] ?? '') === 'sendTypedMedia') {
+                $this->sendTypedMedia($matches[1], (string) $route['media_field']);
+                return true;
+            }
 
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getFile$#i', $path, $matches) === 1) {
-            $this->getFile($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendMessage$#i', $path, $matches) === 1) {
-            $this->sendMessage($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendPhoto$#i', $path, $matches) === 1) {
-            $this->sendPhoto($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendDocument$#i', $path, $matches) === 1) {
-            $this->sendDocument($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVideo$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'video');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendAnimation$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'animation');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendAudio$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'audio');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVoice$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'voice');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVideoNote$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'video_note');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendSticker$#i', $path, $matches) === 1) {
-            $this->sendTypedMedia($matches[1], 'sticker');
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendPoll$#i', $path, $matches) === 1) {
-            $this->sendPoll($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendLocation$#i', $path, $matches) === 1) {
-            $this->sendLocation($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendVenue$#i', $path, $matches) === 1) {
-            $this->sendVenue($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendContact$#i', $path, $matches) === 1) {
-            $this->sendContact($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/sendDice$#i', $path, $matches) === 1) {
-            $this->sendDice($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/editMessageText$#i', $path, $matches) === 1) {
-            $this->editMessageText($matches[1]);
-            return true;
-        }
-
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getWebhookInfo$#i', $path, $matches) === 1) {
-            $this->getWebhookInfo($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/setMyCommands$#i', $path, $matches) === 1) {
-            $this->setMyCommands($matches[1]);
-            return true;
-        }
-
-        if (($method === 'GET' || $method === 'POST') && preg_match('#^/bot([^/]+)/getMyCommands$#i', $path, $matches) === 1) {
-            $this->getMyCommands($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/deleteMyCommands$#i', $path, $matches) === 1) {
-            $this->deleteMyCommands($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/answerCallbackQuery$#i', $path, $matches) === 1) {
-            $this->answerCallbackQuery($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/setWebhook$#i', $path, $matches) === 1) {
-            $this->setWebhook($matches[1]);
-            return true;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bot([^/]+)/deleteWebhook$#i', $path, $matches) === 1) {
-            $this->deleteWebhook($matches[1]);
+            $this->{$route['handler']}($matches[1]);
             return true;
         }
 
         if (preg_match('#^/bot([^/]+)/#', $path) === 1) {
-            Response::json([
-                'ok' => false,
-                'error_code' => 501,
-                'description' => 'Метод пока не поддерживается эмулятором',
-            ], 501);
+            $this->unsupportedMethod();
             return true;
         }
 
         return false;
+    }
+
+    private function unsupportedMethod(): void {
+        Response::json([
+            'ok' => false,
+            'error_code' => 501,
+            'description' => 'Метод пока не поддерживается эмулятором',
+        ], 501);
     }
 
     /**

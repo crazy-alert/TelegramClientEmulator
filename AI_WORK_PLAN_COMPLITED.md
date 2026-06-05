@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## Bot API route registry (2026-06-05)
+
+- [x] Прочитать task-файл и текущий `BotApiController::handle()`.
+- [x] Ввести route registry с method name, HTTP verbs и handler.
+- [x] Обновить `handle()` на единый parser `/bot<TOKEN>/<METHOD>`.
+- [x] Обновить `tests/bot_api_surface_catalog_test.php` на сверку каталога с registry.
+- [x] Запустить проверки.
+- [x] Обновить `AI_CURRENT_CONTEXT.md`, удалить task-файл, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotApiController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/bot_api_surface_catalog_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_surface_catalog_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Import/export controller (2026-06-05)
 
 - [x] Прочитать task-файл и найти текущий import/export срез.

@@ -19,7 +19,7 @@
 - `src/BotAdminController.php` — UI-маршруты `/bots`, `/bots/new`, `/bots/{id}/edit`, create/update/delete и validation формы бота.
 - `src/ProfileAdminController.php` — UI-маршруты `/profiles`, `/profiles/new`, `/profiles/{id}/edit`, create/update/delete и validation формы пользователя.
 - `src/ImportExportController.php` — UI/API-маршруты `/import-export`, `/export/*`, `/import/*`, JSON import/export validation и fixture pack v2.
-- `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, HTTP-валидация и handlers методов `getMe`, `getUpdates`, `getFile`, `sendMessage`, media/structured methods, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
+- `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, route registry, parsing параметров, HTTP-валидация и handlers методов `getMe`, `getUpdates`, `getFile`, `sendMessage`, media/structured methods, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
 - `src/BotApiPayloadFactory.php` — чистая фабрика Telegram-like `Message`, `Chat` и media payload для ответов локального Bot API.
 - `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
 - `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded`, multipart text fields и multipart file parts при отключенном `enable_post_data_reading`.

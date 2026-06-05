@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require dirname(__DIR__) . '/src/BotApiController.php';
+
 final class BotApiSurfaceCatalogTestFailure extends RuntimeException {
 }
 
@@ -44,13 +46,24 @@ foreach ($methods as $method) {
     $byName[$name] = $method;
 }
 
-$controllerSource = (string) file_get_contents(dirname(__DIR__) . '/src/BotApiController.php');
-preg_match_all("~preg_match\\('#\\^/bot\\(\\[\\^/\\]\\+\\)/([A-Za-z0-9]+)\\$#i'~", $controllerSource, $matches);
-$routedMethods = array_values(array_unique($matches[1] ?? []));
+$routeDefinitions = \App\BotApiController::routeDefinitions();
+$routedMethods = array_map(
+    fn(array $route): string => (string) $route['name'],
+    array_values($routeDefinitions),
+);
 sort($routedMethods);
 $catalogMethods = array_keys($byName);
 sort($catalogMethods);
-assertCatalogSame($routedMethods, $catalogMethods, 'Каталог должен совпадать с именами Bot API routes в BotApiController');
+assertCatalogSame($routedMethods, $catalogMethods, 'Каталог должен совпадать с Bot API route registry');
+
+foreach ($routeDefinitions as $route) {
+    $routeName = (string) $route['name'];
+    $routeVerbs = $route['http_methods'];
+    $catalogVerbs = $byName[$routeName]['http_methods'] ?? null;
+    sort($routeVerbs);
+    sort($catalogVerbs);
+    assertCatalogSame($routeVerbs, $catalogVerbs, 'HTTP verbs каталога должны совпадать с registry для ' . $routeName);
+}
 
 foreach (['getUpdates', 'sendMessage', 'sendPhoto', 'sendDocument', 'setMyCommands', 'getMyCommands', 'answerCallbackQuery'] as $requiredMethod) {
     assertCatalogTrue(isset($byName[$requiredMethod]), 'Каталог должен содержать ' . $requiredMethod);
