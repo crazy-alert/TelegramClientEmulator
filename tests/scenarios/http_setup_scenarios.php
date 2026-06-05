@@ -13,6 +13,13 @@ function runHttpSetupScenarios(array $context): void {
     assertTrueValue(str_contains($dashboard['body'], 'value="10000"'), 'Панель должна показывать дефолтный webhook timeout');
     assertTrueValue(str_contains($dashboard['body'], '<a href="/health"><code>/health</code></a>'), 'Панель должна содержать ссылку на raw health endpoint');
     assertTrueValue(!str_contains($dashboard['body'], '>Health</a>'), 'Навигация не должна показывать отдельную кнопку Health');
+    assertTrueValue(str_contains($dashboard['body'], 'Проверить обновления TelegramEmulator'), 'Панель должна показывать кнопку проверки обновлений');
+    assertTrueValue(str_contains($dashboard['body'], 'не запускает Git'), 'Панель должна объяснять безопасный режим проверки обновлений');
+
+    $updateCheck = httpRequest('POST', $baseUrl . '/telegram-emulator-updates/check');
+    assertSameValue(200, $updateCheck['status'], 'Проверка обновлений должна рендерить панель');
+    assertTrueValue(str_contains($updateCheck['body'], 'Есть обновление'), 'Проверка обновлений должна показывать доступное обновление');
+    assertTrueValue(str_contains($updateCheck['body'], 'git pull'), 'Проверка обновлений должна показывать ручную команду обновления');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/settings/webhook-timeout', formBody([
         'webhook_timeout_ms' => '999',

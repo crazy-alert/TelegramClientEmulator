@@ -1,0 +1,7 @@
+{
+  "name": "TelegramClientEmulator",
+  "commit": "89bae01f797f44b1051dcbc60c74a9157e29c25f",
+  "branch": "master",
+  "repository": "https://github.com/crazy-alert/TelegramClientEmulator",
+  "update_check_url": "https://raw.githubusercontent.com/crazy-alert/TelegramClientEmulator/master/version.json"
+}

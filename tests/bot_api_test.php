@@ -15,6 +15,11 @@ function main(): int {
     $logDir = $runtime . '/logs';
     mkdir($dataDir, 0777, true);
     mkdir($logDir, 0777, true);
+    $updateCheckFile = $runtime . '/latest-version.json';
+    file_put_contents($updateCheckFile, json_encode([
+        'sha' => 'ffffffffffffffffffffffffffffffffffffffff',
+        'html_url' => 'https://example.test/commit/ffffffff',
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
     $port = 18082;
     $receiverPort = 18083;
@@ -30,6 +35,7 @@ function main(): int {
         'APP_HOST' => '127.0.0.1',
         'APP_PORT' => (string) $port,
         'LONG_POLLING_MAX_TIMEOUT_SECONDS' => '1',
+        'TELEGRAM_EMULATOR_UPDATE_CHECK_URL' => $updateCheckFile,
     ]);
 
     $process = proc_open($command, [

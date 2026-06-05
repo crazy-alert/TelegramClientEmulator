@@ -6,9 +6,9 @@
 - `AI_CURRENT_CONTEXT.md` — короткий текущий снимок состояния проекта.
 - `AI_WORK_PLAN.md` — активная задача и ближайшие шаги.
 - `AI_WORK_PLAN_COMPLITED.md` — архив завершенных чеклистов.
-- `AI_PROPOSALS.md` — предложения по модернизации после анализа кода при пустой очереди задач.
 - `README.md` — пользовательская документация.
 - `ROADMAP.md` — план реализации по этапам.
+- `version.json` — локальная версия TelegramEmulator для безопасной проверки обновлений без запуска Git из PHP.
 - `docker-compose.yml` — основной запуск приложения на готовом образе `php:8.3-cli-alpine`.
 - `php.ini` — настройки PHP runtime для встроенного сервера.
 
@@ -42,6 +42,7 @@
 - `src/Response.php` — HTTP response helpers.
 - `src/ReplyMarkup.php` — общий helper для Bot API `reply_markup`: чтение Bot API параметра, кодирование в `messages.raw_payload`, извлечение markup из сообщения и вычисление актуальной reply keyboard.
 - `src/SettingsRepository.php` — чтение и запись локальных настроек приложения из таблицы `settings`.
+- `src/UpdateChecker.php` — безопасная проверка обновлений: сравнение локального `version.json` с удаленным JSON endpoint без запуска командной строки.
 - `src/WebhookDeliveryService.php` — одна попытка webhook-доставки update, сохранение delivery attempt и обновление состояния очереди.
 - `src/View.php` — рендеринг полных шаблонов и partial-шаблонов без layout для HTMX.
 

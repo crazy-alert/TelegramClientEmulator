@@ -85,9 +85,69 @@
 </section>
 
 <section class="panel" style="margin-top: 18px;">
-    <h2>Состояние Этапа 1</h2>
+    <h2>Обновления TelegramEmulator</h2>
     <p>
-        CRUD для ботов и пользователей работает через SQLite. Чат открывается для выбранной пары пользователь-бот.
+        Приложение не запускает Git и не выполняет команды из PHP. Проверка только сравнивает локальный
+        <code>version.json</code> с удаленным <code>version.json</code> проекта.
+    </p>
+    <form method="post" action="/telegram-emulator-updates/check" class="form-inline">
+        <button type="submit">Проверить обновления TelegramEmulator</button>
+    </form>
+
+    <?php if (isset($updateCheck) && is_array($updateCheck)): ?>
+        <hr>
+        <?php if (($updateCheck['ok'] ?? false) === true): ?>
+            <dl>
+                <dt>Локальный commit</dt>
+                <dd><code><?= e($updateCheck['current_commit'] ?? '') ?></code></dd>
+                <dt>Последний commit</dt>
+                <dd>
+                    <code><?= e($updateCheck['latest_commit'] ?? '') ?></code>
+                    <?php if (!empty($updateCheck['latest_url'])): ?>
+                        <br><a href="<?= e($updateCheck['latest_url']) ?>">Открыть commit</a>
+                    <?php endif; ?>
+                </dd>
+            </dl>
+
+            <?php if (($updateCheck['update_available'] ?? false) === true): ?>
+                <p><strong>Есть обновление.</strong></p>
+                <p>Обновите проект вручную из папки, где лежит <code>docker-compose.yml</code>:</p>
+                <pre><code>cd S:\TelegramClientEmulator
+git pull
+docker compose pull
+docker compose up -d</code></pre>
+                <p class="muted">
+                    Если вы запускали эмулятор на другом порту, оставьте прежний <code>HOST_PORT</code>
+                    или <code>.env</code> без изменений. Runtime-данные в <code>data/</code> не входят
+                    в git и не должны перезаписываться обычным <code>git pull</code>.
+                </p>
+            <?php else: ?>
+                <p><strong>Обновления не найдены.</strong> Локальный commit совпадает с последним commit ветки.</p>
+            <?php endif; ?>
+        <?php else: ?>
+            <p><strong>Проверка не выполнена.</strong></p>
+            <p class="muted"><?= e($updateCheck['error'] ?? 'Неизвестная ошибка проверки обновлений.') ?></p>
+            <?php if (!empty($updateCheck['source_url'])): ?>
+                <p class="muted">Источник проверки: <code><?= e($updateCheck['source_url']) ?></code></p>
+            <?php endif; ?>
+            <p>Проверить и обновить проект можно вручную:</p>
+            <pre><code>cd S:\TelegramClientEmulator
+git pull
+docker compose up -d</code></pre>
+        <?php endif; ?>
+    <?php else: ?>
+        <p class="muted">
+            Источник по умолчанию: <code>version.json</code> из ветки <code>master</code>
+            в GitHub-репозитории проекта.
+        </p>
+    <?php endif; ?>
+</section>
+
+<section class="panel" style="margin-top: 18px;">
+    <h2>Состояние проекта</h2>
+    <p>
+        Основной локальный workflow готов: боты и пользователи хранятся в SQLite, чат открывается
+        для выбранной пары пользователь-бот, updates доставляются через webhook или Long Polling.
     </p>
     <p class="muted">База данных: <code><?= e($databasePath) ?></code></p>
 </section>

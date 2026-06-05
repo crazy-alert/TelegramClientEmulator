@@ -48,6 +48,7 @@ final class Application {
     private HttpLogger $httpLogger;
     private MediaStorage $mediaStorage;
     private LongPollingService $longPolling;
+    private UpdateChecker $updateChecker;
     private View $view;
     private ?string $rawBody = null;
 
@@ -88,6 +89,7 @@ final class Application {
         );
         $this->httpLogs = new HttpLogRepository($this->logDir);
         $this->httpLogger = new HttpLogger($this->logDir);
+        $this->updateChecker = new UpdateChecker($this->rootPath . '/version.json');
         $this->view = new View($this->rootPath . '/templates');
         $this->inspector = new InspectorController(
             $this->bots,
@@ -230,6 +232,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && $path === '/telegram-emulator-updates/check') {
+            $this->dashboard($this->updateChecker->check());
+            return;
+        }
+
         if ($method === 'GET' && $path === '/health') {
             $this->health();
             return;
@@ -303,7 +310,10 @@ final class Application {
         $runner->run();
     }
 
-    private function dashboard(): void {
+    /**
+     * @param array<string, mixed>|null $updateCheck
+     */
+    private function dashboard(?array $updateCheck = null): void {
         $this->render('dashboard', [
             'title' => 'Панель',
             'bots' => $this->bots->all(),
@@ -321,6 +331,7 @@ final class Application {
             'webhookRetryDelayDefaultMs' => $this->webhookRetryDelayDefaultMs(),
             'webhookRetryDelayMinMs' => self::MIN_WEBHOOK_RETRY_DELAY_MS,
             'webhookRetryDelayMaxMs' => self::MAX_WEBHOOK_RETRY_DELAY_MS,
+            'updateCheck' => $updateCheck,
         ]);
     }
 

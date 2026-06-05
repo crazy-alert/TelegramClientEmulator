@@ -1,153 +1,232 @@
 # Telegram Bot Emulator
 
-Локальный Docker-friendly эмулятор для разработки и тестирования Telegram-ботов офлайн.
+Telegram Bot Emulator — локальный эмулятор Telegram для разработки ботов. Он запускается у вас на компьютере, показывает веб-чат, создает Telegram-like `Update` и отдает их вашему боту через webhook или Long Polling. Настоящий Telegram, BotFather, публичный HTTPS и реальные пользователи для этого не нужны.
 
-Проект предоставляет минимальный Telegram-like веб-интерфейс, где разработчик может создавать тестовых пользователей, настраивать несколько ботов, выбирать режим доставки обновлений через webhook или Long Polling, отправлять сообщения от имени тестовых пользователей и смотреть ответы бота без настоящих Telegram-аккаунтов и публичных webhook-туннелей.
+Проще говоря: это песочница, где можно писать и проверять Telegram-бота так, будто с ним общаются пользователи, но весь цикл остается внутри Docker и локальной машины.
 
-## Проблема
+## Для чего это нужно
 
-Обычный workflow разработки Telegram-ботов создает лишнее трение:
+Обычная разработка Telegram-бота часто упирается в лишние действия:
 
-- бот нужно регистрировать через BotFather;
-- для проверки webhook часто нужен публичный HTTPS endpoint или tunnel;
-- тестовые диалоги смешиваются с реальным состоянием Telegram;
-- переключение между пользователями, чатами и конфигурациями бота занимает время;
-- локальным Docker-сборкам нужны стабильные внутренние имена сервисов вместо публичных URL.
+- нужно создавать тестового бота через BotFather;
+- webhook требует публичный HTTPS-адрес или tunnel;
+- тесты смешиваются с настоящими чатами Telegram;
+- сложно быстро переключаться между пользователями, ботами, группами и сценариями;
+- Docker-контейнеры должны знать внутренние адреса друг друга, а не случайные публичные URL.
 
-Эмулятор должен запускаться рядом с контейнерами ботов в Docker Compose и доставлять Telegram-совместимые обновления через webhook или отдавать их через `getUpdates` для Long Polling.
+Эмулятор убирает это трение:
 
-## Основная идея
+- вы создаете fake bot token прямо в интерфейсе;
+- создаете тестовых пользователей и group/supergroup чаты;
+- отправляете сообщения из локального веб-чата;
+- бот получает `Update` через `getUpdates` или webhook;
+- ответы бота через локальные Bot API endpoints появляются в чате;
+- запросы, ответы, ошибки webhook и payload можно смотреть в инспекторе.
 
-Эмулятор работает как локальный Telegram-клиент и частичный симулятор Telegram-платформы:
+## Что умеет сейчас
 
-1. Разработчик открывает веб-интерфейс эмулятора.
-2. Разработчик выбирает сохраненного пользователя и бота на экране чата.
-3. Разработчик вводит сообщение в интерфейсе чата.
-4. Эмулятор создает похожий на Telegram Bot API payload `Update`.
-5. Эмулятор либо отправляет payload на настроенный webhook URL, либо кладет update в очередь Long Polling.
-6. Ответы бота можно принимать через поддерживаемые Bot API endpoints и показывать в интерфейсе.
+- Несколько ботов с отдельными token, bot id, username и режимом доставки.
+- Тестовые пользователи и group/supergroup чаты.
+- Telegram-like чат в браузере.
+- Long Polling через `getUpdates`.
+- Webhook-доставка в контейнер бота по Docker service URL.
+- Локальные Bot API маршруты вида `/bot<TOKEN>/sendMessage`.
+- Текст, команды, inline keyboard, reply keyboard и callback query.
+- `editMessageText`, `answerCallbackQuery`, `setMyCommands`, `getMyCommands`, `deleteMyCommands`.
+- Media и structured-сообщения: photo, document, video, animation, audio, voice, video note, sticker, poll, location, venue, contact, dice.
+- Локальное media-хранилище и `getFile`.
+- Инспектор Bot API request/response и webhook delivery attempts.
+- Import/export тестовых ботов, пользователей, команд и fixture pack.
+- Панель состояния, health endpoint и безопасная проверка обновлений.
 
-## Scope MVP
+Полная поддерживаемая Bot API surface описана в [`docs/bot-api-surface.json`](docs/bot-api-surface.json), ограничения — в [`docs/limitations.md`](docs/limitations.md).
 
-### Веб-интерфейс
+## Как это работает
 
-- Экран чата в стиле Telegram.
-- Список и редактор пользователей с полями:
-  - user id;
-  - username пользователя;
-  - имя пользователя;
-  - фамилия пользователя;
-  - chat id;
-  - webhook URL;
-  - необязательный webhook secret token;
-  - состояние включен/выключен.
-- Поле ввода текстовых сообщений.
-- История диалога отдельно для каждой пары пользователь-бот.
-- Базовый статус доставки для каждого исходящего update.
-- Инспектор raw update/request для отладки.
+1. Вы открываете `http://localhost:8080`.
+2. Создаете или выбираете тестового бота.
+3. Создаете или выбираете тестового пользователя.
+4. На вкладке `Чат` пишете сообщение.
+5. Эмулятор создает Telegram-like `Update`.
+6. Если бот работает через Long Polling, он получает update из `/bot<TOKEN>/getUpdates`.
+7. Если бот работает через webhook, эмулятор отправляет POST на настроенный webhook URL.
+8. Когда бот вызывает локальный Bot API, например `/bot<TOKEN>/sendMessage`, ответ появляется в чате.
 
-### Эмуляция доставки updates
+## Установка на Windows
 
-- Генерировать похожие на Telegram объекты `Update` для:
-  - текстовых сообщений;
-  - команд вроде `/start`;
-  - callback query на следующих этапах.
-- Поддерживать webhook-доставку на настроенный URL с JSON body.
-- Поддерживать Long Polling через `getUpdates`.
-- Поддерживать настраиваемые заголовки, включая `X-Telegram-Bot-Api-Secret-Token`.
-- Показывать статус ответа webhook, тело ответа, ошибки доставки и состояние очереди Long Polling.
+### 1. Установите Docker Desktop
 
-### Mock Bot API
+1. Скачайте Docker Desktop: `https://www.docker.com/products/docker-desktop/`.
+2. Установите его с включенной поддержкой WSL 2.
+3. Перезагрузите Windows, если установщик попросит.
+4. Запустите Docker Desktop и дождитесь статуса `Docker Desktop is running`.
+5. Проверьте в PowerShell:
 
-Предоставить минимальную локальную поверхность Bot API, чтобы контейнеры ботов могли обращаться к endpoints эмулятора вместо настоящего Telegram:
-
-- `POST /bot<TOKEN>/sendMessage`
-- `POST /bot<TOKEN>/editMessageText`
-- `POST /bot<TOKEN>/answerCallbackQuery`
-- `GET /bot<TOKEN>/getMe`
-- `POST /bot<TOKEN>/setWebhook`
-- `POST /bot<TOKEN>/deleteWebhook`
-- `GET /bot<TOKEN>/getWebhookInfo`
-- `GET|POST /bot<TOKEN>/getUpdates`
-
-Фигурные скобки не являются частью URL. Например, для token `123456:local-dev-token` корректный запрос выглядит так: `http://telegram-emulator:8080/bot123456:local-dev-token/getMe`.
-
-В первой версии нужно отдать приоритет `sendMessage`, `getMe`, `getUpdates`, `setWebhook` и webhook-доставке, потому что они открывают основные локальные циклы разработки.
-
-## Пример использования через Docker Compose
-
-Контейнер использует готовый образ `php:8.3-cli-alpine`, монтирует проект в `/app` и запускает встроенный PHP HTTP server. Отдельная сборка через `Dockerfile` не требуется.
-
-```yaml
-services:
-  telegram-emulator:
-    image: php:8.3-cli-alpine
-    working_dir: /app
-    command: >
-      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
-    environment:
-      APP_HOST: "0.0.0.0"
-      APP_PORT: "8080"
-      DATA_DIR: "/app/data"
-      MEDIA_DIR: "/app/data/media"
-      MEDIA_MAX_BYTES: "10485760"
-      LOG_DIR: "/app/var/logs"
-      WEBHOOK_TIMEOUT_MS: "10000"
-      WEBHOOK_RETRY_MAX_ATTEMPTS: "1"
-      WEBHOOK_RETRY_DELAY_MS: "0"
-      LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
-    expose:
-      - "8080"
-    ports:
-      - "${HOST_PORT:-8080}:8080"
-    volumes:
-      - ./:/app
-    networks:
-      - app-backend
-
-  bot:
-    build: ../my-bot
-    environment:
-      TELEGRAM_API_BASE_URL: "http://telegram-emulator:8080"
-
-networks:
-  app-backend:
-    external: true
-    name: "${APP_BACKEND_NETWORK:-constr_app-backend}"
+```powershell
+docker --version
+docker compose version
 ```
 
-Token, bot id, username бота, transport mode и webhook URL настраиваются в интерфейсе эмулятора для каждого бота. В контейнер бота не нужно зашивать один общий token проекта: бот должен использовать тот token, который разработчик выбрал в конкретном тестовом сценарии.
+Если команды не найдены, перезапустите PowerShell или Windows.
 
-Точные имена переменных окружения зависят от bot framework. Если библиотека сама добавляет `/bot<TOKEN>/<METHOD>` к API root, используйте `http://telegram-emulator:8080`. Если библиотека ожидает Telegram-style base URL до token и сама дописывает token без дополнительного `/`, используйте `http://telegram-emulator:8080/bot`. Не передавайте в HTTP-клиент URL с буквальными `{token}` или `{method}`: многие клиенты отклоняют такие строки как malformed URL.
+### 2. Установите Git
 
-`WEBHOOK_TIMEOUT_MS` задает начальный timeout webhook-доставки в миллисекундах. Если переменная не задана, используется `10000`. На панели `/` timeout можно переопределить через UI без изменения файлов; значение хранится в SQLite и должно быть в диапазоне `1000`–`60000` мс.
+1. Скачайте Git for Windows: `https://git-scm.com/download/win`.
+2. Установите с настройками по умолчанию.
+3. Проверьте в PowerShell:
 
-`WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS` задают начальные настройки короткого синхронного development retry для новых webhook updates. По умолчанию используется одна попытка и задержка `0` мс, то есть автоматические retry отключены. На панели `/` эти значения можно переопределить через UI; допустимые диапазоны: `1`–`5` попыток и `0`–`5000` мс. Это локальный helper для разработки, а не production scheduler: попытки выполняются в текущем HTTP-запросе, каждая попытка пишется в delivery attempts, а ручной retry failed updates остается отдельным действием.
+```powershell
+git --version
+```
 
-`LONG_POLLING_MAX_TIMEOUT_SECONDS` задает верхнюю границу ожидания для `getUpdates.timeout` в single-process PHP server. По умолчанию используется `3`, допустимый диапазон — `0`–`30` секунд. Это локальная защита отзывчивости UI: если бот запросит `timeout=60`, эмулятор будет ждать не дольше этой границы.
+### 3. Скачайте проект
 
-`MEDIA_DIR` задает директорию локального media-хранилища для multipart upload, по умолчанию используется `<DATA_DIR>/media`. `MEDIA_MAX_BYTES` ограничивает размер одного загружаемого файла, значение по умолчанию — `10485760` байт. При стандартном volume `./:/app` файлы сохраняются в `data/media/` и игнорируются git вместе с runtime-данными.
+Выберите папку, где будут лежать локальные проекты, например `S:\` или `C:\Projects`:
 
-В режиме разработки весь проект монтируется в контейнер как `/app`. Поэтому изменения в `public`, `src`, `templates`, `migrations` и других директориях применяются без пересборки образа. SQLite-файл по умолчанию создается в локальной директории `data/`, которая игнорируется git.
+```powershell
+cd S:\
+git clone https://github.com/crazy-alert/TelegramClientEmulator.git
+cd TelegramClientEmulator
+```
 
-## Docker Compose сценарии подключения бота
+Если проект уже скачан, просто перейдите в его папку:
 
-### Long Polling бот
+```powershell
+cd S:\TelegramClientEmulator
+```
 
-Подходит для ботов, которые сами вызывают `getUpdates`. В интерфейсе эмулятора создайте бота с fake token, например `123456:local-dev-token`, и оставьте режим доставки `long_polling`.
+### 4. Подготовьте Docker-сеть
+
+По умолчанию `docker-compose.yml` ожидает внешнюю сеть `constr_app-backend`. Если такой сети нет, создайте ее:
+
+```powershell
+docker network create constr_app-backend
+```
+
+Если хотите использовать другое имя сети, создайте его и передавайте переменную `APP_BACKEND_NETWORK` при запуске:
+
+```powershell
+docker network create telegram-dev
+$env:APP_BACKEND_NETWORK = "telegram-dev"
+docker compose up -d
+```
+
+### 5. Запустите эмулятор
+
+Стандартный запуск:
+
+```powershell
+docker compose up -d
+```
+
+Откройте в браузере:
+
+```text
+http://localhost:8080
+```
+
+Проверка состояния доступна по raw endpoint:
+
+```text
+http://localhost:8080/health
+```
+
+Остановить контейнер:
+
+```powershell
+docker compose down
+```
+
+Посмотреть логи:
+
+```powershell
+docker compose logs -f telegram-emulator
+```
+
+## Порты и локальные адреса
+
+По умолчанию эмулятор слушает порт `8080` внутри контейнера и публикуется на `localhost:8080` на Windows.
+
+Если порт `8080` занят, запустите на другом порту:
+
+```powershell
+$env:HOST_PORT = "18080"
+docker compose up -d
+```
+
+Тогда веб-интерфейс будет доступен так:
+
+```text
+http://localhost:18080
+```
+
+Внутри Docker-сети адрес не меняется:
+
+```text
+http://telegram-emulator:8080
+```
+
+Это важное различие:
+
+- `localhost:8080` — адрес для браузера на Windows;
+- `telegram-emulator:8080` — адрес для контейнера вашего бота;
+- `bot:3000` или похожее имя — адрес контейнера бота для webhook-доставки из эмулятора.
+
+## Настройка через hosts
+
+Если неудобно помнить порт, можно добавить локальное имя в файл hosts.
+
+Откройте PowerShell от имени администратора и выполните:
+
+```powershell
+notepad C:\Windows\System32\drivers\etc\hosts
+```
+
+Добавьте строку:
+
+```text
+127.0.0.1 telegram-emulator.local
+```
+
+После этого адрес будет таким:
+
+```text
+http://telegram-emulator.local:8080
+```
+
+Важно: hosts задает только имя. Порт `:8080` все равно нужен, если вы не используете reverse proxy на 80/443 порту.
+
+## Запуск без reverse proxy
+
+Это самый простой вариант и он подходит большинству локальных сценариев.
+
+1. Эмулятор открыт в браузере как `http://localhost:8080`.
+2. Бот в Docker обращается к Bot API эмулятора как `http://telegram-emulator:8080`.
+3. Если бот работает через webhook, в настройках бота в эмуляторе укажите URL контейнера бота, например:
+
+```text
+http://bot:3000/telegram/webhook
+```
+
+Не указывайте для webhook `http://localhost:3000/...`, если endpoint находится в контейнере бота. Для эмулятора `localhost` внутри контейнера означает сам контейнер эмулятора, а не контейнер бота.
+
+Пример Long Polling бота:
 
 ```yaml
 services:
   telegram-emulator:
     image: php:8.3-cli-alpine
+    container_name: telegram-emulator
     working_dir: /app
     command: >
-      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
+      sh -lc 'php -c /app/php.ini -S "$$APP_HOST:$$APP_PORT" -t public public/index.php'
     environment:
       APP_HOST: "0.0.0.0"
       APP_PORT: "8080"
       DATA_DIR: "/app/data"
       LOG_DIR: "/app/var/logs"
+    ports:
+      - "8080:8080"
     volumes:
       - ./:/app
     networks:
@@ -163,29 +242,24 @@ services:
 
 networks:
   app-backend:
-    name: "${APP_BACKEND_NETWORK:-telegram-dev}"
+    name: telegram-dev
 ```
 
-### Webhook бот
-
-Подходит для ботов, которые принимают updates на HTTP endpoint внутри своей контейнерной сети. В интерфейсе эмулятора укажите webhook URL как service DNS, например `http://bot:3000/telegram/webhook`, а не `localhost`.
+Пример webhook бота:
 
 ```yaml
 services:
   telegram-emulator:
     image: php:8.3-cli-alpine
+    container_name: telegram-emulator
     working_dir: /app
     command: >
-      sh -lc 'php -c /app/php.ini -S "$${APP_HOST}:$${APP_PORT}" -t public public/index.php'
+      sh -lc 'php -c /app/php.ini -S "$$APP_HOST:$$APP_PORT" -t public public/index.php'
     environment:
       APP_HOST: "0.0.0.0"
       APP_PORT: "8080"
       DATA_DIR: "/app/data"
       LOG_DIR: "/app/var/logs"
-      WEBHOOK_TIMEOUT_MS: "10000"
-      WEBHOOK_RETRY_MAX_ATTEMPTS: "1"
-      WEBHOOK_RETRY_DELAY_MS: "0"
-      LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
     ports:
       - "8080:8080"
     volumes:
@@ -205,144 +279,202 @@ services:
 
 networks:
   app-backend:
-    name: "${APP_BACKEND_NETWORK:-telegram-dev}"
+    name: telegram-dev
 ```
 
-### Что важно про `localhost`
+В интерфейсе эмулятора для такого webhook бота укажите:
 
-`localhost` внутри контейнера указывает на сам контейнер, а не на соседний сервис и не на хост-машину. Поэтому:
+```text
+http://bot:3000/telegram/webhook
+```
 
-- бот обращается к эмулятору как `http://telegram-emulator:8080`;
-- эмулятор доставляет webhook в контейнер бота как `http://bot:3000/...`;
-- URL `http://localhost:8080` используйте из браузера на хосте, если порт проброшен через `ports`;
-- если bot framework сам дописывает `/bot<TOKEN>/<METHOD>`, задавайте `TELEGRAM_API_BASE_URL=http://telegram-emulator:8080`; если framework ожидает префикс до token, используйте `http://telegram-emulator:8080/bot`.
+## Запуск с reverse proxy
 
-## Локальный запуск Этапа 0
+Reverse proxy нужен, если вы хотите красивые локальные адреса без портов или если ваш проект уже использует Nginx, Traefik, Caddy, Devilbox, DDEV, Laravel Sail, Symfony Docker или другой локальный proxy.
 
-Если приложение должно быть доступно с хоста и из backend-сети:
+Есть два разных направления трафика:
 
-```bash
+- браузер Windows -> reverse proxy -> эмулятор;
+- контейнеры внутри Docker -> эмулятор или бот по service DNS.
+
+Для браузера можно сделать адрес:
+
+```text
+http://telegram-emulator.local
+```
+
+Для контейнеров лучше оставить внутренний Docker-адрес:
+
+```text
+http://telegram-emulator:8080
+```
+
+Пример Nginx server block на хосте или в proxy-контейнере:
+
+```nginx
+server {
+    listen 80;
+    server_name telegram-emulator.local;
+
+    location / {
+        proxy_pass http://telegram-emulator:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Если reverse proxy работает на Windows-хосте, а не в Docker-сети, `proxy_pass` обычно будет таким:
+
+```nginx
+proxy_pass http://127.0.0.1:8080;
+```
+
+Если reverse proxy работает в Docker, он должен быть подключен к той же сети, что и `telegram-emulator`, и тогда можно использовать:
+
+```nginx
+proxy_pass http://telegram-emulator:8080;
+```
+
+Для hosts при reverse proxy обычно добавляют:
+
+```text
+127.0.0.1 telegram-emulator.local
+```
+
+После этого браузер открывает `http://telegram-emulator.local`, а боты в Docker по-прежнему используют `http://telegram-emulator:8080`.
+
+## Подключение вашего бота
+
+### Если бот использует Long Polling
+
+1. В эмуляторе откройте `Боты`.
+2. Создайте бота с fake token, например `123456:local-dev-token`.
+3. Оставьте delivery mode `long_polling`.
+4. В настройках вашего бота задайте:
+
+```text
+TELEGRAM_BOT_TOKEN=123456:local-dev-token
+TELEGRAM_API_BASE_URL=http://telegram-emulator:8080
+```
+
+Некоторые bot frameworks ожидают base URL без `/bot<TOKEN>`, а некоторые сами склеивают путь иначе. Правило простое:
+
+- если библиотека сама добавляет `/bot<TOKEN>/<METHOD>`, задавайте `http://telegram-emulator:8080`;
+- если библиотека ожидает префикс прямо перед token, задавайте `http://telegram-emulator:8080/bot`;
+- не передавайте URL с буквальными `{token}` и `{method}`.
+
+### Если бот использует webhook
+
+1. В эмуляторе откройте `Боты`.
+2. Создайте бота с fake token.
+3. Выберите delivery mode `webhook`.
+4. В поле webhook URL укажите адрес endpoint контейнера бота, например:
+
+```text
+http://bot:3000/telegram/webhook
+```
+
+5. Если ваш бот проверяет secret token, заполните webhook secret token.
+6. Отправьте сообщение во вкладке `Чат`.
+7. Если доставка не прошла, откройте `Inspector`, `Updates` или `Webhook attempts`.
+
+## Настройки окружения
+
+Основные переменные `docker-compose.yml`:
+
+- `HOST_PORT` — порт на Windows-хосте, по умолчанию `8080`.
+- `APP_BACKEND_NETWORK` — Docker-сеть, по умолчанию `constr_app-backend`.
+- `DATA_DIR` — директория runtime-данных внутри контейнера, по умолчанию `/app/data`.
+- `MEDIA_DIR` — директория media-файлов, по умолчанию `/app/data/media`.
+- `MEDIA_MAX_BYTES` — максимальный размер одного media-файла, по умолчанию `10485760`.
+- `LOG_DIR` — директория HTTP JSONL-логов, по умолчанию `/app/var/logs`.
+- `WEBHOOK_TIMEOUT_MS` — начальный timeout webhook-доставки, по умолчанию `10000`.
+- `WEBHOOK_RETRY_MAX_ATTEMPTS` — начальное число dev retry попыток, по умолчанию `1`.
+- `WEBHOOK_RETRY_DELAY_MS` — задержка dev retry, по умолчанию `0`.
+- `LONG_POLLING_MAX_TIMEOUT_SECONDS` — максимум ожидания `getUpdates.timeout`, по умолчанию `3`.
+- `TELEGRAM_EMULATOR_UPDATE_CHECK_URL` — необязательный URL проверки обновлений, по умолчанию GitHub API текущего репозитория.
+
+Webhook timeout и development retry можно менять на вкладке `Панель` без редактирования файлов. Значения сохраняются в SQLite.
+
+## Данные и логи
+
+При стандартном запуске проект монтируется в контейнер как `/app`.
+
+Runtime-данные лежат локально:
+
+- SQLite: `data/telegram_emulator.sqlite`;
+- media: `data/media/`;
+- HTTP-логи: `var/logs/http-YYYY-MM-DD.jsonl`.
+
+Эти файлы не коммитятся в git. Обычный `git pull` не должен удалять ваши локальные тестовые данные.
+
+## Обновление проекта
+
+Вкладка `Панель` содержит кнопку `Проверить обновления TelegramEmulator`.
+
+Механизм безопасный:
+
+- PHP не запускает `git`;
+- PHP не выполняет команды операционной системы;
+- локальный commit hash читается из `version.json`;
+- последняя версия проверяется по HTTPS через удаленный `version.json` или URL из `TELEGRAM_EMULATOR_UPDATE_CHECK_URL`;
+- если commit отличается, интерфейс показывает ручные команды обновления.
+
+Обновить проект вручную:
+
+```powershell
+cd S:\TelegramClientEmulator
+git pull
+docker compose pull
 docker compose up -d
 ```
 
-Если фактическое имя сети отличается, например Docker Compose создал сеть с префиксом проекта:
+Если вы запускали проект с переменными окружения, например другим портом или сетью, используйте их снова:
 
-```bash
-APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
+```powershell
+$env:HOST_PORT = "18080"
+$env:APP_BACKEND_NETWORK = "telegram-dev"
+docker compose up -d
 ```
 
-После запуска:
+## Проверка и тесты
 
-- внутри Docker-сети: `http://telegram-emulator:8080`;
-- на хосте: `http://localhost:8080` или порт из `HOST_PORT`;
-- healthcheck: `/health`.
+Основной smoke runner:
 
-## Текущие возможности
-
-- Панель состояния: `/`.
-- Управление ботами: `/bots`.
-- Управление пользователями: `/profiles`.
-- Управление group/supergroup чатами и участниками: `/group-chats`.
-- Формы ботов и пользователей показывают основные ошибки рядом с полями и возвращают HTTP 422 без записи некорректных данных.
-- Bot API: `GET|POST /bot<TOKEN>/getMe`.
-- Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`; `timeout` ограничивается `LONG_POLLING_MAX_TIMEOUT_SECONDS`, чтобы не блокировать single-process server надолго.
-- Bot API: `GET|POST /bot<TOKEN>/getFile` для локально сохраненных media.
-- Bot API: `POST /bot<TOKEN>/sendMessage` сохраняет текстовый ответ бота в историю локального чата.
-- Bot API: `sendMessage` поддерживает `reply_markup` для показа `inline_keyboard` и `keyboard` в интерфейсе чата.
-- Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo`.
-- Bot API: `POST /bot<TOKEN>/setWebhook` и `POST /bot<TOKEN>/deleteWebhook`.
-- Bot API: `POST /bot<TOKEN>/setMyCommands`, `GET|POST /bot<TOKEN>/getMyCommands`, `POST /bot<TOKEN>/deleteMyCommands` с `scope` и `language_code`.
-- Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
-- Чат показывает релевантные команды бота для текущего profile/chat с учетом `scope` и `language_code`; команды, reply-кнопки и inline-кнопки кликабельны.
-- Чат на `/chat` периодически обновляет историю, клавиатуры и inspector через HTMX-фрагмент `/chat/fragment?profile_id=<ID>&bot_id=<ID>`.
-- В чате можно очистить историю и updates только выбранной пары пользователь-бот после явного подтверждения.
-- Экран `/updates` показывает список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.
-- Экран `/updates` позволяет очистить pending/confirmed updates выбранного бота после явного подтверждения.
-- Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; поддерживает фильтры по HTTP status и `ok=false`, copy-friendly curl-like блоки и pretty JSON view. Bot token и secret token маскируются в HTML-выводе.
-- Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; отдельный fixture pack v2 (`/export/fixture-pack`, `/import/fixture-pack`) дополнительно включает `bot_commands`, `chats` и `media_manifest` без бинарных media. Импорт отклоняет конфликты `token`, `user_id` и private `chat_id`, но разрешает нескольким group/supergroup пользователям общий `chat_id`. Формат описан в `docs/technical-spec.md`.
-- Групповой чат моделируется отдельной записью `chats` и membership-связями `chat_members`, которые синхронизируются из profiles. Экран `/group-chats` показывает group/supergroup чаты, title, `chat_id`, type и позволяет добавлять или удалять участников через существующие profiles. Для совместимости import/export и UI-форм несколько пользователей по-прежнему могут иметь одинаковый `chat_id` и `chat_type=group|supergroup`; выбранный пользователь в `/chat` является отправителем сообщения.
-- Режим нескольких ботов в одном экране не входит в текущий scope: для сравнения нескольких ботов откройте один `profile_id` с разными `bot_id` в разных вкладках.
-- Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
-- Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
-- Короткий automatic development retry для новых webhook updates настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS`. Это синхронный local helper, не production scheduler.
-- Failed webhook delivery можно повторить вручную из inspector последнего update или batch-формой `/updates/retry-failed` на экране `/updates` для выбранного бота. Batch retry является локальным development helper: он выполняется синхронно в текущем HTTP-запросе, поддерживает `retry_limit` и `retry_delay_ms`, не запускает фоновые workers и логирует каждую попытку в delivery attempts.
-- Отдельный экран `/delivery-attempts` показывает webhook delivery attempts с фильтрами по боту и `update_id`.
-- Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
-- HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.
-- Контейнер доступен другим сервисам как `http://telegram-emulator:8080` в сети `APP_BACKEND_NETWORK`.
-
-Ограничение inspector: `/request-inspector` читает последние локальные HTTP JSONL-логи и не является security boundary. Секреты маскируются в HTML-выводе, но сами runtime-логи остаются файлами разработки в `LOG_DIR`.
-
-## Bot API и тесты
-
-Текущая поддерживаемая поверхность Bot API описана также в машинно-читаемом каталоге [`docs/bot-api-surface.json`](docs/bot-api-surface.json):
-
-- `GET|POST /bot<TOKEN>/getMe`;
-- `GET|POST /bot<TOKEN>/getUpdates`;
-- `GET|POST /bot<TOKEN>/getFile`;
-- `POST /bot<TOKEN>/sendMessage`;
-- `POST /bot<TOKEN>/sendPhoto`;
-- `POST /bot<TOKEN>/sendDocument`;
-- `POST /bot<TOKEN>/sendVideo`;
-- `POST /bot<TOKEN>/sendAnimation`;
-- `POST /bot<TOKEN>/sendAudio`;
-- `POST /bot<TOKEN>/sendVoice`;
-- `POST /bot<TOKEN>/sendVideoNote`;
-- `POST /bot<TOKEN>/sendSticker`;
-- `POST /bot<TOKEN>/sendPoll`;
-- `POST /bot<TOKEN>/sendLocation`;
-- `POST /bot<TOKEN>/sendVenue`;
-- `POST /bot<TOKEN>/sendContact`;
-- `POST /bot<TOKEN>/sendDice`;
-- `POST /bot<TOKEN>/editMessageText`;
-- `GET|POST /bot<TOKEN>/getWebhookInfo`;
-- `POST /bot<TOKEN>/setWebhook`;
-- `POST /bot<TOKEN>/deleteWebhook`;
-- `POST /bot<TOKEN>/setMyCommands`;
-- `GET|POST /bot<TOKEN>/getMyCommands`;
-- `POST /bot<TOKEN>/deleteMyCommands`;
-- `POST /bot<TOKEN>/answerCallbackQuery`.
-
-Для `setWebhook` и других POST-методов поддерживаются JSON, `application/x-www-form-urlencoded` и текстовые поля `multipart/form-data`. Для `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` дополнительно поддерживаются файловые части multipart-запросов в каноничных media-полях; файлы сохраняются в локальном `MEDIA_DIR`, а ответ получает стабильные `file_id` вида `local-media:<sha256>` и `file_unique_id`. `getFile` возвращает Telegram-like `File` с локальным `file_path`; скачать файл можно по `GET /file/bot<TOKEN>/<file_path>` внутри того же Docker-first workflow.
-
-`sendMessage` принимает `reply_markup` с `inline_keyboard` и `keyboard`. `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают строковое/URL значение соответствующего media-поля или multipart upload, сохраняют media placeholder в чате и возвращают Telegram-like `Message.*`. `sendPoll` принимает `question`, `options` и базовые quiz/regular параметры, сохраняет read-only poll в истории и возвращает Telegram-like `Message.poll`; интерактивное голосование пока не моделируется. `sendLocation`, `sendVenue`, `sendContact` и `sendDice` сохраняют structured-сообщения бота в историю и возвращают Telegram-like `Message.location`/`Message.venue`/`Message.contact`/`Message.dice`; `sendDice` в эмуляторе возвращает детерминированное значение `4` для обычных dice emoji и `32` для slot machine, чтобы тесты были стабильными. UI чата также умеет отправлять от пользователя photo, document, video, animation, audio, voice, video note и sticker по URL, file_id или локальному файлу, а также poll, location, venue, contact и dice через компактный раскрывающийся блок `Вложения`; такие сообщения создают Telegram-like `message.*` updates для webhook и Long Polling. `editMessageText` редактирует только сообщения бота по `chat_id` и `message_id`, поддерживает optional `reply_markup` и возвращает Telegram-like `Message`. Inline-кнопки с `callback_data` создают `callback_query` update через интерфейс чата, URL-кнопки открываются ссылкой, reply-кнопки отправляют обычный текстовый `message` update. Методы вне этой поверхности сейчас возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
-
-В `/chat` локальные `local-media:<sha256>` сообщения показывают ссылку "Скачать" на `/file/bot<TOKEN>/<file_path>`. Для локальных изображений дополнительно показывается компактный preview; внешние URL и неизвестные `file_id` не preview-ятся и остаются текстовым source.
-
-Подробный список ограничений, включая media upload, command scopes, language-specific commands, webhook retries и timeout, описан в [ограничениях эмулятора](docs/limitations.md).
-
-Проверки Bot API и focused tests запускаются в контейнере:
-
-```bash
+```powershell
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/bot_api_test.php"
+```
+
+Focused tests:
+
+```powershell
 docker compose run --rm --no-deps telegram-emulator sh -lc "php tests/request_parser_test.php && php tests/reply_markup_test.php && php tests/chat_repository_test.php"
 ```
 
-Стратегия тестирования описана в [ADR: стратегия тестирования](docs/adr-testing.md). На текущем этапе основной контур — самописный Docker HTTP smoke runner без PHPUnit; `tests/bot_api_test.php` остается entrypoint, helpers вынесены в `tests/support/`, а HTTP smoke-фазы — в тематические файлы `tests/scenarios/*_scenarios.php` через оркестратор `tests/scenarios/http_scenarios.php`. Runner проверяет реальные маршруты, SQLite runtime, webhook delivery, Long Polling, Bot API payloads, UI smoke HTML и структурные HTML-проверки через `DOMDocument`/`DOMXPath`. Небольшие focused tests вроде `tests/bot_api_params_test.php`, `tests/bot_api_payload_factory_test.php`, `tests/long_polling_service_test.php`, `tests/request_parser_test.php`, `tests/reply_markup_test.php`, `tests/message_renderer_test.php` и `tests/chat_repository_test.php` проверяют изолированные компоненты без HTTP server.
+Проверка синтаксиса PHP:
 
-Синтаксис PHP-файлов:
-
-```bash
+```powershell
 docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"
 ```
 
-## Проверенные готовые проекты
+## Текущие ограничения
 
-Полного совпадения с нужным продуктом пока не найдено, но несколько проектов полезны как ориентиры:
-
-- `telegram-test-api`: mock server Telegram Bot API для тестов.
-- `Telegraf-Test`: testing helper для Telegraf-ботов.
-- `Telemelya`: простой mock Telegram Bot API.
-- Официальные Docker-образы `telegram-bot-api`: полезны для локального Bot API hosting, но не дают fake chat UI и offline user simulator.
-
-Эмулятор должен использовать идею mock API, но основной фокус проекта: интерактивный веб-интерфейс и локальный Docker-to-Docker workflow webhook.
+- Это локальный инструмент разработки, а не настоящий Telegram server.
+- Эмулятор не подключается к настоящему Telegram.
+- Поддерживается только та Bot API surface, которая нужна для локальных сценариев проекта.
+- Неподдерживаемые методы возвращают Telegram-like JSON с HTTP 501 и `ok=false`.
+- Development retry webhook выполняется синхронно в текущем HTTP-запросе и не является production scheduler.
+- Встроенный PHP server однопроцессный, поэтому Long Polling timeout ограничен.
+- Inspector маскирует секреты в HTML, но runtime-логи остаются локальными файлами разработки.
 
 ## Документация
 
+- [Roadmap](ROADMAP.md)
 - [Техническое задание](docs/technical-spec.md)
 - [Ограничения эмулятора](docs/limitations.md)
 - [Примеры интеграции bot frameworks](docs/framework-examples.md)
 - [ADR: HTTP routing и micro-framework](docs/adr-routing.md)
 - [ADR: стратегия тестирования](docs/adr-testing.md)
 - [Чеклист актуализации Roadmap](docs/roadmap-update-checklist.md)
-- [Roadmap](ROADMAP.md)

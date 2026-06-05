@@ -1,125 +1,52 @@
 # Roadmap
 
-## 1. Архитектурная позиция
+Примечание: этот `ROADMAP.md` и ранее существовавший файл `AI_PROPOSALS.md` были самостоятельно подготовлены и актуализированы AI-агентом Codex (ChatGPT 5.5) как рабочие инженерные ориентиры. Это не внешний контракт и не обещание полной реализации всех идей; каждое предложение ниже должно подтверждаться реальной пользовательской задачей, рисками и проверяемым результатом.
 
-Проект должен быть локальным Telegram Bot API emulator, а не оберткой вокруг одного конкретного бота.
+## 1. Текущая позиция проекта
 
-Базовая модель:
+TelegramClientEmulator — локальный Docker-first эмулятор Telegram Bot API для разработки и тестирования ботов без настоящего Telegram, BotFather, публичного HTTPS и тестовых аккаунтов.
 
-- в эмуляторе может быть несколько ботов;
-- у каждого бота есть свой token, bot id, username;
-- пользователь описывает Telegram-like пользователя и чат;
-- конкретный диалог открывается для выбранной пары пользователь-бот;
-- история сообщений привязана к паре пользователь-бот;
-- бот может получать updates через webhook или Long Polling;
-- бот отправляет ответы через локальные routes вида `/bot{token}/sendMessage`.
+Текущий статус: основной MVP локального developer workflow реализован.
 
-Главный сценарий: разработчик запускает эмулятор и один или несколько контейнеров ботов в Docker Compose, открывает веб-интерфейс, выбирает пользователя и бота, отправляет сообщение, а бот получает update так же, как получил бы его от Telegram.
+MVP считается готовым для сценария, где разработчик:
 
-## 2. Выбранный стек
+- запускает эмулятор через Docker Compose;
+- создает несколько локальных ботов с fake token;
+- создает тестовых пользователей и group/supergroup чаты;
+- отправляет сообщения через веб-чат;
+- получает updates ботом через webhook или Long Polling;
+- отправляет ответы через локальные Bot API routes;
+- видит историю, payload, request/response и ошибки доставки в UI.
+
+Проект не является полным Telegram server и не стремится реализовать весь Telegram Bot API заранее. Новые методы и payload добавляются только под реальные локальные сценарии разработки.
+
+## 2. Архитектурные принципы
+
+- Docker Compose остается основным способом запуска.
+- Эмулятор не подключается к настоящему Telegram.
+- Один глобальный `TELEGRAM_BOT_TOKEN` не используется: token является настройкой конкретного бота.
+- Поддержка нескольких ботов и профилей является базовой моделью, а не расширением.
+- Поведение Bot API routes должно оставаться каноничным относительно Telegram Bot API там, где метод поддержан.
+- Неподдерживаемые методы возвращают Telegram-like ошибку с HTTP 501 и `ok=false`.
+- UI строится на server-rendered HTML и HTMX без тяжелого SPA.
+- Runtime-данные разработки хранятся локально в настраиваемых директориях и не коммитятся в git.
+- Git и командная строка не вызываются из PHP; обновление проекта выполняется пользователем вручную.
+
+## 3. Выбранный стек
 
 - PHP 8.3+ как основной язык backend.
-- HTMX для интерактивности без тяжелого SPA.
+- HTMX для интерактивности без SPA.
 - SQLite для локального хранения состояния.
-- Docker Compose как основной способ запуска.
-- Серверный HTML rendering, минимальный JavaScript только там, где HTMX недостаточно.
+- Встроенный PHP HTTP server внутри контейнера.
+- Docker Compose для запуска эмулятора и соседних контейнеров ботов.
 
-Причина выбора: проект является developer tool с формами, таблицами, чатовым интерфейсом и request/response инспектором. Для такого продукта PHP + HTMX дают простую модель разработки, быстрый старт контейнера и меньше инфраструктуры, чем SPA.
+Стек выбран как прагматичный вариант для developer tool: формы, таблицы, чат, инспектор и небольшие HTTP endpoints быстрее поддерживать в server-rendered PHP, чем в отдельном frontend/backend SPA.
 
-## 3. Ключевые доменные сущности
+## 4. Реализованная Bot API surface
 
-### Bot
+Текущий список также закреплен в [`docs/bot-api-surface.json`](docs/bot-api-surface.json).
 
-Бот описывает локально эмулируемого Telegram-бота.
-
-Поля:
-
-- `id`
-- `token`
-- `bot_id`
-- `username`
-- `display_name`
-- `delivery_mode`: `webhook` или `long_polling`
-- `webhook_url`
-- `webhook_secret_token`
-- `enabled`
-- `created_at`
-- `updated_at`
-
-### User
-
-Пользователь описывает тестового Telegram-пользователя и чат.
-
-Поля:
-
-- `id`
-- `name`
-- `user_id`
-- `username`
-- `first_name`
-- `last_name`
-- `chat_id`
-- `chat_type`
-- `language_code`
-- `enabled`
-- `created_at`
-- `updated_at`
-
-### Message
-
-Сообщение хранит видимую историю диалога.
-
-Поля:
-
-- `id`
-- `bot_id`
-- `profile_id`
-- `chat_id`
-- `telegram_message_id`
-- `direction`: `user` или `bot`
-- `text`
-- `raw_payload`
-- `created_at`
-
-### Update
-
-Update хранит Telegram-like событие, созданное эмулятором.
-
-Поля:
-
-- `id`
-- `bot_id`
-- `profile_id`
-- `update_id`
-- `payload`
-- `delivery_mode`
-- `queue_state`: `pending`, `delivered`, `confirmed`, `failed`
-- `created_at`
-- `delivered_at`
-- `confirmed_at`
-
-### DeliveryAttempt
-
-Попытка webhook-доставки.
-
-Поля:
-
-- `id`
-- `update_id`
-- `bot_id`
-- `webhook_url`
-- `request_headers`
-- `request_body`
-- `response_status`
-- `response_headers`
-- `response_body`
-- `duration_ms`
-- `error`
-- `created_at`
-
-## 4. Bot API surface
-
-### Реализованные методы
+Поддерживаются:
 
 - `GET|POST /bot{token}/getMe`
 - `GET|POST /bot{token}/getUpdates`
@@ -138,6 +65,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `POST /bot{token}/sendVenue`
 - `POST /bot{token}/sendContact`
 - `POST /bot{token}/sendDice`
+- `POST /bot{token}/editMessageText`
 - `POST /bot{token}/setWebhook`
 - `POST /bot{token}/deleteWebhook`
 - `GET|POST /bot{token}/getWebhookInfo`
@@ -146,11 +74,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - `POST /bot{token}/deleteMyCommands`
 - `POST /bot{token}/answerCallbackQuery`
 
-### Следующие методы
-
-На ближайшую задачу вынесен refactor renderer.
-
-Неподдерживаемые методы должны возвращать Telegram-like ошибку:
+Неподдерживаемые методы возвращают:
 
 ```json
 {
@@ -164,223 +88,237 @@ Update хранит Telegram-like событие, созданное эмуля�
 
 ### Этап 0: фундамент проекта
 
-Цель: получить запускаемый PHP-проект в Docker.
-
 Статус: реализовано.
 
-Результат:
+Сделано:
 
-- `docker-compose.yml` на готовом образе `php:8.3-cli-alpine`;
+- `docker-compose.yml` на `php:8.3-cli-alpine`;
 - встроенный PHP HTTP server;
-- endpoint `GET /health`;
-- базовая структура `public/`, `src/`, `templates/`, `var/`;
-- SQLite подключение;
-- миграции;
+- endpoint `/health`;
+- структура `public/`, `src/`, `templates/`, `migrations`, `data`, `var`;
+- SQLite и миграции;
 - bind mount проекта в `/app`;
-- подключение к внешней Docker-сети `app-backend`;
 - публикация порта через `HOST_PORT`, по умолчанию `8080`;
-- `php.ini` с отключенным автоматическим чтением POST body, чтобы вручную и стабильно парсить JSON/form-urlencoded запросы.
-
-Критерий готовности: `docker compose up -d` поднимает приложение, контейнер становится healthy, а `GET /health` возвращает успешный JSON.
+- подключение к Docker-сети через `APP_BACKEND_NETWORK`;
+- `php.ini` с ручным парсингом request body.
 
 ### Этап 1: модель ботов и пользователей
 
-Цель: убрать привязку к одному token и заложить мультиботовую модель.
-
 Статус: реализовано.
 
-Результат:
+Сделано:
 
 - CRUD ботов;
-- CRUD пользователей;
-- выбор пользователя и бота на экране чата через URL-параметры, без cookie-состояния;
-- автоматическая генерация `bot_id` и `token` при создании бота;
-- `bot_id` извлекается из token, если token соответствует Telegram-like формату;
-- базовая нормализация token, user id, chat id и username;
-- хранение настроек в SQLite.
+- CRUD пользователей/profiles;
+- fake token и bot id;
+- выбор пары пользователь-бот через URL-параметры;
+- SQLite-хранение настроек;
+- inline validation основных форм;
+- import/export bots/profiles.
 
-Критерий готовности: в UI можно создать два бота, двух пользователей и открыть разные пары пользователь-бот в разных вкладках без конфликта состояния.
-
-### Этап 2: базовый чат и генерация updates
-
-Цель: создать первый локальный Telegram-like message loop внутри UI.
+### Этап 2: чат и генерация updates
 
 Статус: реализовано.
 
-Результат:
+Сделано:
 
-- экран чата;
-- отправка текстового сообщения от выбранного пользователя;
-- генерация `Update`;
+- веб-чат;
+- отправка сообщений от выбранного пользователя;
+- генерация Telegram-like `Update`;
 - генерация `message_id` и `update_id`;
-- сохранение сообщения и raw payload;
-- inspector для последнего update.
-
-Критерий готовности: сообщение из UI сохраняется в истории, а raw `Update` соответствует Telegram Bot API shape.
+- история сообщений;
+- raw payload inspector последнего update;
+- очистка истории выбранной пары пользователь-бот.
 
 ### Этап 3: Long Polling
 
-Цель: поддержать ботов, которые работают через `getUpdates`.
-
 Статус: реализовано.
 
-Результат:
+Сделано:
 
 - очередь updates по каждому боту;
-- endpoint `GET|POST /bot{token}/getUpdates`;
-- поддержка `offset`, `limit`, `timeout`, `allowed_updates`;
+- `GET|POST /bot{token}/getUpdates`;
+- `offset`, `limit`, `timeout`, `allowed_updates`;
 - подтверждение updates через offset;
-- отображение состояния очереди в UI.
-
-Принятые ограничения:
-
-- `timeout` в MVP ограничен коротким ожиданием до `LONG_POLLING_MAX_TIMEOUT_SECONDS` секунд, по умолчанию `3`, чтобы не блокировать single-process встроенный PHP server надолго.
-
-Критерий готовности: тестовый бот может получать сообщения из эмулятора через Long Polling и не получает подтвержденные updates повторно.
+- UI списка updates и фильтры;
+- ограничение `timeout` через `LONG_POLLING_MAX_TIMEOUT_SECONDS` для защиты однопроцессного PHP server.
 
 ### Этап 4: webhook-доставка
 
-Цель: поддержать ботов, которые работают через webhook.
+Статус: реализовано для локального development workflow.
 
-Статус: реализовано в базовом виде.
+Сделано:
 
-Реализовано:
-
-- `setWebhook`;
-- `deleteWebhook`;
-- `getWebhookInfo`;
+- `setWebhook`, `deleteWebhook`, `getWebhookInfo`;
 - хранение webhook URL и secret token;
-- переключение режима доставки между `webhook` и `long_polling`;
-- 409 conflict для `getUpdates`, если активен webhook.
-- отправка update на webhook URL выбранного бота;
-- сохранение request/response;
-- отображение ошибок доставки.
-- ручной resend failed delivery из inspector последнего update.
-- отдельный список delivery attempts и фильтры по боту/update.
-- настройки webhook timeout в UI с диапазоном 1000–60000 мс.
+- режимы `webhook` и `long_polling`;
+- 409 conflict для `getUpdates`, если webhook активен;
+- POST-доставка update на webhook URL;
+- сохранение request/response и ошибок;
+- `/delivery-attempts` с фильтрами;
+- Inspector для webhook request/response;
+- timeout webhook delivery на панели;
+- ручной retry failed delivery;
+- batch retry failed updates на `/updates`;
+- короткий synchronous development retry/backoff.
 
-Критерий готовности: бот-контейнер получает update через Docker service URL, а эмулятор показывает статус доставки.
+Ограничение: retry является локальным helper, а не production scheduler. Фоновых workers и отложенной очереди retry нет.
 
-### Этап 5: ответы бота
+### Этап 5: ответы бота и UI сообщений
 
-Цель: показывать ответы бота в Telegram-like интерфейсе.
+Статус: реализовано шире начального MVP.
 
-Статус: реализовано для текстовых сообщений.
-
-Результат:
+Сделано:
 
 - `sendMessage`;
-- сохранение bot messages;
-- отображение ответов в чате;
-- Telegram-like response body;
-- поддержка JSON и form-encoded request body.
-- поддержка `reply_markup` для `inline_keyboard` и `keyboard`;
-- отображение inline/reply-кнопок в чате;
-- клики по reply-кнопкам создают обычные message updates;
-- клики по inline-кнопкам с `callback_data` создают `callback_query` updates;
-- сохранение и показ команд бота через `setMyCommands`/`getMyCommands`/`deleteMyCommands`;
-- command scopes и language-specific команды поддержаны для Bot API и выбора команд в `/chat`;
-- компактный select команд рядом с полем ввода и кликабельные команды в истории сообщений.
+- сохранение и отображение bot messages;
+- JSON, form-urlencoded и multipart parsing;
+- `reply_markup` для `inline_keyboard` и `keyboard`;
+- callback query при клике по inline-кнопкам с `callback_data`;
+- reply-кнопки как обычные message updates;
+- URL inline-кнопки как ссылки;
+- `setMyCommands`, `getMyCommands`, `deleteMyCommands`;
+- command scopes и language-specific commands;
+- компактный выбор команд в чате;
+- `editMessageText` для текстовых сообщений бота.
 
-Принятые ограничения:
+Ограничения:
 
-- реализованы только текстовые сообщения;
-- attachments и остальные параметры `sendMessage` будут добавляться по мере появления сценариев.
-- admin-only command scopes сохраняются и возвращаются exact Bot API запросами, но роли администраторов в UI пока не моделируются.
-- URL inline-кнопки открываются ссылкой в UI, но не создают update.
+- роли администраторов для admin-only command scopes в UI пока не моделируются;
+- URL-кнопки не создают update, потому что Telegram тоже не отправляет callback для обычного URL.
 
-Критерий готовности: бот получает сообщение от пользователя и через `/sendMessage` добавляет ответ в видимый чат.
+### Этап 6: media и structured-сообщения
 
-### Этап 6: HTMX-интерактивность и ergonomics
+Статус: частично реализовано, достаточно для основных локальных сценариев.
 
-Цель: сделать интерфейс удобным для ежедневной разработки.
+Сделано:
 
-Статус: частично реализовано.
+- `sendPhoto`, `sendDocument`, `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote`, `sendSticker`;
+- строковые/URL media значения;
+- multipart upload в каноничных media-полях;
+- локальное media-хранилище через `MEDIA_DIR`;
+- `getFile` и локальная отдача `/file/bot<TOKEN>/<file_path>`;
+- `sendPoll` как read-only poll/quiz;
+- `sendLocation`, `sendVenue`, `sendContact`, `sendDice`;
+- отправка от пользователя media/structured-сообщений через компактный блок `Вложения` в чате.
 
-Результат:
+Ограничения:
 
-- HTMX polling для обновления чата — реализовано через `/chat/fragment`;
-- inline validation форм ботов и пользователей — реализовано для основных ошибок;
-- вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
-- экран group/supergroup чатов и membership через profiles — реализован через `/group-chats`;
-- inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts, включая status/ok=false фильтры, curl-like view и pretty JSON;
-- development webhook retry/backoff — реализован как короткий синхронный helper без production scheduler;
-- import/export ботов и пользователей — реализовано для JSON без истории сообщений; fixture pack v2 добавлен для повторяемых тестовых сценариев с `bot_commands`, `chats` и `media_manifest`;
-- очистка истории по пользователю или боту — реализована для диалога и pending/confirmed updates выбранного бота.
+- интерактивное голосование в poll пока не моделируется;
+- preview делается только для локальных изображений, неизвестные `file_id` и внешние URL остаются текстовым source;
+- не все optional параметры Telegram Bot API реализованы.
 
-Критерий готовности: основной workflow выполняется из браузера без ручного редактирования файлов и без перезагрузки страницы для частых действий.
+### Этап 7: ergonomics и инспекторы
 
-### Этап 7: расширение Telegram compatibility
+Статус: реализовано для текущего MVP.
 
-Цель: покрыть частые возможности ботов.
+Сделано:
 
-Статус: частично реализовано.
+- HTMX polling `/chat/fragment`;
+- компактная вкладка `Чат` со скрываемым блоком контекста;
+- навигация с активной вкладкой без дублирующих заголовков страниц;
+- `/request-inspector` для Bot API HTTP logs и webhook delivery attempts;
+- фильтры `status` и `ok=false`;
+- curl-like view и pretty JSON;
+- маскирование bot token и webhook secret token в HTML;
+- `/updates` с фильтрами и batch-действиями;
+- `/delivery-attempts`;
+- `/group-chats` для group/supergroup чатов и membership через profiles;
+- `/import-export` и fixture pack v2;
+- Health-информация на вкладке `Панель` с raw endpoint `/health`.
 
-Результат:
+### Этап 8: качество, документация и сопровождение
 
-- inline keyboard rendering — реализовано для `callback_data` и `url`;
-- callback query generation — реализовано для inline-кнопок с `callback_data`;
-- `answerCallbackQuery` — реализовано в минимальном виде;
-- reply keyboard — реализовано для отправки текстовых кнопок;
-- `editMessageText` — реализовано для текстовых сообщений бота и optional `reply_markup`;
-- базовый `sendPhoto` — реализовано для строкового/URL `photo`, multipart upload, caption и optional `reply_markup`;
-- базовый `sendDocument` — реализовано для строкового/URL `document`, multipart upload, caption и optional `reply_markup`;
-- `getFile` и локальная отдача media — реализованы для файлов, сохраненных в `MEDIA_DIR`;
-- базовые audio/video media методы — реализованы `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` для строкового/URL media и multipart upload;
-- poll/quiz сообщения — реализован базовый `sendPoll` как read-only `Message.poll`;
-- structured messages — реализованы `sendLocation`, `sendVenue`, `sendContact` и `sendDice` без файлового upload.
-- прием structured сообщений от пользователя через UI — реализован для photo/document по URL, file_id или локальному файлу, location и contact.
+Статус: частично реализовано, продолжается.
 
-Критерий готовности: можно локально тестировать ботов с кнопками и редактированием сообщений.
+Сделано:
 
-### Этап 8: качество и документация
+- основной Docker HTTP smoke runner `tests/bot_api_test.php`;
+- focused tests для parser, payload factory, reply markup, renderer, repositories и Long Polling;
+- разбиение HTTP smoke scenarios на тематические файлы;
+- `docs/adr-testing.md`;
+- `docs/adr-routing.md`;
+- `docs/limitations.md`;
+- `docs/framework-examples.md`;
+- `docs/bot-api-surface.json`;
+- обновленный README с Windows/Docker/адресацией/reverse proxy;
+- безопасная проверка обновлений на панели через локальный и удаленный `version.json` без запуска Git из PHP.
 
-Цель: подготовить проект к использованию не только автором.
+Осталось улучшить:
 
-Статус: начато.
+- сделать документацию короче в быстрых разделах, если появятся частые вопросы пользователей;
+- добавить больше focused tests для новых UI-сценариев по мере роста интерфейса;
+- при необходимости добавить release-процесс для автоматического обновления `version.json`.
 
-Результат:
+## 6. Статус MVP
 
-- тесты доменной логики — начато через `tests/bot_api_test.php`;
-- тесты Bot API routes — начато через `tests/bot_api_test.php`;
-- тесты Long Polling offset behavior — реализованы в интеграционном тесте;
-- документация запуска тестов — добавлена в README;
-- документация Docker Compose сценариев — добавлена в README;
-- примеры интеграции для PHP, Python и Node.js bot frameworks — добавлены в `docs/framework-examples.md`;
-- описание ограничений эмулятора — добавлено в `docs/limitations.md`.
-- machine-readable Bot API surface catalog — добавлен в `docs/bot-api-surface.json`.
-
-Критерий готовности: новый разработчик может поднять проект и подключить своего бота по README без устных пояснений.
-
-## 6. Приоритеты MVP
-
-Статус по ключевым приоритетам:
+Ключевые приоритеты MVP:
 
 1. Мультиботовая модель — реализовано.
 2. Пользователи и чаты — реализовано.
-3. Генерация корректных text message updates — реализовано.
-4. Long Polling через `getUpdates` — реализовано.
-5. `sendMessage` для отображения ответов — реализовано для текста.
-6. Webhook configuration (`setWebhook`, `deleteWebhook`, `getWebhookInfo`) — реализовано.
-7. Webhook delivery — реализовано в базовом виде.
-8. Инспектор payload и ошибок — payload inspector и последний delivery attempt реализованы частично; отдельный delivery inspector впереди.
-9. Команды бота и кнопки — реализованы для default/scoped/language-specific команд, inline keyboard, reply keyboard и callback query.
+3. Group/supergroup чаты — реализованы в базовой модели membership через profiles.
+4. Генерация Telegram-like updates — реализовано для текста, callback, media и structured-сообщений.
+5. Long Polling через `getUpdates` — реализовано.
+6. Webhook configuration — реализовано.
+7. Webhook delivery — реализовано для локального development workflow.
+8. Ответы бота через локальный Bot API — реализовано для текущей supported surface.
+9. Inspector payload/request/response/errors — реализовано.
+10. Import/export тестового окружения — реализовано для JSON/fixture pack без бинарных media.
+11. Windows/Docker README — реализовано.
+12. Проверка обновлений без Git из PHP — реализовано.
 
-Long Polling был реализован до webhook-доставки, потому что он не требует отдельного HTTP endpoint в контейнере бота и быстрее проверяет корректность очереди updates.
+Вывод: MVP как локальный инструмент разработки готов. Дальнейшая работа — расширение совместимости, улучшение документации и повышение покрытия тестами, а не закрытие базового сценария.
 
-## 7. Архитектурные ограничения
+## 7. Открытые решения и будущие задачи
 
-- Не использовать один глобальный `TELEGRAM_BOT_TOKEN` как конфигурацию проекта.
-- Token является настройкой конкретного бота внутри эмулятора.
-- Не хранить реальные production token в примерах.
-- Не подключаться к настоящему Telegram.
-- Не строить SPA без необходимости; базовый UI должен работать через server-rendered HTML и HTMX.
-- Не пытаться реализовать весь Telegram Bot API до появления реальных сценариев.
+### Возможные предложения AI-агента
 
-## 8. Открытые решения
+Этот раздел перенесен из `AI_PROPOSALS.md` после сверки с фактической реализацией. Большая часть прежних предложений уже выполнена: admin UI ботов и пользователей вынесен в отдельные контроллеры, import/export вынесен в `ImportExportController`, Bot API routes имеют registry, UI вложений покрывает текущую поддерживаемую media/structured surface, групповые чаты имеют отдельный экран, development webhook retry реализован, крупные message scenarios разделены.
 
-- Формат import/export принят: JSON envelope v1 для bots/profiles без истории; fixture pack v2 использует top-level массивы `bots`, `profiles`, `chats`, `bot_commands` и `media_manifest`. Архив нужен только при появлении экспорта бинарных media.
-- Групповые чаты начаты: несколько сохраненных пользователей могут иметь один group/supergroup `chat_id`, `/chat` выбирает отправителя, update содержит `message.chat.type=group`, история группы читается по `bot_id + chat_id`. Добавлены нормализованные `chats` и `chat_members`, которые синхронизируются из profiles; `/group-chats` показывает список group/supergroup чатов и позволяет добавлять или удалять участников через существующие profiles. UI для title, ролей администраторов и service messages пока отложен.
-- Режим "один пользователь общается с несколькими ботами в одном экране" не входит в текущий scope; альтернатива — открыть одну пару `profile_id`/`bot_id` на вкладку.
-- Micro-framework не внедряется сейчас: решение зафиксировано в `docs/adr-routing.md`, текущий custom router остается до явной необходимости.
-- Стратегия тестов принята: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости; решение зафиксировано в `docs/adr-testing.md`.
+Оставшиеся возможные предложения:
+
+- Дальше уменьшать ответственность `Application`: при росте панели, health, update-check или media download можно вынести их в отдельные контроллеры без изменения URL и HTTP-контрактов.
+- Разделить крупный `ImportExportController`, если он начнет мешать сопровождению: fixture pack validation/normalization можно вынести в отдельный service/helper.
+- Добавить release-процесс, который автоматически обновляет `version.json` при публикации новой версии, чтобы проверка обновлений всегда сравнивала осмысленный release hash.
+- Расширить group/supergroup модель ролями администраторов, service messages и более явным управлением title/history, если это понадобится для тестирования реальных ботов.
+- Добавить export/import бинарных media архивом, если fixture pack нужно будет переносить между машинами вместе с файлами.
+- Добавлять новые Bot API методы только под реальные сценарии: ближайшие кандидаты остаются `sendChatAction`, `deleteMessage`, `editMessageReplyMarkup`, `sendMediaGroup`.
+
+### Telegram compatibility
+
+- Добавлять новые Bot API методы только под реальные локальные сценарии.
+- Возможные следующие кандидаты: `sendChatAction`, `deleteMessage`, `editMessageReplyMarkup`, `sendMediaGroup`.
+- Для каждого нового метода нужно обновлять `docs/bot-api-surface.json`, tests, README/limitations при необходимости.
+
+### Group/supergroup
+
+- Текущая модель membership через profiles работает для базового тестирования.
+- Отложено: роли администраторов, service messages, более подробная модель title/history management.
+
+### Media
+
+- Fixture pack v2 сейчас хранит `media_manifest`, но не переносит бинарные media.
+- Архивный export/import media нужен только при появлении реального сценария обмена fixture pack между машинами.
+
+### Polls
+
+- `sendPoll` реализован как read-only сообщение.
+- Интерактивное голосование и poll answers пока не моделируются.
+
+### Обновления
+
+- Проверка обновлений безопасно сравнивает локальный `version.json` с удаленным `version.json`.
+- PHP не выполняет `git pull` и не имеет доступа к shell.
+- Будущий release-процесс может автоматически обновлять `version.json`, чтобы hash всегда соответствовал опубликованной сборке.
+
+### Тестовая стратегия
+
+- Самописный Docker HTTP smoke runner остается основным контуром.
+- PHPUnit не добавляется без явной необходимости.
+- Решение зафиксировано в [`docs/adr-testing.md`](docs/adr-testing.md).
+
+### Routing
+
+- Custom router остается текущим решением.
+- Micro-framework не внедряется без явной необходимости.
+- Решение зафиксировано в [`docs/adr-routing.md`](docs/adr-routing.md).
