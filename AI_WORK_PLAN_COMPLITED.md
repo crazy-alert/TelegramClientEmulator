@@ -1,5 +1,16 @@
 # Завершенные планы работы
 
+## Development webhook retry/backoff (2026-06-06)
+
+- [x] Разобрать текущую webhook delivery, ручной retry и UI настроек.
+- [x] Добавить настройки max attempts и delay для локального development retry.
+- [x] Выполнять короткие синхронные retry только для автоматической webhook-доставки в helper-режиме.
+- [x] Сохранить ручной retry failed updates без скрытия ошибок и показать attempts в inspector/delivery attempts.
+- [x] Покрыть focused webhook retry scenarios.
+- [x] Обновить README/docs/ROADMAP с ограничением: это не production scheduler.
+- [x] Выполнить syntax checks, focused tests, общий smoke test и `git diff --check`.
+- [x] Обновить рабочий контекст, удалить задачу, перенести чеклист в completed, сделать коммит.
+
 ## Экран group/supergroup чатов и участников (2026-06-06)
 
 - [x] Разобрать текущую модель `profiles`, `chats`, `chat_members` и маршруты UI.

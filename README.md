@@ -93,6 +93,8 @@ services:
       MEDIA_MAX_BYTES: "10485760"
       LOG_DIR: "/app/var/logs"
       WEBHOOK_TIMEOUT_MS: "10000"
+      WEBHOOK_RETRY_MAX_ATTEMPTS: "1"
+      WEBHOOK_RETRY_DELAY_MS: "0"
       LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
     expose:
       - "8080"
@@ -119,6 +121,8 @@ Token, bot id, username бота, transport mode и webhook URL настраив
 Точные имена переменных окружения зависят от bot framework. Если библиотека сама добавляет `/bot<TOKEN>/<METHOD>` к API root, используйте `http://telegram-emulator:8080`. Если библиотека ожидает Telegram-style base URL до token и сама дописывает token без дополнительного `/`, используйте `http://telegram-emulator:8080/bot`. Не передавайте в HTTP-клиент URL с буквальными `{token}` или `{method}`: многие клиенты отклоняют такие строки как malformed URL.
 
 `WEBHOOK_TIMEOUT_MS` задает начальный timeout webhook-доставки в миллисекундах. Если переменная не задана, используется `10000`. На панели `/` timeout можно переопределить через UI без изменения файлов; значение хранится в SQLite и должно быть в диапазоне `1000`–`60000` мс.
+
+`WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS` задают начальные настройки короткого синхронного development retry для новых webhook updates. По умолчанию используется одна попытка и задержка `0` мс, то есть автоматические retry отключены. На панели `/` эти значения можно переопределить через UI; допустимые диапазоны: `1`–`5` попыток и `0`–`5000` мс. Это локальный helper для разработки, а не production scheduler: попытки выполняются в текущем HTTP-запросе, каждая попытка пишется в delivery attempts, а ручной retry failed updates остается отдельным действием.
 
 `LONG_POLLING_MAX_TIMEOUT_SECONDS` задает верхнюю границу ожидания для `getUpdates.timeout` в single-process PHP server. По умолчанию используется `3`, допустимый диапазон — `0`–`30` секунд. Это локальная защита отзывчивости UI: если бот запросит `timeout=60`, эмулятор будет ждать не дольше этой границы.
 
@@ -179,6 +183,8 @@ services:
       DATA_DIR: "/app/data"
       LOG_DIR: "/app/var/logs"
       WEBHOOK_TIMEOUT_MS: "10000"
+      WEBHOOK_RETRY_MAX_ATTEMPTS: "1"
+      WEBHOOK_RETRY_DELAY_MS: "0"
       LONG_POLLING_MAX_TIMEOUT_SECONDS: "3"
     ports:
       - "8080:8080"
@@ -258,6 +264,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Режим нескольких ботов в одном экране не входит в текущий scope: для сравнения нескольких ботов откройте один `profile_id` с разными `bot_id` в разных вкладках.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
+- Короткий automatic development retry для новых webhook updates настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS`. Это синхронный local helper, не production scheduler.
 - Failed webhook delivery можно повторить вручную из inspector последнего update или batch-формой `/updates/retry-failed` на экране `/updates` для выбранного бота. Batch retry является локальным development helper: он выполняется синхронно в текущем HTTP-запросе, поддерживает `retry_limit` и `retry_delay_ms`, не запускает фоновые workers и логирует каждую попытку в delivery attempts.
 - Отдельный экран `/delivery-attempts` показывает webhook delivery attempts с фильтрами по боту и `update_id`.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.

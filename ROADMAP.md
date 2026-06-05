@@ -304,6 +304,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
 - экран group/supergroup чатов и membership через profiles — реализован через `/group-chats`;
 - inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts, включая status/ok=false фильтры, curl-like view и pretty JSON;
+- development webhook retry/backoff — реализован как короткий синхронный helper без production scheduler;
 - import/export ботов и пользователей — реализовано для JSON без истории сообщений; fixture pack v2 добавлен для повторяемых тестовых сценариев с `bot_commands`, `chats` и `media_manifest`;
 - очистка истории по пользователю или боту — реализована для диалога и pending/confirmed updates выбранного бота.
 

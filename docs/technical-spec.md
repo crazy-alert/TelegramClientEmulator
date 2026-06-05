@@ -503,12 +503,14 @@ Runtime stack проекта:
 - Import/export ботов и пользователей.
 - Ручная повторная отправка failed webhook.
 - Request/response inspector.
+- Development webhook retry/backoff настройки на панели `/`.
 
 ## 7. Риски и инженерные заметки
 
 - Bot frameworks по-разному переопределяют Telegram Bot API base URL. Позже в документацию нужно добавить примеры для популярных frameworks.
 - Некоторые боты зависят от API methods кроме `sendMessage`; неподдерживаемые методы должны возвращать понятные Telegram-like errors и логироваться.
 - Webhook URL чувствителен к Docker network context. В Docker Compose URL обычно должен использовать service DNS, например `http://bot:3000/webhook`, а не `localhost`.
+- Development webhook retry не является production scheduler: короткие retry выполняются синхронно в текущем HTTP-запросе, чтобы сохранить Docker-first локальный workflow без фоновых workers.
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.

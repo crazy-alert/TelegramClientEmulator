@@ -189,9 +189,17 @@ function startWebhookReceiver(string $runtime, int $port): mixed {
     file_put_contents($receiverRoot . '/receiver.php', <<<'PHP'
 <?php
 
-$status = (int) ($_GET['status'] ?? 202);
-$body = file_get_contents('php://input') ?: '';
 $logFile = getenv('WEBHOOK_RECEIVER_LOG') ?: sys_get_temp_dir() . '/telegram-emulator-webhook.log';
+$status = (int) ($_GET['status'] ?? 202);
+$sequence = trim((string) ($_GET['sequence'] ?? ''));
+if ($sequence !== '') {
+    $sequenceItems = array_values(array_filter(array_map('trim', explode(',', $sequence)), 'strlen'));
+    $counterFile = dirname($logFile) . '/webhook-sequence-' . md5($_SERVER['REQUEST_URI'] ?? '') . '.txt';
+    $counter = is_file($counterFile) ? (int) file_get_contents($counterFile) : 0;
+    $status = (int) ($sequenceItems[min($counter, count($sequenceItems) - 1)] ?? $status);
+    file_put_contents($counterFile, (string) ($counter + 1));
+}
+$body = file_get_contents('php://input') ?: '';
 file_put_contents($logFile, json_encode([
     'status' => $status,
     'headers' => [

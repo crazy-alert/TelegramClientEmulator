@@ -26,6 +26,7 @@ final readonly class ChatController {
         private BotApiPayloadFactory $payloadFactory,
         private View $view,
         private Closure $webhookTimeoutSeconds,
+        private Closure $webhookRetrySettings,
     ) {
     }
 
@@ -173,7 +174,7 @@ final readonly class ChatController {
             ]);
 
             if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
-                $this->webhookDelivery->deliver($createdUpdate, $bot, $this->webhookTimeoutSeconds());
+                $this->deliverWebhookUpdate($createdUpdate, $bot);
             }
         }
 
@@ -400,7 +401,7 @@ final readonly class ChatController {
         ]);
 
         if (($bot['delivery_mode'] ?? 'long_polling') === 'webhook' && trim((string) ($bot['webhook_url'] ?? '')) !== '') {
-            $this->webhookDelivery->deliver($createdUpdate, $bot, $this->webhookTimeoutSeconds());
+            $this->deliverWebhookUpdate($createdUpdate, $bot);
         }
 
         Response::redirect('/chat?profile_id=' . (int) $profile['id'] . '&bot_id=' . (int) $bot['id']);
@@ -647,6 +648,21 @@ final readonly class ChatController {
 
     private function webhookTimeoutSeconds(): int {
         return (int) ($this->webhookTimeoutSeconds)();
+    }
+
+    /**
+     * @param array{id: int, update_id: int, payload: string} $update
+     * @param array<string, mixed> $bot
+     */
+    private function deliverWebhookUpdate(array $update, array $bot): void {
+        $settings = ($this->webhookRetrySettings)();
+        $this->webhookDelivery->deliverWithDevelopmentRetry(
+            $update,
+            $bot,
+            $this->webhookTimeoutSeconds(),
+            (int) ($settings['max_attempts'] ?? 1),
+            (int) ($settings['delay_ms'] ?? 0),
+        );
     }
 
     /**

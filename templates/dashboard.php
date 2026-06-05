@@ -44,6 +44,44 @@
         <button type="submit">Сохранить</button>
     </form>
     <p class="muted">Допустимый диапазон: <?= e($webhookTimeoutMinMs) ?>–<?= e($webhookTimeoutMaxMs) ?> мс.</p>
+
+    <hr>
+    <p class="muted">
+        Development retry: <strong><?= e($webhookRetryMaxAttempts) ?></strong> попыток,
+        delay <strong><?= e($webhookRetryDelayMs) ?> мс</strong>.
+        По умолчанию из окружения: <?= e($webhookRetryMaxAttemptsDefault) ?> попыток,
+        <?= e($webhookRetryDelayDefaultMs) ?> мс.
+    </p>
+    <form method="post" action="/settings/webhook-retry" class="form-inline">
+        <label>
+            Max attempts
+            <input
+                type="number"
+                name="webhook_retry_max_attempts"
+                value="<?= e($webhookRetryMaxAttempts) ?>"
+                min="<?= e($webhookRetryMaxAttemptsMin) ?>"
+                max="<?= e($webhookRetryMaxAttemptsMax) ?>"
+                required
+            >
+        </label>
+        <label>
+            Retry delay, мс
+            <input
+                type="number"
+                name="webhook_retry_delay_ms"
+                value="<?= e($webhookRetryDelayMs) ?>"
+                min="<?= e($webhookRetryDelayMinMs) ?>"
+                max="<?= e($webhookRetryDelayMaxMs) ?>"
+                step="100"
+                required
+            >
+        </label>
+        <button type="submit">Сохранить retry</button>
+    </form>
+    <p class="muted">
+        Это короткий синхронный helper для локальной разработки, а не production scheduler.
+        Ручной retry failed updates остается доступен на экране `/updates`.
+    </p>
 </section>
 
 <section class="panel" style="margin-top: 18px;">

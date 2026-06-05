@@ -12,6 +12,14 @@ final class Application {
     private const DEFAULT_WEBHOOK_TIMEOUT_MS = 10000;
     private const MIN_WEBHOOK_TIMEOUT_MS = 1000;
     private const MAX_WEBHOOK_TIMEOUT_MS = 60000;
+    private const WEBHOOK_RETRY_MAX_ATTEMPTS_SETTING = 'webhook_retry_max_attempts';
+    private const WEBHOOK_RETRY_DELAY_SETTING = 'webhook_retry_delay_ms';
+    private const DEFAULT_WEBHOOK_RETRY_MAX_ATTEMPTS = 1;
+    private const MIN_WEBHOOK_RETRY_MAX_ATTEMPTS = 1;
+    private const MAX_WEBHOOK_RETRY_MAX_ATTEMPTS = 5;
+    private const DEFAULT_WEBHOOK_RETRY_DELAY_MS = 0;
+    private const MIN_WEBHOOK_RETRY_DELAY_MS = 0;
+    private const MAX_WEBHOOK_RETRY_DELAY_MS = 5000;
     private const DEFAULT_LONG_POLLING_MAX_TIMEOUT_SECONDS = 3;
     private const MIN_LONG_POLLING_MAX_TIMEOUT_SECONDS = 0;
     private const MAX_LONG_POLLING_MAX_TIMEOUT_SECONDS = 30;
@@ -105,6 +113,7 @@ final class Application {
             $this->botApiPayloads,
             $this->view,
             fn(): int => $this->webhookTimeoutSeconds(),
+            fn(): array => $this->webhookRetrySettings(),
         );
         $this->botAdmin = new BotAdminController(
             $this->bots,
@@ -216,6 +225,11 @@ final class Application {
             return;
         }
 
+        if ($method === 'POST' && $path === '/settings/webhook-retry') {
+            $this->updateWebhookRetry();
+            return;
+        }
+
         if ($method === 'GET' && $path === '/health') {
             $this->health();
             return;
@@ -299,6 +313,14 @@ final class Application {
             'webhookTimeoutDefaultMs' => $this->webhookTimeoutDefaultMs(),
             'webhookTimeoutMinMs' => self::MIN_WEBHOOK_TIMEOUT_MS,
             'webhookTimeoutMaxMs' => self::MAX_WEBHOOK_TIMEOUT_MS,
+            'webhookRetryMaxAttempts' => $this->webhookRetryMaxAttempts(),
+            'webhookRetryMaxAttemptsDefault' => $this->webhookRetryMaxAttemptsDefault(),
+            'webhookRetryMaxAttemptsMin' => self::MIN_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            'webhookRetryMaxAttemptsMax' => self::MAX_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            'webhookRetryDelayMs' => $this->webhookRetryDelayMs(),
+            'webhookRetryDelayDefaultMs' => $this->webhookRetryDelayDefaultMs(),
+            'webhookRetryDelayMinMs' => self::MIN_WEBHOOK_RETRY_DELAY_MS,
+            'webhookRetryDelayMaxMs' => self::MAX_WEBHOOK_RETRY_DELAY_MS,
         ]);
     }
 
@@ -317,6 +339,35 @@ final class Application {
         }
 
         $this->settings->set(self::WEBHOOK_TIMEOUT_SETTING, (string) $timeoutMs);
+        Response::redirect('/');
+    }
+
+    private function updateWebhookRetry(): void {
+        $maxAttempts = $this->intParam($_POST['webhook_retry_max_attempts'] ?? 0, 0);
+        $delayMs = $this->intParam($_POST['webhook_retry_delay_ms'] ?? 0, 0);
+
+        if ($maxAttempts < self::MIN_WEBHOOK_RETRY_MAX_ATTEMPTS || $maxAttempts > self::MAX_WEBHOOK_RETRY_MAX_ATTEMPTS) {
+            Response::json([
+                'ok' => false,
+                'error' => 'Webhook retry attempts должен быть целым числом от '
+                    . self::MIN_WEBHOOK_RETRY_MAX_ATTEMPTS . ' до '
+                    . self::MAX_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            ], 400);
+            return;
+        }
+
+        if ($delayMs < self::MIN_WEBHOOK_RETRY_DELAY_MS || $delayMs > self::MAX_WEBHOOK_RETRY_DELAY_MS) {
+            Response::json([
+                'ok' => false,
+                'error' => 'Webhook retry delay должен быть целым числом от '
+                    . self::MIN_WEBHOOK_RETRY_DELAY_MS . ' до '
+                    . self::MAX_WEBHOOK_RETRY_DELAY_MS . ' мс',
+            ], 400);
+            return;
+        }
+
+        $this->settings->set(self::WEBHOOK_RETRY_MAX_ATTEMPTS_SETTING, (string) $maxAttempts);
+        $this->settings->set(self::WEBHOOK_RETRY_DELAY_SETTING, (string) $delayMs);
         Response::redirect('/');
     }
 
@@ -386,6 +437,58 @@ final class Application {
         $timeoutMs = $this->intParam(getenv('WEBHOOK_TIMEOUT_MS') ?: self::DEFAULT_WEBHOOK_TIMEOUT_MS, self::DEFAULT_WEBHOOK_TIMEOUT_MS);
 
         return max(self::MIN_WEBHOOK_TIMEOUT_MS, min(self::MAX_WEBHOOK_TIMEOUT_MS, $timeoutMs));
+    }
+
+    /**
+     * @return array{max_attempts: int, delay_ms: int}
+     */
+    private function webhookRetrySettings(): array {
+        return [
+            'max_attempts' => $this->webhookRetryMaxAttempts(),
+            'delay_ms' => $this->webhookRetryDelayMs(),
+        ];
+    }
+
+    private function webhookRetryMaxAttempts(): int {
+        $stored = $this->settings->get(self::WEBHOOK_RETRY_MAX_ATTEMPTS_SETTING);
+        $maxAttempts = $stored === null
+            ? $this->webhookRetryMaxAttemptsDefault()
+            : $this->intParam($stored, self::DEFAULT_WEBHOOK_RETRY_MAX_ATTEMPTS);
+
+        return max(
+            self::MIN_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            min(self::MAX_WEBHOOK_RETRY_MAX_ATTEMPTS, $maxAttempts),
+        );
+    }
+
+    private function webhookRetryMaxAttemptsDefault(): int {
+        $maxAttempts = $this->intParam(
+            getenv('WEBHOOK_RETRY_MAX_ATTEMPTS') ?: self::DEFAULT_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            self::DEFAULT_WEBHOOK_RETRY_MAX_ATTEMPTS,
+        );
+
+        return max(
+            self::MIN_WEBHOOK_RETRY_MAX_ATTEMPTS,
+            min(self::MAX_WEBHOOK_RETRY_MAX_ATTEMPTS, $maxAttempts),
+        );
+    }
+
+    private function webhookRetryDelayMs(): int {
+        $stored = $this->settings->get(self::WEBHOOK_RETRY_DELAY_SETTING);
+        $delayMs = $stored === null
+            ? $this->webhookRetryDelayDefaultMs()
+            : $this->intParam($stored, self::DEFAULT_WEBHOOK_RETRY_DELAY_MS);
+
+        return max(self::MIN_WEBHOOK_RETRY_DELAY_MS, min(self::MAX_WEBHOOK_RETRY_DELAY_MS, $delayMs));
+    }
+
+    private function webhookRetryDelayDefaultMs(): int {
+        $delayMs = $this->intParam(
+            getenv('WEBHOOK_RETRY_DELAY_MS') ?: self::DEFAULT_WEBHOOK_RETRY_DELAY_MS,
+            self::DEFAULT_WEBHOOK_RETRY_DELAY_MS,
+        );
+
+        return max(self::MIN_WEBHOOK_RETRY_DELAY_MS, min(self::MAX_WEBHOOK_RETRY_DELAY_MS, $delayMs));
     }
 
     private function longPollingMaxTimeoutSeconds(): int {

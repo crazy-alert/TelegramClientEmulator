@@ -98,11 +98,15 @@ UI чата может отправлять от пользователя photo,
 
 ## Webhook delivery
 
-Webhook-доставка делает одну попытку на новый update. Результат сохраняется в `delivery_attempts` и виден в UI.
+Webhook-доставка делает одну или несколько коротких синхронных попыток на новый update согласно development retry настройкам. Результат каждой попытки сохраняется в `delivery_attempts` и виден в UI.
 
 Ограничения:
 
-- production-grade automatic retry/backoff пока нет; доступен только ручной single retry и синхронный batch retry для локальной разработки;
+- production-grade automatic retry/backoff пока нет; development retry выполняется только в текущем HTTP-запросе и не является scheduler;
+- `WEBHOOK_RETRY_MAX_ATTEMPTS` задает начальное число попыток, UI-диапазон: `1`–`5`;
+- `WEBHOOK_RETRY_DELAY_MS` задает начальную задержку между попытками, UI-диапазон: `0`–`5000` мс;
+- каждая попытка сохраняется отдельно, поэтому промежуточные ошибки видны в inspector/delivery attempts;
+- доступен ручной single retry и синхронный batch retry для локальной разработки;
 - failed delivery можно повторить вручную из inspector последнего update;
 - timeout задается `WEBHOOK_TIMEOUT_MS` как начальное значение и может быть переопределен через UI на панели `/`;
 - допустимый UI-диапазон timeout: `1000`–`60000` мс;

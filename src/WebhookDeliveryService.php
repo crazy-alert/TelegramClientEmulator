@@ -7,7 +7,7 @@ namespace App;
 use Throwable;
 
 /**
- * Отвечает за одну попытку webhook-доставки update и сохранение результата.
+ * Отвечает за webhook-доставку update и сохранение результата каждой попытки.
  */
 final readonly class WebhookDeliveryService {
 
@@ -21,7 +21,7 @@ final readonly class WebhookDeliveryService {
      * @param array{id: int, update_id: int, payload: string} $update
      * @param array<string, mixed> $bot
      */
-    public function deliver(array $update, array $bot, int $timeoutSeconds): void {
+    public function deliver(array $update, array $bot, int $timeoutSeconds): bool {
         $url = (string) $bot['webhook_url'];
         $headers = [
             'Content-Type: application/json',
@@ -78,6 +78,36 @@ final readonly class WebhookDeliveryService {
             'error' => $error,
         ]);
         $this->updates->markWebhookDelivery((int) $update['id'], $delivered);
+
+        return $delivered;
+    }
+
+    /**
+     * Выполняет короткие синхронные retry только для локального helper-режима.
+     *
+     * @param array{id: int, update_id: int, payload: string} $update
+     * @param array<string, mixed> $bot
+     */
+    public function deliverWithDevelopmentRetry(
+        array $update,
+        array $bot,
+        int $timeoutSeconds,
+        int $maxAttempts,
+        int $delayMs,
+    ): void {
+        $attempts = max(1, min(5, $maxAttempts));
+        $delayMs = max(0, min(5000, $delayMs));
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $delivered = $this->deliver($update, $bot, $timeoutSeconds);
+            if ($delivered || $attempt === $attempts) {
+                return;
+            }
+
+            if ($delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+        }
     }
 
     /**

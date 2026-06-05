@@ -2,29 +2,26 @@
 
 ## Последнее обновление
 
-2026-06-06: выполнена `.aitasks/task05-group-chat-admin-ui.md`.
+2026-06-06: выполнена `.aitasks/task06-webhook-dev-retry-backoff.md`.
 
 Что сделано:
 
-- Добавлен `GroupChatAdminController` с маршрутами `/group-chats`, `/group-chats/{chat_id}`, добавлением и удалением участников через существующие profiles.
-- `ChatRepository` расширен выборкой group/supergroup чатов с количеством участников и поиском group/supergroup по `chat_id`.
-- В навигацию добавлен пункт `Группы`; созданы шаблоны `templates/group-chats/index.php` и `templates/group-chats/show.php`.
-- `ProfileAdminController` теперь валидирует конфликт private/channel `chat_id` с group/supergroup `chat_id`; `ProfileRepository::hasConflictingChatId()` поддерживает исключение текущего profile при редактировании.
-- `tests/scenarios/group_chat_scenarios.php` покрывает список групп, экран участников, добавление/удаление участника и конфликтные private/group `chat_id` cases.
-- `README.md`, `docs/limitations.md`, `docs/technical-spec.md` и `ROADMAP.md` обновлены под новый group chat admin UI scope.
+- Добавлены настройки development webhook retry на панели `/`: max attempts и delay.
+- `WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS` добавлены в Docker/env документацию и compose defaults.
+- `WebhookDeliveryService::deliver()` возвращает результат попытки, а `deliverWithDevelopmentRetry()` выполняет короткие синхронные retry для автоматической webhook-доставки.
+- Manual resend и batch retry failed updates остались одноразовыми helper-действиями.
+- Каждая попытка сохраняется в `delivery_attempts`; промежуточные ошибки не скрываются.
+- `tests/scenarios/webhook_retry_scenarios.php` проверяет настройки, retry sequence `500,500,202`, delivery attempts и сохранение ручного retry.
+- `README.md`, `docs/limitations.md`, `docs/technical-spec.md` и `ROADMAP.md` обновлены с ограничением: это не production scheduler.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php -l public/index.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/GroupChatAdminController.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/WebhookDeliveryService.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/ProfileAdminController.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/ProfileRepository.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatRepository.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/group-chats/index.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/group-chats/show.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/group_chat_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatController.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l templates/dashboard.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/webhook_retry_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/support/test_helpers.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
@@ -32,10 +29,9 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task06-webhook-dev-retry-backoff.md`
 - `task07-split-message-scenarios.md`
 
-Следующий шаг: взять `.aitasks/task06-webhook-dev-retry-backoff.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
+Следующий шаг: взять `.aitasks/task07-split-message-scenarios.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
 
 ## Важные решения
 
@@ -45,4 +41,5 @@
 - Inspector HTML не должен раскрывать raw bot token и webhook secret; copy-friendly curl тоже строится из замаскированных данных.
 - Command scopes в Bot API работают exact по `scope + language_code`; UI делает отдельный fallback для текущего чата.
 - Group/supergroup membership управляется через существующие profiles, чтобы сохранить совместимость с `profiles.chat_id` и import/export.
+- Development webhook retry выполняется синхронно в текущем HTTP-запросе и не является production scheduler.
 - `tests/bot_api_test.php` остается главным HTTP smoke entrypoint; focused catalog test проверяет документационный контракт без запуска HTTP server.
