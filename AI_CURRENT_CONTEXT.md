@@ -2,23 +2,30 @@
 
 ## Последнее обновление
 
-2026-06-05: после пустой очереди обновлены `AI_PROPOSALS.md` и `.aitasks/`.
+2026-06-05: выполнена `.aitasks/task01-admin-controllers.md`.
 
 Что сделано:
 
-- Убраны устаревшие предложения из `AI_PROPOSALS.md`, которые уже были реализованы предыдущими задачами.
-- Добавлены актуальные предложения: admin controllers, import/export controller, Bot API route registry, полный UI вложений, group chat admin UI, dev retry/backoff, split message scenarios.
-- Созданы task-файлы `.aitasks/task01-admin-controllers.md` ... `.aitasks/task07-split-message-scenarios.md`.
+- Добавлен `src/BotAdminController.php` для `/bots`, `/bots/new`, `/bots/{id}/edit`, create/update/delete и validation формы бота.
+- Добавлен `src/ProfileAdminController.php` для `/profiles`, `/profiles/new`, `/profiles/{id}/edit`, create/update/delete и validation формы пользователя.
+- `Application` теперь делегирует admin UI ботов и пользователей новым контроллерам; import/export validation helpers оставлены в `Application` до task02.
+- `public/index.php`, `AI_PROJECT_MAP.md` и `docs/technical-spec.md` обновлены под новую архитектуру.
+- В `tests/scenarios/http_setup_scenarios.php` добавлены DOM checks для create/edit форм бота и пользователя.
 
 Проверки:
 
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotAdminController.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ProfileAdminController.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l public/index.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/http_setup_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
 ## Ближайшая очередь
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task01-admin-controllers.md`
 - `task02-import-export-controller.md`
 - `task03-bot-api-route-registry.md`
 - `task04-chat-all-attachments-ui.md`
@@ -26,7 +33,7 @@
 - `task06-webhook-dev-retry-backoff.md`
 - `task07-split-message-scenarios.md`
 
-Следующий шаг: взять `.aitasks/task01-admin-controllers.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
+Следующий шаг: взять `.aitasks/task02-import-export-controller.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
 
 ## Важные решения
 

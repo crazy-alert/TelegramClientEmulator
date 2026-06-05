@@ -21,6 +21,8 @@ final class Application {
     private BotApiPayloadFactory $botApiPayloads;
     private BotApiRequestParser $requestParser;
     private ChatController $chat;
+    private BotAdminController $botAdmin;
+    private ProfileAdminController $profileAdmin;
     private BotRepository $bots;
     private BotCommandRepository $botCommands;
     private ChatRepository $chats;
@@ -100,6 +102,16 @@ final class Application {
             $this->mediaStorage,
             $this->view,
             fn(): int => $this->webhookTimeoutSeconds(),
+        );
+        $this->botAdmin = new BotAdminController(
+            $this->bots,
+            $this->profiles,
+            $this->view,
+        );
+        $this->profileAdmin = new ProfileAdminController(
+            $this->profiles,
+            $this->bots,
+            $this->view,
         );
     }
 
@@ -236,69 +248,11 @@ final class Application {
             return;
         }
 
-        // --- Боты ---
-
-        if ($method === 'GET' && $path === '/bots') {
-            $this->botsIndex();
+        if ($this->botAdmin->handle($method, $path)) {
             return;
         }
 
-        if ($method === 'GET' && $path === '/bots/new') {
-            $this->botForm();
-            return;
-        }
-
-        if ($method === 'POST' && $path === '/bots') {
-            $this->botCreate();
-            return;
-        }
-
-        if ($method === 'GET' && preg_match('#^/bots/(\d+)/edit$#', $path, $matches) === 1) {
-            $this->botForm((int) $matches[1]);
-            return;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bots/(\d+)$#', $path, $matches) === 1) {
-            $this->botUpdate((int) $matches[1]);
-            return;
-        }
-
-        if ($method === 'POST' && preg_match('#^/bots/(\d+)/delete$#', $path, $matches) === 1) {
-            $this->bots->delete((int) $matches[1]);
-            Response::redirect('/bots');
-            return;
-        }
-
-        // --- Пользователи ---
-
-        if ($method === 'GET' && $path === '/profiles') {
-            $this->profilesIndex();
-            return;
-        }
-
-        if ($method === 'GET' && $path === '/profiles/new') {
-            $this->profileForm();
-            return;
-        }
-
-        if ($method === 'POST' && $path === '/profiles') {
-            $this->profileCreate();
-            return;
-        }
-
-        if ($method === 'GET' && preg_match('#^/profiles/(\d+)/edit$#', $path, $matches) === 1) {
-            $this->profileForm((int) $matches[1]);
-            return;
-        }
-
-        if ($method === 'POST' && preg_match('#^/profiles/(\d+)$#', $path, $matches) === 1) {
-            $this->profileUpdate((int) $matches[1]);
-            return;
-        }
-
-        if ($method === 'POST' && preg_match('#^/profiles/(\d+)/delete$#', $path, $matches) === 1) {
-            $this->profiles->delete((int) $matches[1]);
-            Response::redirect('/profiles');
+        if ($this->profileAdmin->handle($method, $path)) {
             return;
         }
 
@@ -374,78 +328,6 @@ final class Application {
 
         $this->settings->set(self::WEBHOOK_TIMEOUT_SETTING, (string) $timeoutMs);
         Response::redirect('/');
-    }
-
-    private function botsIndex(): void {
-        $this->render('bots/index', [
-            'title' => 'Боты',
-            'bots' => $this->bots->all(),
-        ]);
-    }
-
-    private function botForm(?int $id = null): void {
-        $bot = $id === null ? null : $this->bots->find($id);
-
-        if ($id !== null && $bot === null) {
-            Response::json(['ok' => false, 'error' => 'Бот не найден'], 404);
-            return;
-        }
-
-        $this->render('bots/form', [
-            'title' => $bot === null ? 'Новый бот' : 'Редактирование бота',
-            'bot' => $bot,
-            'generatedCredentials' => $bot === null ? $this->bots->generateCredentials() : null,
-            'errors' => [],
-        ]);
-    }
-
-    private function botCreate(): void {
-        $errors = $this->validateBotForm($_POST);
-
-        if ($errors !== []) {
-            http_response_code(422);
-            $this->render('bots/form', [
-                'title' => 'Новый бот',
-                'bot' => $_POST,
-                'generatedCredentials' => $this->generatedCredentialsFromPost($_POST) ?? $this->bots->generateCredentials(),
-                'errors' => $errors,
-            ]);
-            return;
-        }
-
-        $this->bots->create($_POST);
-        Response::redirect('/bots');
-    }
-
-    private function botUpdate(int $id): void {
-        $bot = $this->bots->find($id);
-
-        if ($bot === null) {
-            Response::json(['ok' => false, 'error' => 'Бот не найден'], 404);
-            return;
-        }
-
-        $errors = $this->validateBotForm($_POST);
-        if ($errors !== []) {
-            http_response_code(422);
-            $this->render('bots/form', [
-                'title' => 'Редактирование бота',
-                'bot' => array_replace($bot, $_POST, ['id' => $id]),
-                'generatedCredentials' => null,
-                'errors' => $errors,
-            ]);
-            return;
-        }
-
-        $this->bots->update($id, $_POST);
-        Response::redirect('/bots');
-    }
-
-    private function profilesIndex(): void {
-        $this->render('profiles/index', [
-            'title' => 'Пользователи',
-            'users' => $this->profiles->all(),
-        ]);
     }
 
     private function downloadMedia(string $token, string $filePath): void {
@@ -1004,61 +886,6 @@ final class Application {
         ];
     }
 
-    private function profileForm(?int $id = null): void {
-        $profile = $id === null ? null : $this->profiles->find($id);
-
-        if ($id !== null && $profile === null) {
-            Response::json(['ok' => false, 'error' => 'Пользователь не найден'], 404);
-            return;
-        }
-
-        $this->render('profiles/form', [
-            'title' => $profile === null ? 'Новый пользователь' : 'Редактирование пользователя',
-            'profile' => $profile,
-            'errors' => [],
-        ]);
-    }
-
-    private function profileCreate(): void {
-        $errors = $this->validateProfileForm($_POST);
-
-        if ($errors !== []) {
-            http_response_code(422);
-            $this->render('profiles/form', [
-                'title' => 'Новый пользователь',
-                'profile' => $_POST,
-                'errors' => $errors,
-            ]);
-            return;
-        }
-
-        $this->profiles->create($_POST);
-        Response::redirect('/profiles');
-    }
-
-    private function profileUpdate(int $id): void {
-        $profile = $this->profiles->find($id);
-
-        if ($profile === null) {
-            Response::json(['ok' => false, 'error' => 'Пользователь не найден'], 404);
-            return;
-        }
-
-        $errors = $this->validateProfileForm($_POST);
-        if ($errors !== []) {
-            http_response_code(422);
-            $this->render('profiles/form', [
-                'title' => 'Редактирование пользователя',
-                'profile' => array_replace($profile, $_POST, ['id' => $id]),
-                'errors' => $errors,
-            ]);
-            return;
-        }
-
-        $this->profiles->update($id, $_POST);
-        Response::redirect('/profiles');
-    }
-
     /**
      * @param array<string, mixed> $data
      * @return array<string, string>
@@ -1141,22 +968,6 @@ final class Application {
         }
 
         return $errors;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     * @return array{bot_id: int, token: string}|null
-     */
-    private function generatedCredentialsFromPost(array $data): ?array {
-        $token = trim((string) ($data['generated_token'] ?? ''));
-        if (preg_match('/^(\d{5,10}):[a-zA-Z0-9_.+-]{15,}$/', $token, $matches) !== 1) {
-            return null;
-        }
-
-        return [
-            'bot_id' => (int) $matches[1],
-            'token' => $token,
-        ];
     }
 
     private function isValidWebhookUrl(string $url): bool {

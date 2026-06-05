@@ -31,6 +31,15 @@ function runHttpSetupScenarios(array $context): void {
     assertSameValue(200, $dashboard['status'], 'Панель после настройки timeout должна открываться');
     assertTrueValue(str_contains($dashboard['body'], 'value="1500"'), 'Панель должна показывать сохраненный webhook timeout');
 
+    $botForm = httpRequest('GET', $baseUrl . '/bots/new');
+    assertSameValue(200, $botForm['status'], 'Форма создания бота должна открываться');
+    $botFormDom = htmlDocument($botForm['body']);
+    assertDomXPathExists(
+        $botFormDom,
+        '//form[contains(concat(" ", normalize-space(@class), " "), " editor ") and @method="post" and @action="/bots"]//input[@name="generated_token"]',
+        'DOM: форма создания бота должна сохранять generated_token',
+    );
+
     $response = httpRequest('POST', $baseUrl . '/bots', formBody([
         'token' => 'bad-token',
         'bot_id' => 'abc',
@@ -54,6 +63,24 @@ function runHttpSetupScenarios(array $context): void {
         'enabled' => '1',
     ]), ['Content-Type: application/x-www-form-urlencoded']);
     assertSameValue(303, $response['status'], 'Создание бота должно редиректить на список');
+
+    $botEditForm = httpRequest('GET', $baseUrl . '/bots/1/edit');
+    assertSameValue(200, $botEditForm['status'], 'Форма редактирования бота должна открываться');
+    $botEditDom = htmlDocument($botEditForm['body']);
+    assertDomXPathExists(
+        $botEditDom,
+        '//form[contains(concat(" ", normalize-space(@class), " "), " editor ") and @method="post" and @action="/bots/1"]//input[@name="username" and @value="local_bot"]',
+        'DOM: форма редактирования бота должна сохранять action и username',
+    );
+
+    $profileForm = httpRequest('GET', $baseUrl . '/profiles/new');
+    assertSameValue(200, $profileForm['status'], 'Форма создания пользователя должна открываться');
+    $profileFormDom = htmlDocument($profileForm['body']);
+    assertDomXPathExists(
+        $profileFormDom,
+        '//form[contains(concat(" ", normalize-space(@class), " "), " editor ") and @method="post" and @action="/profiles"]//input[@name="user_id"]',
+        'DOM: форма создания пользователя должна содержать user_id',
+    );
 
     $response = httpRequest('POST', $baseUrl . '/profiles', formBody([
         'user_id' => '0',
@@ -81,5 +108,14 @@ function runHttpSetupScenarios(array $context): void {
         'enabled' => '1',
     ]), ['Content-Type: application/x-www-form-urlencoded']);
     assertSameValue(303, $response['status'], 'Создание пользователя должно редиректить на список');
+
+    $profileEditForm = httpRequest('GET', $baseUrl . '/profiles/1/edit');
+    assertSameValue(200, $profileEditForm['status'], 'Форма редактирования пользователя должна открываться');
+    $profileEditDom = htmlDocument($profileEditForm['body']);
+    assertDomXPathExists(
+        $profileEditDom,
+        '//form[contains(concat(" ", normalize-space(@class), " "), " editor ") and @method="post" and @action="/profiles/1"]//input[@name="username" and @value="dev_user"]',
+        'DOM: форма редактирования пользователя должна сохранять action и username',
+    );
 
 }

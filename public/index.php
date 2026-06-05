@@ -25,6 +25,7 @@ ini_set('output_buffering', '4096');
 use App\Application;
 
 require dirname(__DIR__) . '/src/Application.php';
+require dirname(__DIR__) . '/src/BotAdminController.php';
 require dirname(__DIR__) . '/src/BotApiController.php';
 require dirname(__DIR__) . '/src/BotApiPayloadFactory.php';
 require dirname(__DIR__) . '/src/BotApiParams.php';
@@ -44,6 +45,7 @@ require dirname(__DIR__) . '/src/MessageRenderer.php';
 require dirname(__DIR__) . '/src/MessageRepository.php';
 require dirname(__DIR__) . '/src/MigrationRunner.php';
 require dirname(__DIR__) . '/src/ProfileRepository.php';
+require dirname(__DIR__) . '/src/ProfileAdminController.php';
 require dirname(__DIR__) . '/src/Response.php';
 require dirname(__DIR__) . '/src/ReplyMarkup.php';
 require dirname(__DIR__) . '/src/SettingsRepository.php';

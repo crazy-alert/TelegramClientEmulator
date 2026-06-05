@@ -1,5 +1,26 @@
 # Завершенные планы работы
 
+## Admin UI controllers (2026-06-05)
+
+- [x] Прочитать task-файл и текущий `Application`.
+- [x] Спроектировать минимальный перенос dependencies/routes/helpers.
+- [x] Добавить `BotAdminController` и `ProfileAdminController`.
+- [x] Подключить контроллеры в `Application` и `public/index.php`.
+- [x] Обновить HTTP/DOM checks для форм.
+- [x] Обновить `AI_PROJECT_MAP.md` и `AI_CURRENT_CONTEXT.md`.
+- [x] Запустить проверки.
+- [x] Удалить task-файл, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotAdminController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ProfileAdminController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l public/index.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/http_setup_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Сворачивание chat update inspector (2026-06-05)
 
 - [x] Проверить текущую разметку чата и связанные стили.

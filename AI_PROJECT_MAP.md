@@ -15,7 +15,9 @@
 ## Приложение
 
 - `public/index.php` — front controller.
-- `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`, chat-сценарии — в `ChatController`, inspector/update/delivery UI routes — в `InspectorController`.
+- `src/Application.php` — composition root, custom router, orchestration dashboard/import-export/media/local routes; локальные Bot API requests делегируются в `BotApiController`, chat-сценарии — в `ChatController`, inspector/update/delivery UI routes — в `InspectorController`, admin UI ботов и пользователей — в `BotAdminController` и `ProfileAdminController`.
+- `src/BotAdminController.php` — UI-маршруты `/bots`, `/bots/new`, `/bots/{id}/edit`, create/update/delete и validation формы бота.
+- `src/ProfileAdminController.php` — UI-маршруты `/profiles`, `/profiles/new`, `/profiles/{id}/edit`, create/update/delete и validation формы пользователя.
 - `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, HTTP-валидация и handlers методов `getMe`, `getUpdates`, `getFile`, `sendMessage`, media/structured methods, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
 - `src/BotApiPayloadFactory.php` — чистая фабрика Telegram-like `Message`, `Chat` и media payload для ответов локального Bot API.
 - `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
