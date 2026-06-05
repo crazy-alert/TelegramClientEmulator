@@ -50,6 +50,24 @@
 </form>
 
 <?php if ((int) ($selectedBotId ?? 0) > 0): ?>
+    <form class="editor" method="post" action="/updates/retry-failed" onsubmit="return confirm('Повторить failed webhook updates выбранного бота?');" style="margin-bottom: 18px;">
+        <input type="hidden" name="bot_id" value="<?= e($selectedBotId) ?>">
+        <input type="hidden" name="confirm_retry" value="1">
+        <div class="grid">
+            <label>
+                Retry limit
+                <input type="number" name="retry_limit" value="10" min="1" max="50">
+            </label>
+            <label>
+                Delay, ms
+                <input type="number" name="retry_delay_ms" value="0" min="0" max="5000" step="100">
+            </label>
+        </div>
+        <div class="actions">
+            <button type="submit">Retry failed webhook updates</button>
+        </div>
+    </form>
+
     <form class="editor" method="post" action="/updates/clear" onsubmit="return confirm('Удалить pending и confirmed updates выбранного бота?');" style="margin-bottom: 18px;">
         <input type="hidden" name="bot_id" value="<?= e($selectedBotId) ?>">
         <input type="hidden" name="confirm_clear" value="1">

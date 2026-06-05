@@ -88,6 +88,27 @@ final readonly class UpdateRepository {
     }
 
     /**
+     * Возвращает failed webhook updates выбранного бота для ручного retry.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findFailedWebhookByBot(int $botId, int $limit): array {
+        $statement = $this->pdo->prepare(
+            'SELECT * FROM updates
+            WHERE bot_id = :bot_id
+                AND delivery_mode = \'webhook\'
+                AND queue_state = \'failed\'
+            ORDER BY id ASC
+            LIMIT :limit'
+        );
+        $statement->bindValue(':bot_id', $botId, PDO::PARAM_INT);
+        $statement->bindValue(':limit', max(1, min(50, $limit)), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /**
      * Возвращает updates с данными бота и пользователя для UI-списка.
      *
      * @return list<array<string, mixed>>

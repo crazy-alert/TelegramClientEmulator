@@ -253,7 +253,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Режим нескольких ботов в одном экране не входит в текущий scope: для сравнения нескольких ботов откройте один `profile_id` с разными `bot_id` в разных вкладках.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.
-- Failed webhook delivery можно повторить вручную из inspector последнего update.
+- Failed webhook delivery можно повторить вручную из inspector последнего update или batch-формой `/updates/retry-failed` на экране `/updates` для выбранного бота. Batch retry является локальным development helper: он выполняется синхронно в текущем HTTP-запросе, поддерживает `retry_limit` и `retry_delay_ms`, не запускает фоновые workers и логирует каждую попытку в delivery attempts.
 - Отдельный экран `/delivery-attempts` показывает webhook delivery attempts с фильтрами по боту и `update_id`.
 - Данные хранятся в SQLite в `data/telegram_emulator.sqlite`.
 - HTTP-логи пишутся в JSONL-файлы `var/logs/http-YYYY-MM-DD.jsonl`; файлы старше 5 дней автоматически удаляются при обработке запросов.

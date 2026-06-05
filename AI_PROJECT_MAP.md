@@ -21,13 +21,13 @@
 - `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
 - `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded`, multipart text fields и multipart file parts при отключенном `enable_post_data_reading`.
 - `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
-- `src/InspectorController.php` — UI/admin-маршруты `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/delivery-attempts`, `/request-inspector`, фильтры inspector-экранов и маскирование секретов в webhook/request выводе.
+- `src/InspectorController.php` — UI/admin-маршруты `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts`, `/request-inspector`, фильтры inspector-экранов, ручной retry webhook updates и маскирование секретов в webhook/request выводе.
 - `src/LongPollingService.php` — выбор pending updates для `getUpdates`, подтверждение offset, negative offset и фильтрация `allowed_updates`.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
 - `src/BotRepository.php` — доступ к данным ботов.
 - `src/BotCommandRepository.php` — хранение команд Bot API для `setMyCommands`/`getMyCommands`.
-- `src/UpdateRepository.php` — очередь updates, выборка pending updates, UI-список updates с context и очистка updates.
+- `src/UpdateRepository.php` — очередь updates, выборка pending/failed updates, UI-список updates с context и очистка updates.
 - `src/MessageRepository.php` — история сообщений диалогов, group/supergroup выборка по `bot_id + chat_id` и очистка сообщений выбранного диалога.
 - `src/ProfileRepository.php` — доступ к данным пользователей (исторически таблица `profiles`).
 - `src/DeliveryAttemptRepository.php` — webhook delivery attempts и UI-выборки с context.

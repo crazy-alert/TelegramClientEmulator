@@ -166,7 +166,8 @@
 - Добавлять `X-Telegram-Bot-Api-Secret-Token`, если он настроен.
 - Сохранять request status, response status code, response headers, response body, duration и error message.
 - Использовать настраиваемый timeout. Значение MVP по умолчанию: 10 секунд.
-- Не делать автоматические retry в MVP; предоставить ручную повторную отправку.
+- Не делать production scheduler и фоновые delivery workers; предоставить ручную повторную отправку одного failed update и локальный batch retry failed webhook updates выбранного бота.
+- Batch retry выполняется синхронно в UI HTTP-запросе, ограничивает количество updates и опциональную задержку между попытками; это development helper, а не модель production delivery.
 
 #### Long Polling
 
@@ -263,7 +264,7 @@ UI `/chat` принимает от пользователя structured-сооб�
 
 Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания.
 
-UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, повтор webhook delivery и маскирование секретов inspector-вывода.
+UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery и маскирование секретов inspector-вывода.
 
 Поведение команд и кнопок:
 

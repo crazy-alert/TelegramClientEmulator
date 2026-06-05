@@ -1,5 +1,22 @@
 # Завершенные планы работы
 
+## Webhook retry/backoff helper (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Изучить текущие webhook delivery, update queue, attempts UI и тесты.
+- [x] Выбрать минимальную модель retry/backoff без фоновых workers.
+- [x] Реализовать retry/backoff или manual batch retry для failed updates.
+- [x] Добавить/обновить HTTP tests для failed/success retry.
+- [x] Обновить документацию и карту проекта.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task06, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## Дробление HTTP scenarios (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

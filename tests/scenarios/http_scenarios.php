@@ -9,6 +9,7 @@ require_once __DIR__ . '/webhook_scenarios.php';
 require_once __DIR__ . '/bot_api_message_scenarios.php';
 require_once __DIR__ . '/chat_ui_scenarios.php';
 require_once __DIR__ . '/long_polling_scenarios.php';
+require_once __DIR__ . '/webhook_retry_scenarios.php';
 require_once __DIR__ . '/imported_dialog_scenarios.php';
 require_once __DIR__ . '/bot_api_surface_scenarios.php';
 require_once __DIR__ . '/group_chat_scenarios.php';
@@ -30,6 +31,7 @@ function runHttpTests(string $baseUrl, int $receiverPort): void {
     runBotApiMessageScenarios($context);
     runChatUiScenarios($context);
     runLongPollingScenarios($context);
+    runWebhookRetryScenarios($context);
     runImportedDialogScenarios($context);
     runBotApiSurfaceScenarios($context);
     runGroupChatScenarios($context);

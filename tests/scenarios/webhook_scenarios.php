@@ -115,6 +115,8 @@ function runWebhookScenarios(array $context): void {
     assertSameValue(200, $updatesPage['status'], 'Экран updates с фильтрами должен открываться');
     assertTrueValue(str_contains($updatesPage['body'], 'value="100000001"'), 'Фильтр updates update_id должен сохранять значение');
     assertTrueValue(str_contains($updatesPage['body'], 'delivered'), 'Фильтр updates queue_state должен сохранять значение');
+    assertTrueValue(str_contains($updatesPage['body'], '/updates/retry-failed'), 'Экран updates выбранного бота должен показывать batch retry failed webhook updates');
+    assertTrueValue(str_contains($updatesPage['body'], 'Retry failed webhook updates'), 'Batch retry должен быть явно помечен как development helper');
 
     $inspector = httpRequest('GET', $baseUrl . '/request-inspector?token=' . rawurlencode($token) . '&method=sendMessage');
     assertSameValue(200, $inspector['status'], 'Request inspector должен открываться');

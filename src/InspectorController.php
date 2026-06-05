@@ -29,6 +29,11 @@ final readonly class InspectorController {
             return true;
         }
 
+        if ($method === 'POST' && $path === '/updates/retry-failed') {
+            $this->retryFailedWebhookUpdates();
+            return true;
+        }
+
         if ($method === 'GET' && $path === '/delivery-attempts') {
             $this->deliveryAttemptsIndex();
             return true;
@@ -87,6 +92,45 @@ final readonly class InspectorController {
         ], $bot, ($this->webhookTimeoutSeconds)());
 
         Response::redirect('/chat?profile_id=' . (int) $update['profile_id'] . '&bot_id=' . (int) $bot['id']);
+    }
+
+    private function retryFailedWebhookUpdates(): void {
+        $botId = $this->intParam($_POST['bot_id'] ?? 0, 0);
+        $limit = max(1, min(50, $this->intParam($_POST['retry_limit'] ?? 10, 10)));
+        $delayMs = max(0, min(5000, $this->intParam($_POST['retry_delay_ms'] ?? 0, 0)));
+        $bot = $this->bots->find($botId);
+
+        if ($bot === null || (string) ($_POST['confirm_retry'] ?? '') !== '1') {
+            Response::json([
+                'ok' => false,
+                'error' => 'Для retry failed updates нужно выбрать бота и подтвердить действие',
+            ], 400);
+            return;
+        }
+
+        if (trim((string) ($bot['webhook_url'] ?? '')) === '') {
+            Response::json([
+                'ok' => false,
+                'error' => 'У бота не настроен webhook URL',
+            ], 400);
+            return;
+        }
+
+        $updates = $this->updates->findFailedWebhookByBot((int) $bot['id'], $limit);
+        $lastIndex = count($updates) - 1;
+        foreach ($updates as $index => $update) {
+            $this->webhookDelivery->deliver([
+                'id' => (int) $update['id'],
+                'update_id' => (int) $update['update_id'],
+                'payload' => (string) $update['payload'],
+            ], $bot, ($this->webhookTimeoutSeconds)());
+
+            if ($delayMs > 0 && $index < $lastIndex) {
+                usleep($delayMs * 1000);
+            }
+        }
+
+        Response::redirect('/delivery-attempts?bot_id=' . (int) $bot['id']);
     }
 
     private function deliveryAttemptsIndex(): void {

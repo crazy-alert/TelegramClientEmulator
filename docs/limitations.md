@@ -48,7 +48,7 @@
 - forum topics, business connections и другие специальные режимы платформы;
 - inline mode через `inline_query`;
 - membership/admin workflows вроде `getChatMember`, `banChatMember`, `restrictChatMember`;
-- production-grade webhook retry/backoff и фоновые delivery workers.
+- production-grade webhook retry/backoff, scheduler и фоновые delivery workers.
 
 Это не полный каталог всех методов Telegram Bot API. Практическое правило проще: все, что не перечислено в разделе поддерживаемой поверхности, сейчас не поддерживается.
 
@@ -101,7 +101,7 @@ Webhook-доставка делает одну попытку на новый up
 
 Ограничения:
 
-- автоматических retry/backoff пока нет;
+- production-grade automatic retry/backoff пока нет; доступен только ручной single retry и синхронный batch retry для локальной разработки;
 - failed delivery можно повторить вручную из inspector последнего update;
 - timeout задается `WEBHOOK_TIMEOUT_MS` как начальное значение и может быть переопределен через UI на панели `/`;
 - допустимый UI-диапазон timeout: `1000`–`60000` мс;
