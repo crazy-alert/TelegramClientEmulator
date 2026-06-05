@@ -1,158 +1,108 @@
 # Предложения по модернизации проекта
 
-Файл обновлен после завершения очереди `.aitasks` 2026-06-05. Активных task-файлов сейчас нет.
+Файл обновлен после завершения очереди `.aitasks` 2026-06-05. Активных task-файлов на момент анализа не было.
 
-Ниже только актуальные предложения. Уже выполненные пункты не повторяются как будущие задачи: декомпозиция `BotApiRequestParser`, `ChatController`, `ReplyMarkup`, `MediaStorage`, `MessageRenderer`, `BotApiParams`, `BotApiPayloadFactory`, поддержка базовых structured/media methods, multipart upload для `sendPhoto`/`sendDocument`, `getFile`, локальная отдача media и focused tests.
+Ниже только актуальные предложения. Уже выполненные пункты не повторяются как будущие задачи: `LongPollingService`, command scopes, fixture packs, `MediaStorage`, media preview/download, расширенные media methods, `MessageRenderer`, `ReplyMarkup`, `BotApiParams`, `BotApiPayloadFactory`, request inspector, webhook retry UI, групповые `chats/chat_members` и machine-readable каталог Bot API surface уже реализованы.
 
 ## Высокий приоритет
 
-### 1. Вынести Long Polling в отдельный сервис
+### 1. Вынести admin UI ботов и пользователей из `Application`
 
-`BotApiController` уже стал меньше, но `getUpdates` все еще держит логику очереди, offset confirmation, фильтрации `allowed_updates` и короткого ожидания. Это отдельная ответственность и ее удобно тестировать без HTTP.
-
-Минимальный scope:
-
-- добавить `LongPollingService`;
-- перенести туда выбор pending updates, подтверждение offset и фильтрацию allowed updates;
-- оставить в `BotApiController` проверку bot/webhook conflict и формирование HTTP response;
-- добавить focused tests для offset, negative offset, limit и `allowed_updates`;
-- не менять текущий лимит ожидания и тексты HTTP-ошибок.
-
-Ожидаемый эффект: проще развивать `getUpdates`, меньше риска сломать Bot API routes при изменениях очереди.
-
-### 2. Расширить multipart upload на остальные media-методы
-
-Сейчас реальные файлы поддержаны для `sendPhoto` и `sendDocument`. `sendVideo`, `sendAnimation`, `sendAudio`, `sendVoice`, `sendVideoNote` и `sendSticker` принимают только строковый URL/file_id.
+`src/Application.php` все еще содержит routing, dashboard/settings, forms для ботов и пользователей, import/export, media download и общие helpers. Это делает любые UI-изменения рискованнее, чем нужно.
 
 Минимальный scope:
 
-- принимать multipart file parts в каноничных полях соответствующих методов;
-- переиспользовать `MediaStorage`;
-- возвращать `file_size`, `mime_type`, `file_name` там, где это есть в Telegram-like object;
-- добавить HTTP tests для success, required param, unknown chat и `getFile`;
-- обновить `README.md`, `docs/technical-spec.md`, `docs/limitations.md` и `ROADMAP.md`.
+- добавить `BotAdminController` для `/bots`, `/bots/new`, `/bots/{id}/edit`, create/update;
+- добавить `ProfileAdminController` для `/profiles`, `/profiles/new`, `/profiles/{id}/edit`, create/update;
+- оставить в `Application` composition root, общий dispatcher и shared helpers только там, где они действительно общие;
+- сохранить текущие URL, HTTP status, redirects и тексты ошибок;
+- добавить focused HTTP/DOM checks для страниц forms.
 
-Ожидаемый эффект: локальная проверка ботов с audio/video/sticker сценариями станет ближе к Telegram.
+Ожидаемый эффект: меньше связность `Application`, проще менять админские формы и не затрагивать Bot API/chat routes.
 
-### 3. Сделать UI-preview и download links для локальных media
+### 2. Вынести import/export и fixture pack logic из `Application`
 
-Чат показывает media blocks как текстовые `file_id`/source. После `getFile` и `/file/bot<TOKEN>/<file_path>` можно безопасно дать ссылку на локальный файл.
+Import/export занимает значительную часть `Application`: export payload, validation, fixture pack, conflict checks и нормализация включенных секций. Это самостоятельная область с отдельными правилами безопасности и совместимости.
 
 Минимальный scope:
 
-- для `local-media:<sha256>` показывать ссылку "Скачать" в media block;
-- для локальных изображений показывать компактный `<img>` preview;
-- не preview-ить внешние URL;
-- сохранить лаконичную верстку `/chat` для маленьких экранов;
-- добавить DOM/HTTP regression checks.
+- добавить `ImportExportController` для `/import-export`, `/export/*`, `/import/*`;
+- вынести validation/normalization fixture pack в отдельный helper/service, если контроллер иначе получится слишком крупным;
+- сохранить JSON envelope v1 и текущие ограничения;
+- добавить tests на конфликт `chat_id`, bot command sections и отказ от бинарных media внутри JSON.
 
-Ожидаемый эффект: media-сообщения станут полезными в интерфейсе, а не только в payload.
+Ожидаемый эффект: import/export можно развивать как fixture-инструмент без дальнейшего разрастания `Application`.
 
-### 4. Дальше декомпозировать `Application`
+### 3. Сделать registry маршрутов Bot API
 
-`src/Application.php` все еще совмещает composition root, router, dashboard/settings, bots/profiles forms, updates/delivery attempts, request inspector и import/export.
+`BotApiController::handle()` содержит длинную цепочку `preg_match` по каждому методу. После расширения Bot API surface это стало шумным местом: добавление метода требует ручного копирования маршрута, handler и обновления каталога.
 
-Практичный следующий срез:
+Минимальный scope:
 
-- `BotAdminController` для `/bots`;
-- `ProfileAdminController` для `/profiles`;
-- `ImportExportController` для `/import-*` и `/export-*`;
-- `InspectorController` для `/updates`, `/delivery-attempts`, `/request-inspector`;
-- оставить `Application` как bootstrapping, DI/composition root и route dispatcher.
+- ввести локальную таблицу route definitions: method name, HTTP verbs, handler;
+- сохранить каноничный URL `/bot<TOKEN>/<METHOD>` и текущие ошибки unsupported methods;
+- не добавлять aliases или альтернативные пути;
+- обновить `tests/bot_api_surface_catalog_test.php`, чтобы он сверял каталог с registry;
+- проверить, что `GET|POST`-методы и `POST`-only методы ведут себя как раньше.
 
-Ожидаемый эффект: меньше риск при добавлении UI-экранов, проще тестировать validation/import logic отдельно от маршрутизации.
+Ожидаемый эффект: проще поддерживать surface catalog и снижать риск рассинхронизации маршрутов.
+
+### 4. Расширить UI отправки вложений до всей поддерживаемой Bot API surface
+
+Backend уже поддерживает больше типов сообщений, чем форма `/chat`: сейчас UI-вложения покрывают только photo, document, location и contact. Для локального тестирования ботов нужна отправка всех основных типов как из мессенджера.
+
+Минимальный scope:
+
+- добавить компактные формы для `video`, `animation`, `audio`, `voice`, `video_note`, `sticker`, `poll`, `venue`, `dice`;
+- сохранить раскрывающийся блок `Вложения` и плотную верстку для маленьких экранов;
+- переиспользовать существующий `/chat/send` и `message_type`;
+- добавить DOM/HTTP checks на наличие форм и создание updates;
+- обновить `README.md`/`docs/limitations.md`, если меняется описание UI.
+
+Ожидаемый эффект: frontend перестанет отставать от реализованного backend Bot API.
 
 ## Средний приоритет
 
-### 5. Дробить HTTP scenarios дальше
+### 5. Добавить экран управления групповыми чатами и участниками
 
-`tests/scenarios/http_scenarios.php` остается крупным файлом.
+Сущности `chats` и `chat_members` уже есть, но пользователь управляет группами косвенно через profiles/import. Это неочевидно и мешает вручную собирать групповые сценарии.
 
-Следующий срез:
+Минимальный scope:
 
-- `chat_ui_scenarios.php`;
-- `media_scenarios.php`;
-- `webhook_scenarios.php`;
-- `long_polling_scenarios.php`;
-- `import_export_scenarios.php`;
-- общий entrypoint `tests/bot_api_test.php` оставить прежним.
+- добавить UI для списка group/supergroup chats с title, `chat_id`, type;
+- добавить управление участниками через существующие profiles;
+- сохранить текущую совместимость profiles с `chat_id`;
+- добавить validation на конфликт private/group `chat_id`;
+- покрыть happy path и конфликтные cases тестами.
 
-Ожидаемый эффект: проще искать failing scenario и добавлять новые Bot API проверки.
+Ожидаемый эффект: group chat scenarios станут явной частью продукта, а не побочным эффектом profiles.
 
-### 6. Улучшить webhook retry/backoff
+### 6. Улучшить development webhook retry/backoff
 
-Сейчас webhook delivery делает одну попытку, failed update можно переотправить вручную.
+Сейчас есть ручной retry failed delivery и batch retry, но нет настраиваемой модели коротких повторов с задержкой. Для локальной отладки нестабильных ботов полезно видеть несколько попыток без production scheduler.
 
-MVP без production scheduler:
+Минимальный scope:
 
-- настройка количества retry и задержки в UI;
-- синхронные короткие retry в рамках текущего запроса или manual batch retry для failed updates;
-- отдельное логирование попыток;
-- явно документировать, что это development helper.
+- добавить настройки max attempts и delay для development retry;
+- выполнять короткие синхронные retry только в рамках локального helper-режима;
+- показывать попытки в inspector/delivery attempts без скрытия ошибок;
+- явно документировать ограничение: это не production scheduler.
 
-### 7. Ввести отдельную модель group chat
+Ожидаемый эффект: проще отлаживать временные ошибки webhook endpoint без ручного повторения каждого update.
 
-Текущая group/supergroup модель работает через несколько `profiles` с общим `chat_id`. Этого достаточно для первых тестов, но не покрывает title, membership, роли и service messages.
+### 7. Дробить крупные message scenarios
 
-Первый шаг:
+`tests/scenarios/bot_api_message_scenarios.php` стал самым крупным сценарным файлом. Он покрывает text, edit, media, structured payloads и validation, поэтому failures труднее локализовать.
 
-- добавить сущность `chats` или `groups` с `chat_id`, `type`, `title`;
-- связать profiles с group через membership table;
-- сохранить быстрый сценарий выбора отправителя в `/chat`;
-- продумать backward-compatible import.
+Минимальный scope:
 
-### 8. Расширить import/export до fixture packs
+- разделить сценарии на message core, media methods и structured methods;
+- не менять общий entrypoint `tests/bot_api_test.php`;
+- сохранить порядок setup и независимость runtime;
+- добавить короткие названия сценариев в failure messages, где это помогает.
 
-Текущий import/export сохраняет bots/profiles без истории. Для повторяемых тестовых сценариев полезны fixture packs.
-
-Scope:
-
-- optional export/import `bot_commands`;
-- optional export/import `groups/chats`, если появится отдельная модель;
-- позже optional `messages`/`updates` без delivery attempts;
-- отдельное решение для media archive/manifest, не бинарные файлы внутри JSON.
-
-## Низкий приоритет
-
-### 9. Уточнить Long Polling timeout модель
-
-`getUpdates.timeout` ограничен 3 секундами из-за single-process PHP server. Это осознанное ограничение, но некоторым bot frameworks важно более похожее long polling поведение.
-
-Варианты:
-
-- оставить ограничение и добавить больше framework-документации;
-- разрешить настройку верхней границы timeout в UI/env;
-- перейти на runtime/server mode, где блокирующее ожидание не мешает другим запросам.
-
-### 10. Поддержать command scopes и language-specific commands
-
-`setMyCommands` хранит default-команды без scope и language. Для MVP нормально, но не покрывает разные команды для group/private chats и языков.
-
-Минимальный следующий шаг: сохранять raw `scope` и `language_code`, но сначала решить, как UI будет выбирать набор команд для текущего chat/profile.
-
-### 11. Улучшить inspector HTTP-логов
-
-Идеи:
-
-- фильтр по HTTP status и `ok=false`;
-- копирование curl-like request;
-- раскрытие JSON body в pretty tree;
-- связь request inspector с конкретным message/update.
-
-### 12. Добавить machine-readable описание локального Bot API surface
-
-Документация сейчас человекочитаемая. Для examples и будущих tests можно добавить простой JSON/YAML каталог поддерживаемых методов.
-
-Формат может содержать:
-
-- method name;
-- HTTP methods;
-- required/optional params;
-- supported content types;
-- media upload support;
-- known limitations;
-- тестовый статус.
+Ожидаемый эффект: тесты проще читать, расширять и запускать точечно при новых Bot API методах.
 
 ## Ближайшая практическая задача
 
-Наиболее полезный следующий шаг: вынести `getUpdates` queue/offset/allowed_updates logic в `LongPollingService` с focused tests. Это продолжит декомпозицию без изменения Bot API surface и подготовит почву для более точной timeout-модели.
+Наиболее полезный следующий шаг: вынести admin UI ботов и пользователей из `Application`. Это снижает архитектурный риск без изменения Bot API surface и даст основу для дальнейшего выноса import/export.

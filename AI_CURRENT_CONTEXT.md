@@ -2,30 +2,31 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task13.md`.
+2026-06-05: после пустой очереди обновлены `AI_PROPOSALS.md` и `.aitasks/`.
 
 Что сделано:
 
-- На вкладке `Чат` блок `Последний Update (inspector)` свернут в `<details class="panel chat-update-inspector">`.
-- Содержимое inspector, `Raw payload (JSON)`, `Webhook delivery`, response body и кнопка resend сохранены без изменения поведения.
-- В `templates/layout.php` добавлены компактные стили для `chat-update-inspector`.
-- В `tests/scenarios/chat_ui_scenarios.php` добавлены string/DOM assertions, что последний update inspector находится внутри `details/summary`.
+- Убраны устаревшие предложения из `AI_PROPOSALS.md`, которые уже были реализованы предыдущими задачами.
+- Добавлены актуальные предложения: admin controllers, import/export controller, Bot API route registry, полный UI вложений, group chat admin UI, dev retry/backoff, split message scenarios.
+- Созданы task-файлы `.aitasks/task01-admin-controllers.md` ... `.aitasks/task07-split-message-scenarios.md`.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/chat/index.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/layout.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/chat_ui_scenarios.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
 ## Ближайшая очередь
 
 Оставшиеся задачи в `.aitasks/`:
 
-- Нет активных task-файлов кроме `.gitkeep`.
+- `task01-admin-controllers.md`
+- `task02-import-export-controller.md`
+- `task03-bot-api-route-registry.md`
+- `task04-chat-all-attachments-ui.md`
+- `task05-group-chat-admin-ui.md`
+- `task06-webhook-dev-retry-backoff.md`
+- `task07-split-message-scenarios.md`
 
-Следующий шаг: если очередь пуста, проанализировать код и при необходимости обновить `AI_PROPOSALS.md`/создать новые `.aitasks` по правилам пользователя.
+Следующий шаг: взять `.aitasks/task01-admin-controllers.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
 
 ## Важные решения
 
