@@ -244,9 +244,9 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Bot API: `sendMessage` поддерживает `reply_markup` для показа `inline_keyboard` и `keyboard` в интерфейсе чата.
 - Bot API: `GET|POST /bot<TOKEN>/getWebhookInfo`.
 - Bot API: `POST /bot<TOKEN>/setWebhook` и `POST /bot<TOKEN>/deleteWebhook`.
-- Bot API: `POST /bot<TOKEN>/setMyCommands`, `GET|POST /bot<TOKEN>/getMyCommands`, `POST /bot<TOKEN>/deleteMyCommands`.
+- Bot API: `POST /bot<TOKEN>/setMyCommands`, `GET|POST /bot<TOKEN>/getMyCommands`, `POST /bot<TOKEN>/deleteMyCommands` с `scope` и `language_code`.
 - Bot API: `POST /bot<TOKEN>/answerCallbackQuery` возвращает успешное подтверждение callback.
-- Чат показывает сохраненные команды бота; команды, reply-кнопки и inline-кнопки кликабельны.
+- Чат показывает релевантные команды бота для текущего profile/chat с учетом `scope` и `language_code`; команды, reply-кнопки и inline-кнопки кликабельны.
 - Чат на `/chat` периодически обновляет историю, клавиатуры и inspector через HTMX-фрагмент `/chat/fragment?profile_id=<ID>&bot_id=<ID>`.
 - В чате можно очистить историю и updates только выбранной пары пользователь-бот после явного подтверждения.
 - Экран `/updates` показывает список updates с фильтрами по боту, пользователю, `queue_state` и `update_id`.

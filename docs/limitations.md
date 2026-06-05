@@ -86,12 +86,13 @@ UI чата может отправлять от пользователя photo/
 
 ## Команды бота
 
-`setMyCommands`, `getMyCommands` и `deleteMyCommands` работают с default-списком команд конкретного бота.
+`setMyCommands`, `getMyCommands` и `deleteMyCommands` работают с `scope` и `language_code` конкретного бота. Без параметров используется default scope и пустой `language_code`.
 
 Ограничения:
 
-- command scopes не разделяются;
-- language-specific команды не разделяются;
+- поддерживаются стандартные типы scope Bot API: `default`, `all_private_chats`, `all_group_chats`, `all_chat_administrators`, `chat`, `chat_administrators`, `chat_member`;
+- UI выбирает первый непустой набор команд по приоритету `chat_member`, `chat`, `all_private_chats` или `all_group_chats`, затем `default`; exact `language_code` имеет приоритет над пустым language;
+- роли администраторов в UI пока не моделируются, поэтому admin-only scopes сохраняются и возвращаются exact Bot API запросами, но не выбираются автоматически в чате;
 - команды показываются в чате как компактный select рядом с полем ввода;
 - команды в истории сообщений кликабельны, если текст похож на Telegram bot command.
 

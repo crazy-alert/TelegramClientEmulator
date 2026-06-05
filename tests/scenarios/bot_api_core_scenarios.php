@@ -32,6 +32,41 @@ function runBotApiCoreScenarios(array $context): void {
     $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
     assertSameValue($commands, $json['result'], 'getMyCommands возвращает сохраненные команды');
 
+    $privateEnglishCommands = [
+        [
+            'command' => 'private_en',
+            'description' => 'Private English command',
+        ],
+    ];
+    $privateScope = [
+        'type' => 'all_private_chats',
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setMyCommands', json_encode([
+        'commands' => $privateEnglishCommands,
+        'scope' => $privateScope,
+        'language_code' => 'en',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(true, $json['result'], 'setMyCommands сохраняет scoped language commands');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getMyCommands', json_encode([
+        'scope' => $privateScope,
+        'language_code' => 'en',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue($privateEnglishCommands, $json['result'], 'getMyCommands возвращает exact scope/language commands');
+
+    $json = assertJsonResponse(httpRequest('GET', $baseUrl . '/bot' . $token . '/getMyCommands'), 200, true);
+    assertSameValue($commands, $json['result'], 'getMyCommands без scope возвращает default commands');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
+    assertSameValue(200, $chat['status'], 'Чат должен открываться для проверки scoped commands');
+    assertTrueValue(str_contains($chat['body'], '/private_en'), 'UI должен выбирать scoped language commands для текущего private profile');
+    assertTrueValue(!str_contains($chat['body'], '/start —'), 'UI не должен показывать default commands, если найден scoped language набор');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/getMyCommands', json_encode([
+        'scope' => ['type' => 'chat'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 400, false);
+    assertSameValue(400, $json['error_code'], 'getMyCommands валидирует scope');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $token . '/setMyCommands', formBody([
         'commands' => json_encode([
             [

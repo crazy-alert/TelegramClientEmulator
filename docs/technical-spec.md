@@ -269,7 +269,9 @@ UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/u
 
 Поведение команд и кнопок:
 
-- `setMyCommands` сохраняет default-список команд для бота; scope и language-specific команды пока не разделяются.
+- `setMyCommands`, `getMyCommands` и `deleteMyCommands` сохраняют и выбирают набор команд по exact `scope` + `language_code`; без параметров используется default scope и пустой language.
+- `/chat` выбирает релевантные команды для текущего profile/chat по приоритету `chat_member`, `chat`, `all_private_chats` или `all_group_chats`, затем `default`; exact `language_code` имеет приоритет над пустым language.
+- Admin-only command scopes сохраняются и возвращаются exact Bot API запросами, но не выбираются автоматически в UI, потому что роли администраторов пока не моделируются.
 - `/chat` показывает компактный выпадающий список команд рядом с полем ввода.
 - `reply_markup.inline_keyboard` отображается под сообщением бота; кнопки с `callback_data` создают `callback_query` update, URL-кнопки открываются как ссылки.
 - `reply_markup.keyboard` отображается как основная клавиатура чата; нажатие отправляет текст кнопки как обычное пользовательское сообщение.

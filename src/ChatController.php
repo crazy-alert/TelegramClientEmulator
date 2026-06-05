@@ -94,7 +94,13 @@ final readonly class ChatController {
                 $latestDeliveryAttempt = $this->deliveryAttempts->findLatestByUpdate((int) $latestUpdate['id']);
             }
             $pendingUpdateCount = $this->updates->countPendingByBot((int) $bot['id']);
-            $botCommands = $this->botCommands->allForBot((int) $bot['id']);
+            $botCommands = $this->botCommands->forChatContext(
+                (int) $bot['id'],
+                (int) $profile['chat_id'],
+                (string) $profile['chat_type'],
+                (int) $profile['user_id'],
+                (string) $profile['language_code'],
+            );
         }
 
         return [

@@ -59,6 +59,7 @@
 - `migrations/001_initial_schema.sql` — базовая схема SQLite.
 - `migrations/002_bot_commands.sql` — таблица команд бота.
 - `migrations/003_chats_and_members.sql` — нормализованные `chats` и `chat_members`, backfill из profiles.
+- `migrations/004_bot_command_scopes.sql` — расширение команд бота до scope/language-aware хранения.
 - `data/` — локальные runtime-данные, игнорируются git.
 - `var/` — служебная runtime-директория.
 

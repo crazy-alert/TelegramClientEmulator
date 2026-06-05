@@ -279,13 +279,14 @@ Update хранит Telegram-like событие, созданное эмуля�
 - клики по reply-кнопкам создают обычные message updates;
 - клики по inline-кнопкам с `callback_data` создают `callback_query` updates;
 - сохранение и показ команд бота через `setMyCommands`/`getMyCommands`/`deleteMyCommands`;
+- command scopes и language-specific команды поддержаны для Bot API и выбора команд в `/chat`;
 - компактный select команд рядом с полем ввода и кликабельные команды в истории сообщений.
 
 Принятые ограничения:
 
 - реализованы только текстовые сообщения;
 - attachments и остальные параметры `sendMessage` будут добавляться по мере появления сценариев.
-- command scopes и language-specific команды пока не разделяются.
+- admin-only command scopes сохраняются и возвращаются exact Bot API запросами, но роли администраторов в UI пока не моделируются.
 - URL inline-кнопки открываются ссылкой в UI, но не создают update.
 
 Критерий готовности: бот получает сообщение от пользователя и через `/sendMessage` добавляет ответ в видимый чат.
@@ -360,7 +361,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 6. Webhook configuration (`setWebhook`, `deleteWebhook`, `getWebhookInfo`) — реализовано.
 7. Webhook delivery — реализовано в базовом виде.
 8. Инспектор payload и ошибок — payload inspector и последний delivery attempt реализованы частично; отдельный delivery inspector впереди.
-9. Команды бота и кнопки — реализованы в базовом виде для default-команд, inline keyboard, reply keyboard и callback query.
+9. Команды бота и кнопки — реализованы для default/scoped/language-specific команд, inline keyboard, reply keyboard и callback query.
 
 Long Polling был реализован до webhook-доставки, потому что он не требует отдельного HTTP endpoint в контейнере бота и быстрее проверяет корректность очереди updates.
 

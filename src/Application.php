@@ -695,7 +695,12 @@ final class Application {
         foreach ($commandsToImport as $commandGroup) {
             $bot = $this->bots->findByToken($commandGroup['bot_token']);
             if ($bot !== null) {
-                $this->botCommands->replaceForBot((int) $bot['id'], $commandGroup['commands']);
+                $this->botCommands->replaceForBot(
+                    (int) $bot['id'],
+                    $commandGroup['commands'],
+                    $commandGroup['scope'],
+                    $commandGroup['language_code'],
+                );
             }
         }
 
@@ -836,7 +841,7 @@ final class Application {
     /**
      * @param list<mixed> $botCommands
      * @param list<array<string, mixed>> $botsToCreate
-     * @return list<array{bot_token: string, commands: list<array{command: string, description: string}>}>|null
+     * @return list<array{bot_token: string, scope: array<string, mixed>, language_code: string, commands: list<array{command: string, description: string}>}>|null
      */
     private function validatedImportBotCommands(array $botCommands, array $botsToCreate): ?array {
         $availableTokens = [];
@@ -845,7 +850,7 @@ final class Application {
         }
 
         $commandsToImport = [];
-        $seenTokens = [];
+        $seenGroups = [];
         foreach ($botCommands as $index => $commandGroup) {
             if (!is_array($commandGroup)) {
                 Response::json(['ok' => false, 'error' => 'bot_commands[' . $index . '] должен быть объектом'], 400);
@@ -853,8 +858,16 @@ final class Application {
             }
 
             $token = trim((string) ($commandGroup['bot_token'] ?? ''));
-            if ($token === '' || isset($seenTokens[$token]) || !isset($availableTokens[$token])) {
+            $scope = BotApiParams::commandScope($commandGroup['scope'] ?? null);
+            $languageCode = BotApiParams::languageCode($commandGroup['language_code'] ?? '');
+            if ($token === '' || $scope === null || !isset($availableTokens[$token])) {
                 Response::json(['ok' => false, 'error' => 'Некорректный bot_token в bot_commands'], 400);
+                return null;
+            }
+
+            $groupKey = $token . "\n" . $this->botCommands->scopeKey($scope) . "\n" . $languageCode;
+            if (isset($seenGroups[$groupKey])) {
+                Response::json(['ok' => false, 'error' => 'Дубликат bot_commands scope/language'], 409);
                 return null;
             }
 
@@ -864,9 +877,11 @@ final class Application {
                 return null;
             }
 
-            $seenTokens[$token] = true;
+            $seenGroups[$groupKey] = true;
             $commandsToImport[] = [
                 'bot_token' => $token,
+                'scope' => $scope,
+                'language_code' => $languageCode,
                 'commands' => $commands,
             ];
         }

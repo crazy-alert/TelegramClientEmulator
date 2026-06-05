@@ -9,7 +9,7 @@ function runChatUiScenarios(array $context): void {
     extract($context);
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=1&bot_id=1');
     assertSameValue(200, $chat['status'], 'Страница чата должна открываться');
-    assertTrueValue(str_contains($chat['body'], '/start'), 'Чат показывает сохраненные команды');
+    assertTrueValue(str_contains($chat['body'], '/private_en'), 'Чат показывает релевантные scoped language команды');
     assertTrueValue(str_contains($chat['body'], 'white-space: pre-line'), 'Текст сообщений должен сохранять переносы строк без лишних пробелов');
     assertTrueValue(!str_contains($chat['body'], 'white-space: pre-wrap'), 'Текст сообщений не должен раздувать блоки через pre-wrap');
     assertTrueValue(str_contains($chat['body'], 'Inline action'), 'Чат показывает inline keyboard');

@@ -49,6 +49,14 @@ assertBotApiParamsSame(
 assertBotApiParamsSame(null, BotApiParams::commands('[{"command":"bad-command","description":"Bad"}]'), 'commands должен валидировать command name');
 
 assertBotApiParamsSame(
+    ['type' => 'chat_member', 'chat_id' => -100300, 'user_id' => 3001],
+    BotApiParams::commandScope('{"type":"chat_member","chat_id":"-100300","user_id":"3001"}'),
+    'commandScope должен нормализовать chat_member scope',
+);
+assertBotApiParamsSame(null, BotApiParams::commandScope('{"type":"chat"}'), 'commandScope должен требовать chat_id для chat scope');
+assertBotApiParamsSame('ru', BotApiParams::languageCode(' ru '), 'languageCode должен чистить пробелы');
+
+assertBotApiParamsSame(
     [
         ['text' => 'A', 'voter_count' => 0],
         ['text' => 'B', 'voter_count' => 0],

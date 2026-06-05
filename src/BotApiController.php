@@ -696,13 +696,20 @@ final readonly class BotApiController {
 
         $params = $this->botApiParams();
         $commands = BotApiParams::commands($params['commands'] ?? null);
+        $scope = BotApiParams::commandScope($params['scope'] ?? null);
+        $languageCode = BotApiParams::languageCode($params['language_code'] ?? '');
 
         if ($commands === null) {
             $this->badRequest('Bad Request: parameter "commands" is required');
             return;
         }
 
-        $this->botCommands->replaceForBot((int) $bot['id'], $commands);
+        if ($scope === null) {
+            $this->badRequest('Bad Request: parameter "scope" is invalid');
+            return;
+        }
+
+        $this->botCommands->replaceForBot((int) $bot['id'], $commands, $scope, $languageCode);
 
         Response::json([
             'ok' => true,
@@ -718,9 +725,20 @@ final readonly class BotApiController {
             return;
         }
 
+        $params = $this->botApiParams();
+        $scope = BotApiParams::commandScope($params['scope'] ?? null);
+        if ($scope === null) {
+            $this->badRequest('Bad Request: parameter "scope" is invalid');
+            return;
+        }
+
         Response::json([
             'ok' => true,
-            'result' => $this->botCommands->allForBot((int) $bot['id']),
+            'result' => $this->botCommands->allForBot(
+                (int) $bot['id'],
+                $scope,
+                BotApiParams::languageCode($params['language_code'] ?? ''),
+            ),
         ]);
     }
 
@@ -732,7 +750,18 @@ final readonly class BotApiController {
             return;
         }
 
-        $this->botCommands->deleteForBot((int) $bot['id']);
+        $params = $this->botApiParams();
+        $scope = BotApiParams::commandScope($params['scope'] ?? null);
+        if ($scope === null) {
+            $this->badRequest('Bad Request: parameter "scope" is invalid');
+            return;
+        }
+
+        $this->botCommands->deleteForBot(
+            (int) $bot['id'],
+            $scope,
+            BotApiParams::languageCode($params['language_code'] ?? ''),
+        );
 
         Response::json([
             'ok' => true,

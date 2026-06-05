@@ -1,5 +1,34 @@
 # Завершенные планы работы
 
+## Command scopes и language-specific commands (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Изучить текущую таблицу `bot_commands`, Bot API handlers, import/export и UI выбор команд.
+- [x] Спроектировать каноничные правила выбора команд по `scope` и `language_code`.
+- [x] Обновить хранение и миграции без поломки существующих default commands.
+- [x] Реализовать `setMyCommands`/`getMyCommands`/`deleteMyCommands` со scope/language.
+- [x] Обновить UI `/chat` для релевантного набора команд текущего profile/chat.
+- [x] Добавить tests для default, scope и language behavior.
+- [x] Обновить документацию ограничений.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task10, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotCommandRepository.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotApiParams.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/BotApiController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatController.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_params_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_payload_factory_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/message_renderer_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/reply_markup_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/request_parser_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/long_polling_service_test.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/chat_repository_test.php`
+- `git diff --check`
+
 ## Long Polling timeout model (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий план.

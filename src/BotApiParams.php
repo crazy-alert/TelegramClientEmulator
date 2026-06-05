@@ -115,6 +115,93 @@ final readonly class BotApiParams {
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public static function commandScope(mixed $value): ?array {
+        if ($value === null || $value === '') {
+            return ['type' => 'default'];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : null;
+        }
+
+        if (!is_array($value) || array_is_list($value)) {
+            return null;
+        }
+
+        $type = (string) ($value['type'] ?? '');
+        if (!in_array($type, [
+            'default',
+            'all_private_chats',
+            'all_group_chats',
+            'all_chat_administrators',
+            'chat',
+            'chat_administrators',
+            'chat_member',
+        ], true)) {
+            return null;
+        }
+
+        if (in_array($type, ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'], true)) {
+            return ['type' => $type];
+        }
+
+        $chatId = self::scopeScalar($value['chat_id'] ?? null);
+        if ($chatId === null) {
+            return null;
+        }
+
+        if ($type !== 'chat_member') {
+            return [
+                'type' => $type,
+                'chat_id' => $chatId,
+            ];
+        }
+
+        $userId = self::scopeScalar($value['user_id'] ?? null);
+        if ($userId === null) {
+            return null;
+        }
+
+        return [
+            'type' => $type,
+            'chat_id' => $chatId,
+            'user_id' => $userId,
+        ];
+    }
+
+    public static function languageCode(mixed $value): string {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        return substr(trim((string) $value), 0, 64);
+    }
+
+    private static function scopeScalar(mixed $value): int|string|null {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return null;
+            }
+
+            if (preg_match('/^-?\d+$/', $value) === 1) {
+                return (int) $value;
+            }
+
+            return $value;
+        }
+
+        return null;
+    }
+
+    /**
      * @return list<array{text: string, voter_count: int}>|null
      */
     public static function pollOptions(mixed $value): ?array {
