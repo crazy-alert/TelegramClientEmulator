@@ -2,14 +2,14 @@
 
 ## Последнее обновление
 
-2026-06-05: выполнена `.aitasks/task04-application-decomposition.md`.
+2026-06-05: выполнена `.aitasks/task05-split-http-scenarios.md`.
 
 Что сделано:
 
-- Добавлен `InspectorController` для UI/admin-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/delivery-attempts` и `/request-inspector`.
-- `Application` теперь делегирует inspector/update/delivery routes в `InspectorController` и больше не содержит их handlers и маскирование секретов inspector-вывода.
-- `public/index.php` подключает новый контроллер.
-- Обновлены `AI_PROJECT_MAP.md` и `docs/technical-spec.md`.
+- `tests/scenarios/http_scenarios.php` превращен в оркестратор HTTP smoke-фаз и оставлен подключаемым entrypoint для `tests/bot_api_test.php`.
+- Большой HTTP сценарий разделен на тематические файлы: setup, import/export, Bot API core/message/surface, webhook, chat UI, Long Polling, imported dialog, group chat, media и callback error.
+- Порядок выполнения smoke-фаз сохранен, чтобы не менять stateful-семантику сценариев.
+- Обновлены `README.md`, `docs/adr-testing.md` и `AI_PROJECT_MAP.md`.
 
 Проверки:
 
@@ -21,7 +21,6 @@
 
 Оставшиеся задачи в `.aitasks/`:
 
-- `task05-split-http-scenarios.md`
 - `task06-webhook-retry-backoff.md`
 - `task07-group-chat-model.md`
 - `task08-fixture-packs-import-export.md`
@@ -30,12 +29,13 @@
 - `task11-http-log-inspector.md`
 - `task12-bot-api-surface-catalog.md`
 
-Следующий шаг: взять `task05-split-http-scenarios.md`, обновить `AI_WORK_PLAN.md` и начать декомпозицию HTTP smoke scenarios.
+Следующий шаг: взять `task06-webhook-retry-backoff.md`, обновить `AI_WORK_PLAN.md` и продумать модель retry/backoff для webhook delivery.
 
 ## Важные решения
 
 - Проект Docker-first; на хосте может не быть `php`, проверки запускать через `docker compose run`.
 - Не добавлять неканоничные Telegram Bot API aliases/shortcuts без явного запроса.
+- `tests/bot_api_test.php` остается главным HTTP smoke entrypoint; `tests/scenarios/http_scenarios.php` только оркестрирует тематические фазы.
 - `BotApiParams` отвечает за parsing/нормализацию параметров, но не за HTTP response policy.
 - `BotApiPayloadFactory` отвечает за чистую сборку response payload и не должен обращаться к БД, HTTP response helpers или runtime storage.
 - `LongPollingService` отвечает за queue/offset/allowed_updates logic и не должен формировать HTTP response или проверять webhook conflict.

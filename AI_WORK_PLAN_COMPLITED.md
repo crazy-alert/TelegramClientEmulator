@@ -1,5 +1,21 @@
 # Завершенные планы работы
 
+## Дробление HTTP scenarios (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий план.
+- [x] Разобрать структуру `tests/bot_api_test.php` и текущего `http_scenarios.php`.
+- [x] Вынести группы сценариев в тематические файлы.
+- [x] Сохранить `tests/bot_api_test.php` основным entrypoint.
+- [x] Обновить документацию о test layout.
+- [x] Запустить HTTP tests, lint и `git diff --check`.
+- [x] Обновить контекст, удалить task05, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## Декомпозиция Application: InspectorController (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий контекст.
