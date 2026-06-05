@@ -25,9 +25,11 @@ final readonly class ProfileRepository {
      */
     public function all(): array {
         $statement = $this->pdo->query(
-            'SELECT profiles.*, chats.title AS chat_title
+            'SELECT profiles.*, chats.title AS chat_title, chat_members.role AS chat_role
             FROM profiles
             LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            LEFT JOIN chat_members ON chat_members.profile_id = profiles.id
+                AND chat_members.chat_row_id = chats.id
             ORDER BY profiles.created_at DESC, profiles.id DESC'
         );
 
@@ -41,9 +43,11 @@ final readonly class ProfileRepository {
      */
     public function find(int $id): ?array {
         $statement = $this->pdo->prepare(
-            'SELECT profiles.*, chats.title AS chat_title
+            'SELECT profiles.*, chats.title AS chat_title, chat_members.role AS chat_role
             FROM profiles
             LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            LEFT JOIN chat_members ON chat_members.profile_id = profiles.id
+                AND chat_members.chat_row_id = chats.id
             WHERE profiles.id = :id'
         );
         $statement->execute(['id' => $id]);
@@ -59,9 +63,11 @@ final readonly class ProfileRepository {
      */
     public function findEnabledByChat(int $chatId): ?array {
         $statement = $this->pdo->prepare(
-            'SELECT profiles.*, chats.title AS chat_title
+            'SELECT profiles.*, chats.title AS chat_title, chat_members.role AS chat_role
             FROM profiles
             LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            LEFT JOIN chat_members ON chat_members.profile_id = profiles.id
+                AND chat_members.chat_row_id = chats.id
             WHERE profiles.chat_id = :chat_id AND profiles.enabled = 1
             ORDER BY profiles.id ASC
             LIMIT 1'

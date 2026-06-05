@@ -100,8 +100,15 @@ final readonly class BotCommandRepository {
     /**
      * @return list<array{command: string, description: string}>
      */
-    public function forChatContext(int $botId, int|string $chatId, string $chatType, int $userId, string $languageCode): array {
-        foreach ($this->scopeCandidates($chatId, $chatType, $userId) as $scope) {
+    public function forChatContext(
+        int $botId,
+        int|string $chatId,
+        string $chatType,
+        int $userId,
+        string $languageCode,
+        string $chatRole = 'member',
+    ): array {
+        foreach ($this->scopeCandidates($chatId, $chatType, $userId, $chatRole) as $scope) {
             foreach ([$languageCode, ''] as $candidateLanguage) {
                 $commands = $this->allForBot($botId, $scope, $candidateLanguage);
                 if ($commands !== []) {
@@ -192,7 +199,7 @@ final readonly class BotCommandRepository {
     /**
      * @return list<array<string, mixed>>
      */
-    private function scopeCandidates(int|string $chatId, string $chatType, int $userId): array {
+    private function scopeCandidates(int|string $chatId, string $chatType, int $userId, string $chatRole): array {
         $scopes = [
             [
                 'type' => 'chat_member',
@@ -206,6 +213,13 @@ final readonly class BotCommandRepository {
         ];
 
         if (in_array($chatType, ['group', 'supergroup'], true)) {
+            if ($chatRole === 'administrator') {
+                $scopes[] = [
+                    'type' => 'chat_administrators',
+                    'chat_id' => $chatId,
+                ];
+                $scopes[] = ['type' => 'all_chat_administrators'];
+            }
             $scopes[] = ['type' => 'all_group_chats'];
         } else {
             $scopes[] = ['type' => 'all_private_chats'];

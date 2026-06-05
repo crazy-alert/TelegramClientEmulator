@@ -863,3 +863,26 @@
 
 - `ProfileRepository::syncChatMembership` сейчас может перезаписать title группы. Нужно сохранять существующий title через `COALESCE(NULLIF(chats.title, ''), excluded.title)`.
 - История уже читается по `bot_id + chat_id`; отдельная очистка истории группы не требуется для минимального scope этой задачи.
+
+## Group/supergroup роли участников (2026-06-06)
+
+# Активный план работы
+
+## Активная задача
+
+Файл: `.aitasks/002-group-member-roles.md`
+
+Цель: добавить базовые роли участников group/supergroup: `member` и `administrator`.
+
+Чеклист:
+
+- [in_progress] Добавить чтение/изменение роли участника в `ChatRepository` и `GroupChatAdminController`.
+- [pending] Добавить UI смены роли на `/group-chats/{chat_id}`.
+- [pending] Подмешивать `chat_role` в selected profile и использовать admin scopes в UI-командах без изменения exact Bot API.
+- [pending] Обновить tests и документацию/roadmap.
+- [pending] Удалить task-файл, обновить context/plan archive, выполнить проверки и сделать коммит.
+
+Ограничения:
+
+- Не моделировать Telegram permissions и статусы сверх `member`/`administrator`.
+- Не менять каноничную семантику `getMyCommands`: exact Bot API запросы остаются exact.

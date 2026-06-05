@@ -69,6 +69,16 @@
                 <td><?= e($member['chat_role']) ?></td>
                 <td>
                     <div class="actions">
+                        <form method="post" action="/group-chats/<?= e($chat['chat_id']) ?>/members/<?= e($member['id']) ?>/role" class="form-inline">
+                            <select name="role" required>
+                                <option value="member" <?= (string) $member['chat_role'] === 'member' ? 'selected' : '' ?>>member</option>
+                                <option value="administrator" <?= (string) $member['chat_role'] === 'administrator' ? 'selected' : '' ?>>administrator</option>
+                            </select>
+                            <button type="submit">Сохранить роль</button>
+                            <?php if (isset($errors['role_' . $member['id']])): ?>
+                                <span class="field-error"><?= e($errors['role_' . $member['id']]) ?></span>
+                            <?php endif; ?>
+                        </form>
                         <a class="button secondary" href="/profiles/<?= e($member['id']) ?>/edit">Профиль</a>
                         <form method="post" action="/group-chats/<?= e($chat['chat_id']) ?>/members/<?= e($member['id']) ?>/delete" onsubmit="return confirm('Удалить участника из группы?');">
                             <button class="danger" type="submit">Удалить</button>

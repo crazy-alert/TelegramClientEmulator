@@ -184,7 +184,7 @@ MVP считается готовым для сценария, где разра
 
 Ограничения:
 
-- роли администраторов для admin-only command scopes в UI пока не моделируются;
+- admin-only command scopes в UI учитывают базовую роль `administrator`, но Telegram permissions не моделируются;
 - URL-кнопки не создают update, потому что Telegram тоже не отправляет callback для обычного URL.
 
 ### Этап 6: media и structured-сообщения
@@ -280,7 +280,7 @@ MVP считается готовым для сценария, где разра
 - Дальше уменьшать ответственность `Application`: при росте панели, health, update-check или media download можно вынести их в отдельные контроллеры без изменения URL и HTTP-контрактов.
 - Разделить крупный `ImportExportController`, если он начнет мешать сопровождению: fixture pack validation/normalization можно вынести в отдельный service/helper.
 - Добавить release-процесс, который автоматически обновляет `version.json` при публикации новой версии, чтобы проверка обновлений всегда сравнивала осмысленный release hash.
-- Расширить group/supergroup модель ролями администраторов и service messages, если это понадобится для тестирования реальных ботов.
+- Расширить group/supergroup модель service messages и более подробными Telegram permissions, если это понадобится для тестирования реальных ботов.
 - Добавить export/import бинарных media архивом, если fixture pack нужно будет переносить между машинами вместе с файлами.
 - Добавлять новые Bot API методы только под реальные сценарии: ближайшие кандидаты остаются `sendChatAction`, `deleteMessage`, `editMessageReplyMarkup`, `sendMediaGroup`.
 
@@ -294,7 +294,8 @@ MVP считается готовым для сценария, где разра
 
 - Текущая модель membership через profiles работает для базового тестирования.
 - Title group/supergroup редактируется на `/group-chats/{chat_id}`, а история остается привязанной к `bot_id + chat_id`.
-- Отложено: роли администраторов и service messages.
+- Роли участников `member`/`administrator` редактируются на `/group-chats/{chat_id}`; admin role используется для UI-подбора admin command scopes без изменения exact Bot API.
+- Отложено: service messages и подробная модель Telegram permissions.
 
 ### Media
 

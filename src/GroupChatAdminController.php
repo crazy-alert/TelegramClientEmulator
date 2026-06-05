@@ -38,6 +38,11 @@ final readonly class GroupChatAdminController {
             return true;
         }
 
+        if ($method === 'POST' && preg_match('#^/group-chats/(-?\d+)/members/(\d+)/role$#', $path, $matches) === 1) {
+            $this->updateMemberRole((int) $matches[1], (int) $matches[2]);
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/group-chats/(-?\d+)/members/(\d+)/delete$#', $path, $matches) === 1) {
             $this->removeMember((int) $matches[1], (int) $matches[2]);
             return true;
@@ -96,6 +101,32 @@ final readonly class GroupChatAdminController {
         }
 
         $this->chats->updateGroupTitle($chatId, $title);
+
+        Response::redirect('/group-chats/' . $chatId);
+    }
+
+    private function updateMemberRole(int $chatId, int $profileId): void {
+        $chat = $this->chats->findGroupByChatId($chatId);
+        $profile = $this->profiles->find($profileId);
+        $role = (string) ($_POST['role'] ?? '');
+
+        if ($chat === null) {
+            Response::json(['ok' => false, 'error' => 'Групповой чат не найден'], 404);
+            return;
+        }
+
+        if ($profile === null || (int) $profile['chat_id'] !== $chatId) {
+            Response::json(['ok' => false, 'error' => 'Участник не найден'], 404);
+            return;
+        }
+
+        if (!in_array($role, ['member', 'administrator'], true)) {
+            http_response_code(422);
+            $this->show($chatId, ['role_' . $profileId => 'Выберите роль member или administrator.']);
+            return;
+        }
+
+        $this->chats->updateMemberRole($chatId, $profileId, $role);
 
         Response::redirect('/group-chats/' . $chatId);
     }

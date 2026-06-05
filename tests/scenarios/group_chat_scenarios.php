@@ -143,6 +143,45 @@ function runGroupChatScenarios(array $context): void {
     assertTrueValue(str_contains($profileEditForm['body'], 'value="3003"'), 'Удаление из группы должно вернуть private chat_id=user_id');
     assertTrueValue(str_contains($profileEditForm['body'], '<option value="private" selected>private</option>'), 'Удаление из группы должно вернуть private chat_type');
 
+    $response = httpRequest('POST', $baseUrl . '/group-chats/-100300/members/3/role', formBody([
+        'role' => 'owner',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(422, $response['status'], 'Некорректная роль участника группы должна возвращать 422');
+    assertTrueValue(str_contains($response['body'], 'Выберите роль member или administrator'), 'Форма группы должна показывать ошибку role');
+
+    $response = httpRequest('POST', $baseUrl . '/group-chats/-100300/members/3/role', formBody([
+        'role' => 'administrator',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Смена роли участника группы должна редиректить');
+
+    $groupMembers = httpRequest('GET', $baseUrl . '/group-chats/-100300');
+    assertSameValue(200, $groupMembers['status'], 'Экран участников после смены роли должен открываться');
+    assertTrueValue(str_contains($groupMembers['body'], '<option value="administrator" selected>administrator</option>'), 'Экран группы должен показывать роль administrator');
+
+    $adminCommands = [
+        [
+            'command' => 'admin',
+            'description' => 'Admin command',
+        ],
+    ];
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $groupToken . '/setMyCommands', json_encode([
+        'commands' => $adminCommands,
+        'scope' => [
+            'type' => 'chat_administrators',
+            'chat_id' => -100300,
+        ],
+        'language_code' => 'ru',
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(true, $json['result'], 'setMyCommands должен сохранять chat_administrators scope');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=3&bot_id=3');
+    assertSameValue(200, $chat['status'], 'Group chat администратора должен открываться');
+    assertTrueValue(str_contains($chat['body'], '/admin'), 'UI должен показывать admin scoped commands администратору группы');
+
+    $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=4&bot_id=3');
+    assertSameValue(200, $chat['status'], 'Group chat обычного участника должен открываться');
+    assertTrueValue(!str_contains($chat['body'], '/admin'), 'UI не должен показывать admin scoped commands обычному участнику группы');
+
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '3',
         'bot_id' => '3',

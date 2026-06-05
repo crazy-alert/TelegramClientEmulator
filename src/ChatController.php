@@ -102,6 +102,7 @@ final readonly class ChatController {
                 (string) $profile['chat_type'],
                 (int) $profile['user_id'],
                 (string) $profile['language_code'],
+                (string) ($profile['chat_role'] ?? 'member'),
             );
         }
 

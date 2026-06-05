@@ -101,6 +101,24 @@ final readonly class ChatRepository {
         ]);
     }
 
+    public function updateMemberRole(int $chatId, int $profileId, string $role): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE chat_members
+            SET role = :role
+            WHERE profile_id = :profile_id
+                AND chat_row_id = (
+                    SELECT id FROM chats
+                    WHERE chat_id = :chat_id
+                        AND type IN (\'group\', \'supergroup\')
+                )'
+        );
+        $statement->execute([
+            'chat_id' => $chatId,
+            'profile_id' => $profileId,
+            'role' => $role,
+        ]);
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

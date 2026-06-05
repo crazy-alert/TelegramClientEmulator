@@ -57,6 +57,11 @@ try {
     assertSameValue(2, count($members), 'Group chat должен иметь двух участников');
     assertSameValue(3001, (int) $members[0]['user_id'], 'Первый участник group chat должен ссылаться на Alice profile');
     assertSameValue(3002, (int) $members[1]['user_id'], 'Второй участник group chat должен ссылаться на Bob profile');
+    assertSameValue('member', (string) $members[0]['chat_role'], 'Новый участник group chat должен иметь роль member');
+
+    $chats->updateMemberRole(-100300, 1, 'administrator');
+    $members = $chats->membersByChatId(-100300);
+    assertSameValue('administrator', (string) $members[0]['chat_role'], 'Роль участника group chat должна редактироваться');
 
     $profiles->update(2, [
         'user_id' => 3002,
