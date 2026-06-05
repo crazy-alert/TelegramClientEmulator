@@ -132,7 +132,7 @@ Webhook-доставка делает одну или несколько кор�
 - title group/supergroup можно редактировать на `/group-chats/{chat_id}`; если title не задан, используется fallback `Chat <chat_id>`;
 - `/group-chats` позволяет добавлять и удалять участников через существующие profiles и задавать базовую роль `member` или `administrator`;
 - роль `administrator` используется для UI-подбора команд bot command scopes `chat_administrators` и `all_chat_administrators`, но не моделирует Telegram permissions;
-- service messages пока не моделируются;
+- изменения title и состава участников создают локальные service messages в истории чата, но не создают Bot API updates;
 - import разрешает общий `chat_id` только для group/supergroup profiles.
 
 ## Несколько ботов в одном экране

@@ -159,6 +159,48 @@ final readonly class MessageRepository {
         ];
     }
 
+    /**
+     * Создает локальное service-сообщение без Bot API update.
+     *
+     * @param array<string, mixed> $bot
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $chat
+     * @param array<string, mixed> $servicePayload
+     * @return array<string, mixed>
+     */
+    public function createService(array $bot, array $profile, array $chat, string $text, array $servicePayload): array {
+        $botId = (int) $bot['id'];
+        $chatId = (int) $chat['chat_id'];
+        $nextMessageId = $this->nextMessageId($botId, $chatId);
+        $rawPayload = $this->serviceRawPayload($nextMessageId, $profile, $chat, $servicePayload);
+
+        $statement = $this->pdo->prepare(
+            'INSERT INTO messages (bot_id, profile_id, chat_id, telegram_message_id, direction, text, raw_payload)
+            VALUES (:bot_id, :profile_id, :chat_id, :telegram_message_id, \'service\', :text, :raw_payload)'
+        );
+
+        $statement->execute([
+            'bot_id' => $botId,
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'telegram_message_id' => $nextMessageId,
+            'text' => $text,
+            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+
+        return $this->find((int) $this->pdo->lastInsertId()) ?? [
+            'id' => (int) $this->pdo->lastInsertId(),
+            'bot_id' => $botId,
+            'profile_id' => (int) $profile['id'],
+            'chat_id' => $chatId,
+            'telegram_message_id' => $nextMessageId,
+            'direction' => 'service',
+            'text' => $text,
+            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+    }
+
     public function deleteByDialog(int $botId, int $profileId, int $chatId): int {
         $statement = $this->pdo->prepare(
             'DELETE FROM messages
@@ -188,5 +230,50 @@ final readonly class MessageRepository {
         ]);
 
         return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $chat
+     * @param array<string, mixed> $servicePayload
+     * @return array<string, mixed>
+     */
+    private function serviceRawPayload(int $messageId, array $profile, array $chat, array $servicePayload): array {
+        return array_merge([
+            'message_id' => $messageId,
+            'date' => time(),
+            'chat' => [
+                'id' => (int) $chat['chat_id'],
+                'type' => (string) $chat['type'],
+                'title' => (string) ($chat['title'] ?? ('Chat ' . (string) $chat['chat_id'])),
+            ],
+            'from' => $this->serviceUserPayload($profile),
+        ], $servicePayload);
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>
+     */
+    private function serviceUserPayload(array $profile): array {
+        $payload = [
+            'id' => (int) $profile['user_id'],
+            'is_bot' => false,
+            'first_name' => (string) $profile['first_name'],
+        ];
+
+        if ((string) ($profile['last_name'] ?? '') !== '') {
+            $payload['last_name'] = (string) $profile['last_name'];
+        }
+
+        if ((string) ($profile['username'] ?? '') !== '') {
+            $payload['username'] = (string) $profile['username'];
+        }
+
+        if ((string) ($profile['language_code'] ?? '') !== '') {
+            $payload['language_code'] = (string) $profile['language_code'];
+        }
+
+        return $payload;
     }
 }

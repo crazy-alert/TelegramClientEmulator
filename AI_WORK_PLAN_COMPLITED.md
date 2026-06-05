@@ -886,3 +886,9 @@
 
 - Не моделировать Telegram permissions и статусы сверх `member`/`administrator`.
 - Не менять каноничную семантику `getMyCommands`: exact Bot API запросы остаются exact.
+
+## Group/supergroup service messages (2026-06-06)
+
+# Активный план работы
+
+Активной задачи нет. Следующая задача очереди: `.aitasks/003-group-service-messages.md`.

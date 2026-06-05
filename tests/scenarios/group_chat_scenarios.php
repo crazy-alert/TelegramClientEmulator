@@ -177,10 +177,19 @@ function runGroupChatScenarios(array $context): void {
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=3&bot_id=3');
     assertSameValue(200, $chat['status'], 'Group chat администратора должен открываться');
     assertTrueValue(str_contains($chat['body'], '/admin'), 'UI должен показывать admin scoped commands администратору группы');
+    assertTrueValue(str_contains($chat['body'], 'Событие'), 'Group chat должен показывать service messages');
+    assertTrueValue(str_contains($chat['body'], 'Название группы изменено: Chat -100300 -&gt; QA Group'), 'Group chat должен показывать service message изменения title');
+    assertTrueValue(str_contains($chat['body'], 'Пользователь добавлен в группу: Charlie Sender (@group_charlie)'), 'Group chat должен показывать service message добавления участника');
+    assertTrueValue(str_contains($chat['body'], 'Пользователь удален из группы: Charlie Sender (@group_charlie)'), 'Group chat должен показывать service message удаления участника');
 
     $chat = httpRequest('GET', $baseUrl . '/chat?profile_id=4&bot_id=3');
     assertSameValue(200, $chat['status'], 'Group chat обычного участника должен открываться');
     assertTrueValue(!str_contains($chat['body'], '/admin'), 'UI не должен показывать admin scoped commands обычному участнику группы');
+
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/bot' . $groupToken . '/getUpdates', json_encode([
+        'allowed_updates' => ['message'],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 200, true);
+    assertSameValue(0, count($json['result']), 'Service messages не должны создавать Bot API updates');
 
     $response = httpRequest('POST', $baseUrl . '/chat/send', formBody([
         'profile_id' => '3',

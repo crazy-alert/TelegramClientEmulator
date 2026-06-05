@@ -101,11 +101,22 @@
                 <?php
                 $replyMarkup = \App\ReplyMarkup::fromMessage($msg);
                 $messageBlocks = \App\MessageRenderer::blocksFromMessage($msg, $mediaStorage ?? null, (string) ($bot['token'] ?? ''));
+                $messageDirection = (string) $msg['direction'];
+                $messageAuthor = match ($messageDirection) {
+                    'user' => 'Пользователь',
+                    'service' => 'Событие',
+                    default => 'Бот',
+                };
+                $messageAuthorColor = match ($messageDirection) {
+                    'user' => '#2481cc',
+                    'service' => '#647482',
+                    default => '#4caf50',
+                };
                 ?>
-                <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2;">
+                <div class="<?= $messageDirection === 'service' ? 'message-service' : '' ?>" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6edf2; <?= $messageDirection === 'service' ? 'background: #f8fafc; border-radius: 8px; padding: 10px;' : '' ?>">
                     <div style="margin-bottom: 4px;">
-                        <strong style="color: <?= $msg['direction'] === 'user' ? '#2481cc' : '#4caf50' ?>">
-                            <?= $msg['direction'] === 'user' ? 'Пользователь' : 'Бот' ?>
+                        <strong style="color: <?= e($messageAuthorColor) ?>">
+                            <?= e($messageAuthor) ?>
                         </strong>
                         <span class="muted" style="font-size: 12px;">
                             #<?= e($msg['telegram_message_id']) ?>

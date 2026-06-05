@@ -13,6 +13,7 @@ final readonly class GroupChatAdminController {
         private ChatRepository $chats,
         private ProfileRepository $profiles,
         private BotRepository $bots,
+        private MessageRepository $messages,
         private View $view,
     ) {
     }
@@ -100,7 +101,17 @@ final readonly class GroupChatAdminController {
             return;
         }
 
+        $oldTitle = (string) ($chat['title'] ?? ('Chat ' . $chatId));
         $this->chats->updateGroupTitle($chatId, $title);
+        if ($oldTitle !== $title) {
+            $updatedChat = $this->chats->findGroupByChatId($chatId) ?? array_replace($chat, ['title' => $title]);
+            $actor = $this->serviceActor($chatId);
+            if ($actor !== null) {
+                $this->createServiceMessages($updatedChat, $actor, 'Название группы изменено: ' . $oldTitle . ' -> ' . $title, [
+                    'new_chat_title' => $title,
+                ]);
+            }
+        }
 
         Response::redirect('/group-chats/' . $chatId);
     }
@@ -152,6 +163,13 @@ final readonly class GroupChatAdminController {
             'chat_type' => (string) $chat['type'],
             'enabled' => ((int) $profile['enabled']) === 1 ? '1' : null,
         ]));
+        $updatedProfile = $this->profiles->find($profileId) ?? array_replace($profile, [
+            'chat_id' => $chatId,
+            'chat_type' => (string) $chat['type'],
+        ]);
+        $this->createServiceMessages($chat, $updatedProfile, 'Пользователь добавлен в группу: ' . $this->profileLabel($profile), [
+            'new_chat_members' => [$this->serviceUserPayload($updatedProfile)],
+        ]);
 
         Response::redirect('/group-chats/' . $chatId);
     }
@@ -170,6 +188,10 @@ final readonly class GroupChatAdminController {
             return;
         }
 
+        $this->createServiceMessages($chat, $profile, 'Пользователь удален из группы: ' . $this->profileLabel($profile), [
+            'left_chat_member' => $this->serviceUserPayload($profile),
+        ]);
+
         $this->profiles->update($profileId, array_replace($profile, [
             'chat_id' => (int) $profile['user_id'],
             'chat_type' => 'private',
@@ -186,5 +208,61 @@ final readonly class GroupChatAdminController {
         $data['allUsers'] = $this->profiles->all();
         $data['allBots'] = $this->bots->all();
         $this->view->render($template, $data);
+    }
+
+    /**
+     * @param array<string, mixed> $chat
+     * @param array<string, mixed> $profile
+     * @param array<string, mixed> $servicePayload
+     */
+    private function createServiceMessages(array $chat, array $profile, string $text, array $servicePayload): void {
+        foreach ($this->bots->all() as $bot) {
+            $this->messages->createService($bot, $profile, $chat, $text, $servicePayload);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function serviceActor(int $chatId): ?array {
+        $members = $this->chats->membersByChatId($chatId);
+
+        return $members[0] ?? null;
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     */
+    private function profileLabel(array $profile): string {
+        $name = trim((string) ($profile['first_name'] ?? '') . ' ' . (string) ($profile['last_name'] ?? ''));
+        $username = (string) ($profile['username'] ?? '');
+
+        return $username === '' ? $name : $name . ' (@' . $username . ')';
+    }
+
+    /**
+     * @param array<string, mixed> $profile
+     * @return array<string, mixed>
+     */
+    private function serviceUserPayload(array $profile): array {
+        $payload = [
+            'id' => (int) $profile['user_id'],
+            'is_bot' => false,
+            'first_name' => (string) $profile['first_name'],
+        ];
+
+        if ((string) ($profile['last_name'] ?? '') !== '') {
+            $payload['last_name'] = (string) $profile['last_name'];
+        }
+
+        if ((string) ($profile['username'] ?? '') !== '') {
+            $payload['username'] = (string) $profile['username'];
+        }
+
+        if ((string) ($profile['language_code'] ?? '') !== '') {
+            $payload['language_code'] = (string) $profile['language_code'];
+        }
+
+        return $payload;
     }
 }

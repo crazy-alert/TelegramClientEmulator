@@ -126,6 +126,7 @@ final class Application {
             $this->chats,
             $this->profiles,
             $this->bots,
+            $this->messages,
             $this->view,
         );
         $this->profileAdmin = new ProfileAdminController(
