@@ -98,7 +98,7 @@ final readonly class ProfileAdminController {
             return;
         }
 
-        $errors = $this->validateForm($_POST);
+        $errors = $this->validateForm($_POST, $id);
         if ($errors !== []) {
             http_response_code(422);
             $this->render('profiles/form', [
@@ -117,7 +117,7 @@ final readonly class ProfileAdminController {
      * @param array<string, mixed> $data
      * @return array<string, string>
      */
-    private function validateForm(array $data): array {
+    private function validateForm(array $data, ?int $profileId = null): array {
         $errors = [];
         $userId = trim((string) ($data['user_id'] ?? ''));
         $username = ltrim(trim((string) ($data['username'] ?? '')), '@');
@@ -146,6 +146,13 @@ final readonly class ProfileAdminController {
 
         if (!in_array($chatType, ['private', 'group', 'supergroup', 'channel'], true)) {
             $errors['chat_type'] = 'Выберите допустимый тип чата.';
+        }
+
+        if (
+            !isset($errors['chat_id'], $errors['chat_type'])
+            && $this->profiles->hasConflictingChatId((int) $chatId, $chatType, $profileId)
+        ) {
+            $errors['chat_id'] = 'Private/channel chat_id не может совпадать с group/supergroup chat_id.';
         }
 
         if ($languageCode !== '' && preg_match('/^[a-z]{2,8}(?:-[A-Z]{2})?$/', $languageCode) !== 1) {

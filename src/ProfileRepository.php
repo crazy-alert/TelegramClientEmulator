@@ -76,9 +76,17 @@ final readonly class ProfileRepository {
         return $statement->fetchColumn() !== false;
     }
 
-    public function hasConflictingChatId(int $chatId, string $chatType): bool {
-        $statement = $this->pdo->prepare('SELECT chat_type FROM profiles WHERE chat_id = :chat_id');
-        $statement->execute(['chat_id' => $chatId]);
+    public function hasConflictingChatId(int $chatId, string $chatType, ?int $exceptProfileId = null): bool {
+        $query = 'SELECT chat_type FROM profiles WHERE chat_id = :chat_id';
+        $params = ['chat_id' => $chatId];
+
+        if ($exceptProfileId !== null) {
+            $query .= ' AND id <> :except_profile_id';
+            $params['except_profile_id'] = $exceptProfileId;
+        }
+
+        $statement = $this->pdo->prepare($query);
+        $statement->execute($params);
         $existingTypes = $statement->fetchAll(PDO::FETCH_COLUMN);
 
         if ($existingTypes === []) {

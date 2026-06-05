@@ -68,6 +68,7 @@
 
 - Пользователь может создавать, редактировать, дублировать, удалять, импортировать и экспортировать ботов.
 - Пользователь может создавать, редактировать, дублировать, удалять, импортировать и экспортировать пользователей.
+- Пользователь может открыть `/group-chats`, увидеть список group/supergroup чатов и управлять участниками через существующие profiles.
 - Пользователь может выбрать сохраненного пользователя и бота на экране чата.
 - История диалога привязана к паре пользователь-бот.
 - Для group/supergroup несколько пользователей могут иметь общий `chat_id`; выбранный пользователь является отправителем, а история чата читается по `bot_id + chat_id`.
@@ -93,7 +94,7 @@
 Возможности следующих версий:
 
 - Mock attachments: photo, document, video, animation, audio, voice, video note, sticker, poll, location, venue, contact, dice.
-- Дальнейшее развитие group chat: управление title, ролями, service messages и отдельным UI membership поверх уже существующих `chats/chat_members`.
+- Дальнейшее развитие group chat: управление title, ролями, администраторами и service messages поверх уже существующих `chats/chat_members`.
 
 Решение по multi-bot UI: отдельный экран, где один пользователь одновременно общается с несколькими ботами, в текущий scope не входит. Причины:
 
@@ -265,7 +266,7 @@ UI `/chat` принимает от пользователя structured/media-с�
 
 Long Polling выборку для `getUpdates` нормализует `LongPollingService`: он выбирает pending updates, подтверждает offset, обрабатывает negative offset, применяет limit и фильтрует `allowed_updates`. `BotApiController` сохраняет HTTP-политику метода, включая конфликт с активным webhook и цикл короткого ожидания, ограниченный `LONG_POLLING_MAX_TIMEOUT_SECONDS`.
 
-UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. Admin UI ботов (`/bots`) обслуживает `BotAdminController`, admin UI пользователей (`/profiles`) обслуживает `ProfileAdminController`. Import/export routes (`/import-export`, `/export/*`, `/import/*`) обслуживает `ImportExportController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery, validation admin/import forms и маскирование секретов inspector-вывода. Request inspector поддерживает фильтры по HTTP status и `ok=false`, curl-like view, pretty JSON view и ссылки к update/delivery context.
+UI/admin-маршруты inspector-среза `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/updates/retry-failed`, `/delivery-attempts` и `/request-inspector` обслуживает `InspectorController`. Admin UI ботов (`/bots`) обслуживает `BotAdminController`, admin UI пользователей (`/profiles`) обслуживает `ProfileAdminController`, admin UI group/supergroup чатов (`/group-chats`) обслуживает `GroupChatAdminController`. Import/export routes (`/import-export`, `/export/*`, `/import/*`) обслуживает `ImportExportController`. `Application` остается composition root и router entrypoint, но не должен заново реализовывать фильтрацию update/delivery списков, ручной retry webhook delivery, validation admin/import forms и маскирование секретов inspector-вывода. Request inspector поддерживает фильтры по HTTP status и `ok=false`, curl-like view, pretty JSON view и ссылки к update/delivery context.
 
 Поведение команд и кнопок:
 
@@ -511,13 +512,13 @@ Runtime stack проекта:
 - Long Polling требует аккуратной модели подтверждения offset, иначе бот может получать дубликаты или терять updates.
 - Решение по HTTP routing зафиксировано в `docs/adr-routing.md`: текущий custom router остается, а первичная модернизация должна декомпозировать `Application` на parser/handlers/services.
 - Решение по тестам зафиксировано в `docs/adr-testing.md`: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости.
-- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, inspector/update/delivery UI handlers вынесены в `InspectorController`, admin UI ботов и пользователей вынесен в `BotAdminController`/`ProfileAdminController`, import/export и fixture pack logic вынесены в `ImportExportController`, parsing request body вынесен в `BotApiRequestParser`, сборка Bot API response payload вынесена в `BotApiPayloadFactory`, Long Polling queue logic вынесена в `LongPollingService`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
+- Webhook delivery вынесена из `Application` в `WebhookDeliveryService`, Bot API handlers вынесены в `BotApiController`, Chat UI handlers вынесены в `ChatController`, inspector/update/delivery UI handlers вынесены в `InspectorController`, admin UI ботов, пользователей и групп вынесен в `BotAdminController`/`ProfileAdminController`/`GroupChatAdminController`, import/export и fixture pack logic вынесены в `ImportExportController`, parsing request body вынесен в `BotApiRequestParser`, сборка Bot API response payload вынесена в `BotApiPayloadFactory`, Long Polling queue logic вынесена в `LongPollingService`; дальнейшая декомпозиция должна аналогично уменьшать ответственность `Application` без изменения HTTP-контрактов.
 - Полная совместимость с Telegram имеет большую поверхность. Эмулятор должен расти от реальных задач разработки ботов, а не от попытки сразу клонировать весь API.
 
 ## 8. Открытые вопросы
 
 - Какие bot frameworks поддерживать первыми: Telegraf, aiogram, python-telegram-bot, grammY, Telegram.Bot for .NET?
-- Для group chat нужна отдельная сущность группы или достаточно нескольких пользователей с одним `chatId` и режимом выбора отправителя?
+- Нужен ли отдельный редактор title/ролей group chat или достаточно текущего membership UI через profiles до появления admin/service-message сценариев?
 - Интерфейс проекта и документация должны быть только на русском или двуязычными?
 
 ## 9. Ссылки

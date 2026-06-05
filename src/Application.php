@@ -21,6 +21,7 @@ final class Application {
     private BotApiPayloadFactory $botApiPayloads;
     private BotApiRequestParser $requestParser;
     private ChatController $chat;
+    private GroupChatAdminController $groupChatAdmin;
     private BotAdminController $botAdmin;
     private ProfileAdminController $profileAdmin;
     private ImportExportController $importExport;
@@ -108,6 +109,12 @@ final class Application {
         $this->botAdmin = new BotAdminController(
             $this->bots,
             $this->profiles,
+            $this->view,
+        );
+        $this->groupChatAdmin = new GroupChatAdminController(
+            $this->chats,
+            $this->profiles,
+            $this->bots,
             $this->view,
         );
         $this->profileAdmin = new ProfileAdminController(
@@ -228,6 +235,10 @@ final class Application {
         }
 
         if ($this->botAdmin->handle($method, $path)) {
+            return;
+        }
+
+        if ($this->groupChatAdmin->handle($method, $path)) {
             return;
         }
 

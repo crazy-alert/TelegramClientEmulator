@@ -302,6 +302,7 @@ Update хранит Telegram-like событие, созданное эмуля�
 - HTMX polling для обновления чата — реализовано через `/chat/fragment`;
 - inline validation форм ботов и пользователей — реализовано для основных ошибок;
 - вкладки: чат, боты, пользователи, updates, delivery attempts — updates и delivery attempts реализованы;
+- экран group/supergroup чатов и membership через profiles — реализован через `/group-chats`;
 - inspector request/response — реализован для Bot API HTTP-логов и webhook delivery attempts, включая status/ok=false фильтры, curl-like view и pretty JSON;
 - import/export ботов и пользователей — реализовано для JSON без истории сообщений; fixture pack v2 добавлен для повторяемых тестовых сценариев с `bot_commands`, `chats` и `media_manifest`;
 - очистка истории по пользователю или боту — реализована для диалога и pending/confirmed updates выбранного бота.
@@ -378,7 +379,7 @@ Long Polling был реализован до webhook-доставки, пото
 ## 8. Открытые решения
 
 - Формат import/export принят: JSON envelope v1 для bots/profiles без истории; fixture pack v2 использует top-level массивы `bots`, `profiles`, `chats`, `bot_commands` и `media_manifest`. Архив нужен только при появлении экспорта бинарных media.
-- Групповые чаты начаты: несколько сохраненных пользователей могут иметь один group/supergroup `chat_id`, `/chat` выбирает отправителя, update содержит `message.chat.type=group`, история группы читается по `bot_id + chat_id`. Добавлены нормализованные `chats` и `chat_members`, которые синхронизируются из profiles; отдельный UI для membership/title/roles пока отложен.
+- Групповые чаты начаты: несколько сохраненных пользователей могут иметь один group/supergroup `chat_id`, `/chat` выбирает отправителя, update содержит `message.chat.type=group`, история группы читается по `bot_id + chat_id`. Добавлены нормализованные `chats` и `chat_members`, которые синхронизируются из profiles; `/group-chats` показывает список group/supergroup чатов и позволяет добавлять или удалять участников через существующие profiles. UI для title, ролей администраторов и service messages пока отложен.
 - Режим "один пользователь общается с несколькими ботами в одном экране" не входит в текущий scope; альтернатива — открыть одну пару `profile_id`/`bot_id` на вкладку.
 - Micro-framework не внедряется сейчас: решение зафиксировано в `docs/adr-routing.md`, текущий custom router остается до явной необходимости.
 - Стратегия тестов принята: текущий самописный Docker HTTP smoke runner остается основным контуром, PHPUnit не добавляется без явной необходимости; решение зафиксировано в `docs/adr-testing.md`.

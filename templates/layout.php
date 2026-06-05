@@ -340,6 +340,7 @@
         <a href="/request-inspector">Inspector</a>
         <a href="/import-export">Import/export</a>
         <a href="/bots">Боты</a>
+        <a href="/group-chats">Группы</a>
         <a href="/profiles">Пользователи</a>
         <a href="/delivery-attempts">Webhook attempts</a>
         <a href="/health">Health</a>

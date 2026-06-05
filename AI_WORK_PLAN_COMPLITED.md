@@ -1,5 +1,15 @@
 # Завершенные планы работы
 
+## Экран group/supergroup чатов и участников (2026-06-06)
+
+- [x] Разобрать текущую модель `profiles`, `chats`, `chat_members` и маршруты UI.
+- [x] Добавить UI списка group/supergroup chats и экран участников.
+- [x] Добавить управление участниками через существующие profiles и validation конфликтов private/group `chat_id`.
+- [x] Покрыть happy path и конфликтные cases тестами.
+- [x] Обновить README/docs/ROADMAP по изменению scope.
+- [x] Выполнить syntax checks, focused tests, общий smoke test и `git diff --check`.
+- [x] Обновить рабочий контекст, удалить задачу, перенести чеклист в completed, сделать коммит.
+
 ## Chat UI all attachments (2026-06-05)
 
 - [x] Прочитать task-файл и текущий `ChatController::messageDataFromPost()`.

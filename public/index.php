@@ -36,6 +36,7 @@ require dirname(__DIR__) . '/src/ChatController.php';
 require dirname(__DIR__) . '/src/ChatRepository.php';
 require dirname(__DIR__) . '/src/Database.php';
 require dirname(__DIR__) . '/src/DeliveryAttemptRepository.php';
+require dirname(__DIR__) . '/src/GroupChatAdminController.php';
 require dirname(__DIR__) . '/src/HttpLogRepository.php';
 require dirname(__DIR__) . '/src/HttpLogger.php';
 require dirname(__DIR__) . '/src/InspectorController.php';

@@ -236,6 +236,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Панель состояния: `/`.
 - Управление ботами: `/bots`.
 - Управление пользователями: `/profiles`.
+- Управление group/supergroup чатами и участниками: `/group-chats`.
 - Формы ботов и пользователей показывают основные ошибки рядом с полями и возвращают HTTP 422 без записи некорректных данных.
 - Bot API: `GET|POST /bot<TOKEN>/getMe`.
 - Bot API: `GET|POST /bot<TOKEN>/getUpdates` с `offset`, `limit`, `timeout` и `allowed_updates`; `timeout` ограничивается `LONG_POLLING_MAX_TIMEOUT_SECONDS`, чтобы не блокировать single-process server надолго.
@@ -253,7 +254,7 @@ APP_BACKEND_NETWORK=constr_app-backend docker compose up -d
 - Экран `/updates` позволяет очистить pending/confirmed updates выбранного бота после явного подтверждения.
 - Экран `/request-inspector` показывает последние Bot API request/response из HTTP JSONL-логов и webhook request/response из delivery attempts; поддерживает фильтры по HTTP status и `ok=false`, copy-friendly curl-like блоки и pretty JSON view. Bot token и secret token маскируются в HTML-выводе.
 - Экран `/import-export` экспортирует и импортирует JSON для bots/profiles без истории сообщений; отдельный fixture pack v2 (`/export/fixture-pack`, `/import/fixture-pack`) дополнительно включает `bot_commands`, `chats` и `media_manifest` без бинарных media. Импорт отклоняет конфликты `token`, `user_id` и private `chat_id`, но разрешает нескольким group/supergroup пользователям общий `chat_id`. Формат описан в `docs/technical-spec.md`.
-- Групповой чат моделируется отдельной записью `chats` и membership-связями `chat_members`, которые синхронизируются из profiles. Для совместимости import/export и UI-форм несколько пользователей по-прежнему могут иметь одинаковый `chat_id` и `chat_type=group|supergroup`; выбранный пользователь в `/chat` является отправителем сообщения.
+- Групповой чат моделируется отдельной записью `chats` и membership-связями `chat_members`, которые синхронизируются из profiles. Экран `/group-chats` показывает group/supergroup чаты, title, `chat_id`, type и позволяет добавлять или удалять участников через существующие profiles. Для совместимости import/export и UI-форм несколько пользователей по-прежнему могут иметь одинаковый `chat_id` и `chat_type=group|supergroup`; выбранный пользователь в `/chat` является отправителем сообщения.
 - Режим нескольких ботов в одном экране не входит в текущий scope: для сравнения нескольких ботов откройте один `profile_id` с разными `bot_id` в разных вкладках.
 - Webhook delivery: при режиме `webhook` новые updates отправляются POST-запросом на настроенный URL, попытка доставки сохраняется и показывается в инспекторе последнего update.
 - Timeout webhook delivery виден и настраивается на панели `/`; UI-настройка переопределяет `WEBHOOK_TIMEOUT_MS`.

@@ -34,6 +34,43 @@ final readonly class ChatRepository {
         return $statement->fetchAll();
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function groupChats(): array {
+        $statement = $this->pdo->query(
+            'SELECT
+                chats.*,
+                COUNT(chat_members.id) AS member_count
+            FROM chats
+            LEFT JOIN chat_members ON chat_members.chat_row_id = chats.id
+            WHERE chats.type IN (\'group\', \'supergroup\')
+            GROUP BY chats.id
+            ORDER BY chats.updated_at DESC, chats.id DESC'
+        );
+
+        return $statement->fetchAll();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findGroupByChatId(int $chatId): ?array {
+        $statement = $this->pdo->prepare(
+            'SELECT
+                chats.*,
+                COUNT(chat_members.id) AS member_count
+            FROM chats
+            LEFT JOIN chat_members ON chat_members.chat_row_id = chats.id
+            WHERE chats.chat_id = :chat_id AND chats.type IN (\'group\', \'supergroup\')
+            GROUP BY chats.id'
+        );
+        $statement->execute(['chat_id' => $chatId]);
+        $chat = $statement->fetch();
+
+        return $chat === false ? null : $chat;
+    }
+
     public function upsertMetadata(int $chatId, string $type, ?string $title): void {
         $statement = $this->pdo->prepare(
             'INSERT INTO chats (chat_id, type, title)
