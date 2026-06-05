@@ -1,5 +1,26 @@
 # Завершенные планы работы
 
+## Import/export controller (2026-06-05)
+
+- [x] Прочитать task-файл и найти текущий import/export срез.
+- [x] Спроектировать перенос dependencies/routes/helpers.
+- [x] Добавить `ImportExportController`.
+- [x] Подключить контроллер в `Application` и `public/index.php`.
+- [x] Обновить или добавить tests для конфликтов `chat_id`, bot command sections и отказа от бинарных media в JSON.
+- [x] Обновить `AI_PROJECT_MAP.md`, `docs/technical-spec.md` и `AI_CURRENT_CONTEXT.md`.
+- [x] Запустить проверки.
+- [x] Удалить task-файл, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php -l src/ImportExportController.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l public/index.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/import_export_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/fixture_pack_scenarios.php`
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `git diff --check`
+
 ## Admin UI controllers (2026-06-05)
 
 - [x] Прочитать task-файл и текущий `Application`.

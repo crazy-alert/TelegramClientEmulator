@@ -34,6 +34,22 @@ function runImportExportScenarios(array $context): void {
     ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 409, false);
     assertTrueValue(str_contains((string) ($json['error'] ?? ''), 'Конфликт user_id'), 'Импорт пользователей должен отклонять конфликт user_id');
 
+    $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/import/profiles', json_encode([
+        'profiles' => [
+            [
+                'user_id' => 2003,
+                'username' => 'chat_conflict_user',
+                'first_name' => 'Conflict',
+                'last_name' => 'User',
+                'chat_id' => 1001,
+                'chat_type' => 'private',
+                'language_code' => 'ru',
+                'enabled' => true,
+            ],
+        ],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 409, false);
+    assertTrueValue(str_contains((string) ($json['error'] ?? ''), 'Конфликт chat_id'), 'Импорт пользователей должен отклонять конфликт chat_id');
+
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/import/bots', json_encode([
         'bots' => [
             [

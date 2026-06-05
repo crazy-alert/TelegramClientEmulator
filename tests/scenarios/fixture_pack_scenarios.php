@@ -35,8 +35,51 @@ function runFixturePackScenarios(array $context): void {
     ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 409, false);
     assertTrueValue(str_contains((string) ($conflict['error'] ?? ''), 'Конфликт token'), 'Fixture pack должен отклонять конфликтующий bot token');
 
+    $mediaJson = assertJsonResponse(httpRequest('POST', $baseUrl . '/import/fixture-pack', json_encode([
+        'kind' => 'telegram-emulator-fixture-pack',
+        'version' => 2,
+        'bots' => [],
+        'profiles' => [],
+        'chats' => [],
+        'bot_commands' => [],
+        'media_manifest' => ['included' => true],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 400, false);
+    assertTrueValue(str_contains((string) ($mediaJson['error'] ?? ''), 'Бинарные media'), 'Fixture pack должен отклонять встроенные бинарные media в JSON');
+
     $fixtureToken = '777777:fixture-local-dev-token';
     $fixtureChatId = -100777;
+    $invalidCommands = assertJsonResponse(httpRequest('POST', $baseUrl . '/import/fixture-pack', json_encode([
+        'kind' => 'telegram-emulator-fixture-pack',
+        'version' => 2,
+        'bots' => [
+            [
+                'token' => $fixtureToken,
+                'bot_id' => 777777,
+                'username' => 'fixture_bot',
+                'display_name' => 'Fixture Bot',
+                'delivery_mode' => 'long_polling',
+                'webhook_url' => null,
+                'webhook_secret_token' => null,
+                'enabled' => true,
+            ],
+        ],
+        'profiles' => [],
+        'chats' => [],
+        'bot_commands' => [
+            [
+                'bot_token' => 'missing-token',
+                'commands' => [
+                    [
+                        'command' => 'fixture',
+                        'description' => 'Fixture command',
+                    ],
+                ],
+            ],
+        ],
+        'media_manifest' => ['included' => false],
+    ], JSON_THROW_ON_ERROR), ['Content-Type: application/json']), 400, false);
+    assertTrueValue(str_contains((string) ($invalidCommands['error'] ?? ''), 'Некорректный bot_token'), 'Fixture pack должен валидировать bot_commands section');
+
     $fixturePack = [
         'kind' => 'telegram-emulator-fixture-pack',
         'version' => 2,
