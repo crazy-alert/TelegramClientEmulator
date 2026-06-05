@@ -36,6 +36,7 @@ require dirname(__DIR__) . '/src/Database.php';
 require dirname(__DIR__) . '/src/DeliveryAttemptRepository.php';
 require dirname(__DIR__) . '/src/HttpLogRepository.php';
 require dirname(__DIR__) . '/src/HttpLogger.php';
+require dirname(__DIR__) . '/src/InspectorController.php';
 require dirname(__DIR__) . '/src/LongPollingService.php';
 require dirname(__DIR__) . '/src/MediaStorage.php';
 require dirname(__DIR__) . '/src/MessageRenderer.php';

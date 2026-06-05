@@ -1,5 +1,20 @@
 # Завершенные планы работы
 
+## Декомпозиция Application: InspectorController (2026-06-05)
+
+- [x] Проверить git status, task-файл и текущий контекст.
+- [x] Вынести inspector/update/delivery routes в `InspectorController`.
+- [x] Подключить контроллер в `Application` без изменения маршрутов.
+- [x] Обновить архитектурную документацию.
+- [x] Запустить focused/full проверки.
+- [x] Обновить контекст, удалить task04, перенести чеклист в completed, сделать коммит и push.
+
+Проверки:
+
+- `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php`
+- `docker compose run --rm --no-deps telegram-emulator sh -lc "find src public templates tests -name '*.php' -print0 | xargs -0 -n1 php -l"`
+- `git diff --check`
+
 ## Preview и download links для media в UI (2026-06-05)
 
 - [x] Проверить git status, task-файл и текущий renderer media blocks.

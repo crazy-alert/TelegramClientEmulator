@@ -15,12 +15,13 @@
 ## Приложение
 
 - `public/index.php` — front controller.
-- `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`.
+- `src/Application.php` — composition root, custom router, orchestration UI/local routes и серверная валидация UI-форм; локальные Bot API requests делегируются в `BotApiController`, chat-сценарии — в `ChatController`, inspector/update/delivery UI routes — в `InspectorController`.
 - `src/BotApiController.php` — локальные Telegram Bot API маршруты `/bot<TOKEN>/<METHOD>`, parsing параметров, HTTP-валидация и handlers методов `getMe`, `getUpdates`, `getFile`, `sendMessage`, media/structured methods, `editMessageText`, webhook commands, bot commands и `answerCallbackQuery`.
 - `src/BotApiPayloadFactory.php` — чистая фабрика Telegram-like `Message`, `Chat` и media payload для ответов локального Bot API.
 - `src/BotApiParams.php` — чистый helper для объединения query/body параметров Bot API и нормализации чисел, boolean-like значений, `allowed_updates`, commands и poll options.
 - `src/BotApiRequestParser.php` — parser JSON, `application/x-www-form-urlencoded`, multipart text fields и multipart file parts при отключенном `enable_post_data_reading`.
 - `src/ChatController.php` — UI-маршруты `/chat`, `/chat/fragment`, `/chat/send`, `/chat/callback`, `/chat/clear`, формирование данных для шаблона чата, создание message/callback updates и запуск webhook delivery для chat-сценариев.
+- `src/InspectorController.php` — UI/admin-маршруты `/updates`, `/updates/clear`, `/updates/{id}/resend`, `/delivery-attempts`, `/request-inspector`, фильтры inspector-экранов и маскирование секретов в webhook/request выводе.
 - `src/LongPollingService.php` — выбор pending updates для `getUpdates`, подтверждение offset, negative offset и фильтрация `allowed_updates`.
 - `src/Database.php` — подключение SQLite.
 - `src/MigrationRunner.php` — применение SQL-миграций.
