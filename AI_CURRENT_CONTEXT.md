@@ -2,36 +2,31 @@
 
 ## Последнее обновление
 
-2026-06-06: выполнена `.aitasks/task06-webhook-dev-retry-backoff.md`.
+2026-06-06: выполнена `.aitasks/task07-split-message-scenarios.md`.
 
 Что сделано:
 
-- Добавлены настройки development webhook retry на панели `/`: max attempts и delay.
-- `WEBHOOK_RETRY_MAX_ATTEMPTS` и `WEBHOOK_RETRY_DELAY_MS` добавлены в Docker/env документацию и compose defaults.
-- `WebhookDeliveryService::deliver()` возвращает результат попытки, а `deliverWithDevelopmentRetry()` выполняет короткие синхронные retry для автоматической webhook-доставки.
-- Manual resend и batch retry failed updates остались одноразовыми helper-действиями.
-- Каждая попытка сохраняется в `delivery_attempts`; промежуточные ошибки не скрываются.
-- `tests/scenarios/webhook_retry_scenarios.php` проверяет настройки, retry sequence `500,500,202`, delivery attempts и сохранение ручного retry.
-- `README.md`, `docs/limitations.md`, `docs/technical-spec.md` и `ROADMAP.md` обновлены с ограничением: это не production scheduler.
+- Крупный `tests/scenarios/bot_api_message_scenarios.php` превращен в wrapper.
+- Message core сценарии вынесены в `tests/scenarios/bot_api_message_core_scenarios.php`.
+- Media method сценарии вынесены в `tests/scenarios/bot_api_media_method_scenarios.php`.
+- Structured method сценарии вынесены в `tests/scenarios/bot_api_structured_method_scenarios.php`.
+- `tests/bot_api_test.php` не менялся; общий entrypoint `runBotApiMessageScenarios()` сохранен.
+- В failure messages добавлены короткие префиксы `[message core]`, `[media methods]`, `[structured methods]`.
 
 Проверки:
 
-- `docker compose run --rm --no-deps telegram-emulator php -l src/WebhookDeliveryService.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/Application.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l src/ChatController.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l templates/dashboard.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/webhook_retry_scenarios.php` — успешно.
-- `docker compose run --rm --no-deps telegram-emulator php -l tests/support/test_helpers.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_message_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_message_core_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_media_method_scenarios.php` — успешно.
+- `docker compose run --rm --no-deps telegram-emulator php -l tests/scenarios/bot_api_structured_method_scenarios.php` — успешно.
 - `docker compose run --rm --no-deps telegram-emulator php tests/bot_api_test.php` — успешно.
 - `git diff --check` — успешно; есть только предупреждения Git о будущей CRLF-нормализации на Windows.
 
 ## Ближайшая очередь
 
-Оставшиеся задачи в `.aitasks/`:
+Оставшихся задач в `.aitasks/` нет.
 
-- `task07-split-message-scenarios.md`
-
-Следующий шаг: взять `.aitasks/task07-split-message-scenarios.md`, обновить `AI_WORK_PLAN.md` и реализовать отдельным коммитом.
+Следующий шаг: ждать новую задачу пользователя.
 
 ## Важные решения
 

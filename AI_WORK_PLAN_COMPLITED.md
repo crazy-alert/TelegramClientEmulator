@@ -1,5 +1,14 @@
 # Завершенные планы работы
 
+## Дробление Bot API message scenarios (2026-06-06)
+
+- [x] Разобрать текущий порядок message scenarios и зависимости по message_id.
+- [x] Вынести message core, media methods и structured methods в отдельные scenario-файлы.
+- [x] Оставить `tests/bot_api_test.php` без изменений и сохранить wrapper `runBotApiMessageScenarios()`.
+- [x] Добавить короткие названия сценариев в failure messages там, где это помогает.
+- [x] Выполнить syntax checks новых/измененных test-файлов, общий smoke test и `git diff --check`.
+- [x] Обновить рабочий контекст, удалить задачу, перенести чеклист в completed, сделать коммит.
+
 ## Development webhook retry/backoff (2026-06-06)
 
 - [x] Разобрать текущую webhook delivery, ручной retry и UI настроек.
