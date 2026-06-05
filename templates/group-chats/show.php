@@ -13,6 +13,18 @@
         <p><strong>Участники:</strong> <?= e($chat['member_count'] ?? count($members)) ?></p>
     </section>
 
+    <form class="editor" method="post" action="/group-chats/<?= e($chat['chat_id']) ?>/title">
+        <h2>Название</h2>
+        <label>
+            Title
+            <input name="title" value="<?= e($chat['title'] ?? '') ?>" maxlength="128" required>
+            <?php if (isset($errors['title'])): ?>
+                <span class="field-error"><?= e($errors['title']) ?></span>
+            <?php endif; ?>
+        </label>
+        <button type="submit">Сохранить title</button>
+    </form>
+
     <form class="editor" method="post" action="/group-chats/<?= e($chat['chat_id']) ?>/members">
         <h2>Добавить участника</h2>
         <label>

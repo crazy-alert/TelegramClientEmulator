@@ -24,7 +24,12 @@ final readonly class ProfileRepository {
      * @return list<array<string, mixed>>
      */
     public function all(): array {
-        $statement = $this->pdo->query('SELECT * FROM profiles ORDER BY created_at DESC, id DESC');
+        $statement = $this->pdo->query(
+            'SELECT profiles.*, chats.title AS chat_title
+            FROM profiles
+            LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            ORDER BY profiles.created_at DESC, profiles.id DESC'
+        );
 
         return $statement->fetchAll();
     }
@@ -35,7 +40,12 @@ final readonly class ProfileRepository {
      * @return array<string, mixed>|null Возвращает данные пользователя или null, если пользователь не найден.
      */
     public function find(int $id): ?array {
-        $statement = $this->pdo->prepare('SELECT * FROM profiles WHERE id = :id');
+        $statement = $this->pdo->prepare(
+            'SELECT profiles.*, chats.title AS chat_title
+            FROM profiles
+            LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            WHERE profiles.id = :id'
+        );
         $statement->execute(['id' => $id]);
         $profile = $statement->fetch();
 
@@ -49,9 +59,11 @@ final readonly class ProfileRepository {
      */
     public function findEnabledByChat(int $chatId): ?array {
         $statement = $this->pdo->prepare(
-            'SELECT * FROM profiles
-            WHERE chat_id = :chat_id AND enabled = 1
-            ORDER BY id ASC
+            'SELECT profiles.*, chats.title AS chat_title
+            FROM profiles
+            LEFT JOIN chats ON chats.chat_id = profiles.chat_id
+            WHERE profiles.chat_id = :chat_id AND profiles.enabled = 1
+            ORDER BY profiles.id ASC
             LIMIT 1'
         );
         $statement->execute([
@@ -212,7 +224,7 @@ final readonly class ProfileRepository {
             VALUES (:chat_id, :type, :title)
             ON CONFLICT(chat_id) DO UPDATE SET
                 type = excluded.type,
-                title = excluded.title,
+                title = COALESCE(NULLIF(chats.title, \'\'), excluded.title),
                 updated_at = CURRENT_TIMESTAMP'
         );
         $upsertChat->execute([

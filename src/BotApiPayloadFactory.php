@@ -86,7 +86,8 @@ final class BotApiPayloadFactory {
         ];
 
         if (in_array($chatType, ['group', 'supergroup', 'channel'], true)) {
-            $payload['title'] = 'Chat ' . (string) ($profile['chat_id'] ?? '0');
+            $title = trim((string) ($profile['chat_title'] ?? ''));
+            $payload['title'] = $title === '' ? 'Chat ' . (string) ($profile['chat_id'] ?? '0') : $title;
 
             return $payload;
         }

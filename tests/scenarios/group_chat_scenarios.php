@@ -100,6 +100,26 @@ function runGroupChatScenarios(array $context): void {
     assertTrueValue(str_contains($groupMembers['body'], 'group_alice'), 'Экран участников должен показывать Alice');
     assertTrueValue(str_contains($groupMembers['body'], 'group_bob'), 'Экран участников должен показывать Bob');
     assertTrueValue(str_contains($groupMembers['body'], 'group_charlie'), 'Private profile должен быть доступен для добавления');
+    assertTrueValue(str_contains($groupMembers['body'], 'action="/group-chats/-100300/title"'), 'Экран группы должен показывать форму редактирования title');
+
+    $response = httpRequest('POST', $baseUrl . '/group-chats/-100300/title', formBody([
+        'title' => '',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(422, $response['status'], 'Пустой title группы должен возвращать 422');
+    assertTrueValue(str_contains($response['body'], 'Title должен быть непустой строкой'), 'Форма группы должна показывать ошибку title');
+
+    $response = httpRequest('POST', $baseUrl . '/group-chats/-100300/title', formBody([
+        'title' => 'QA Group',
+    ]), ['Content-Type: application/x-www-form-urlencoded']);
+    assertSameValue(303, $response['status'], 'Сохранение title группы должно редиректить');
+
+    $groupMembers = httpRequest('GET', $baseUrl . '/group-chats/-100300');
+    assertSameValue(200, $groupMembers['status'], 'Экран участников после изменения title должен открываться');
+    assertTrueValue(str_contains($groupMembers['body'], 'value="QA Group"'), 'Экран группы должен показывать сохраненный title');
+
+    $groups = httpRequest('GET', $baseUrl . '/group-chats');
+    assertSameValue(200, $groups['status'], 'Список group/supergroup chats после изменения title должен открываться');
+    assertTrueValue(str_contains($groups['body'], 'QA Group'), 'Список групп должен показывать отредактированный title');
 
     $response = httpRequest('POST', $baseUrl . '/group-chats/-100300/members', formBody([
         'profile_id' => '5',
@@ -151,6 +171,6 @@ function runGroupChatScenarios(array $context): void {
     assertSameValue(2, count($json['result']), 'Group bot должен получить два message update');
     assertSameValue(-100300, $json['result'][0]['message']['chat']['id'], 'Group update содержит общий chat_id');
     assertSameValue('group', $json['result'][0]['message']['chat']['type'], 'Group update содержит chat.type=group');
-    assertSameValue('Chat -100300', $json['result'][0]['message']['chat']['title'], 'Group update содержит title чата');
+    assertSameValue('QA Group', $json['result'][0]['message']['chat']['title'], 'Group update содержит отредактированный title чата');
     assertSameValue(3001, $json['result'][0]['message']['from']['id'], 'Первый group update содержит отправителя Alice');
 }

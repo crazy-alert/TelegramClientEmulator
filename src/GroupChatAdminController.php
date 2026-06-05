@@ -28,6 +28,11 @@ final readonly class GroupChatAdminController {
             return true;
         }
 
+        if ($method === 'POST' && preg_match('#^/group-chats/(-?\d+)/title$#', $path, $matches) === 1) {
+            $this->updateTitle((int) $matches[1]);
+            return true;
+        }
+
         if ($method === 'POST' && preg_match('#^/group-chats/(-?\d+)/members$#', $path, $matches) === 1) {
             $this->addMember((int) $matches[1]);
             return true;
@@ -73,6 +78,26 @@ final readonly class GroupChatAdminController {
             'availableProfiles' => $availableProfiles,
             'errors' => $errors,
         ]);
+    }
+
+    private function updateTitle(int $chatId): void {
+        $chat = $this->chats->findGroupByChatId($chatId);
+        $title = trim((string) ($_POST['title'] ?? ''));
+
+        if ($chat === null) {
+            Response::json(['ok' => false, 'error' => 'Групповой чат не найден'], 404);
+            return;
+        }
+
+        if ($title === '' || mb_strlen($title) > 128) {
+            http_response_code(422);
+            $this->show($chatId, ['title' => 'Title должен быть непустой строкой до 128 символов.']);
+            return;
+        }
+
+        $this->chats->updateGroupTitle($chatId, $title);
+
+        Response::redirect('/group-chats/' . $chatId);
     }
 
     private function addMember(int $chatId): void {

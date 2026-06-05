@@ -129,7 +129,7 @@ Webhook-доставка делает одну или несколько кор�
 
 Ограничения:
 
-- title группы пока генерируется как `Chat <chat_id>`;
+- title group/supergroup можно редактировать на `/group-chats/{chat_id}`; если title не задан, используется fallback `Chat <chat_id>`;
 - `/group-chats` позволяет добавлять и удалять участников через существующие profiles; роли, администраторы и service messages пока не моделируются;
 - import разрешает общий `chat_id` только для group/supergroup profiles.
 

@@ -87,6 +87,20 @@ final readonly class ChatRepository {
         ]);
     }
 
+    public function updateGroupTitle(int $chatId, string $title): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE chats
+            SET title = :title,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE chat_id = :chat_id
+                AND type IN (\'group\', \'supergroup\')'
+        );
+        $statement->execute([
+            'chat_id' => $chatId,
+            'title' => $title,
+        ]);
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

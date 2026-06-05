@@ -49,6 +49,10 @@ try {
     assertSameValue('group', (string) ($chat['type'] ?? ''), 'Group chat должен сохранять type');
     assertSameValue('Chat -100300', (string) ($chat['title'] ?? ''), 'Group chat должен иметь стабильный title');
 
+    $chats->updateGroupTitle(-100300, 'Local QA Group');
+    $chat = $chats->findByChatId(-100300);
+    assertSameValue('Local QA Group', (string) ($chat['title'] ?? ''), 'Group chat title должен редактироваться явно');
+
     $members = $chats->membersByChatId(-100300);
     assertSameValue(2, count($members), 'Group chat должен иметь двух участников');
     assertSameValue(3001, (int) $members[0]['user_id'], 'Первый участник group chat должен ссылаться на Alice profile');
@@ -64,6 +68,9 @@ try {
         'language_code' => 'ru',
         'enabled' => '1',
     ]);
+
+    $chat = $chats->findByChatId(-100300);
+    assertSameValue('Local QA Group', (string) ($chat['title'] ?? ''), 'Profile sync не должен перезаписывать ручной title группы');
 
     assertSameValue(1, count($chats->membersByChatId(-100300)), 'При смене chat_id старый group chat теряет участника');
     assertSameValue(1, count($chats->membersByChatId(-100301)), 'При смене chat_id новый supergroup chat получает участника');

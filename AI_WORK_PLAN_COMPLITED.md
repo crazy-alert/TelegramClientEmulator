@@ -839,3 +839,27 @@
 - [x] Добавить правило K&R в AGENTS.md
 - [x] Исправить все PHP-файлы на стиль K&R
 - [x] Коммит 8e2f552 и пуш
+
+## Group/supergroup title и история (2026-06-06)
+
+# Активный план работы
+
+## Активная задача
+
+Файл: `.aitasks/001-group-title-history.md`
+
+Цель: сделать явное редактирование title group/supergroup чата и сохранить историю группы по `bot_id + chat_id`.
+
+Чеклист:
+
+- [in_progress] Добавить обновление title в `ChatRepository` и защитить ручной title от перезаписи profile sync.
+- [pending] Добавить POST-маршрут и форму редактирования title в group chat UI.
+- [pending] Передавать актуальный `chat_title` в Telegram-like payload для group/supergroup updates.
+- [pending] Обновить group/repository tests.
+- [pending] Обновить docs/roadmap/context, удалить task-файл, запустить проверки.
+- [pending] Скопировать чеклист в `AI_WORK_PLAN_COMPLITED.md`, очистить план и сделать коммит.
+
+Риски и решения:
+
+- `ProfileRepository::syncChatMembership` сейчас может перезаписать title группы. Нужно сохранять существующий title через `COALESCE(NULLIF(chats.title, ''), excluded.title)`.
+- История уже читается по `bot_id + chat_id`; отдельная очистка истории группы не требуется для минимального scope этой задачи.
