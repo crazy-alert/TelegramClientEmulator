@@ -11,6 +11,8 @@ function runHttpSetupScenarios(array $context): void {
     assertSameValue(200, $dashboard['status'], 'Панель должна открываться');
     assertTrueValue(str_contains($dashboard['body'], 'Webhook delivery'), 'Панель должна показывать настройку webhook delivery');
     assertTrueValue(str_contains($dashboard['body'], 'value="10000"'), 'Панель должна показывать дефолтный webhook timeout');
+    assertTrueValue(str_contains($dashboard['body'], '<a href="/health"><code>/health</code></a>'), 'Панель должна содержать ссылку на raw health endpoint');
+    assertTrueValue(!str_contains($dashboard['body'], '>Health</a>'), 'Навигация не должна показывать отдельную кнопку Health');
 
     $json = assertJsonResponse(httpRequest('POST', $baseUrl . '/settings/webhook-timeout', formBody([
         'webhook_timeout_ms' => '999',

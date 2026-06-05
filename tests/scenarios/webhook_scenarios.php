@@ -125,6 +125,7 @@ function runWebhookScenarios(array $context): void {
 
     $inspector = httpRequest('GET', $baseUrl . '/request-inspector?token=' . rawurlencode($token) . '&method=sendMessage');
     assertSameValue(200, $inspector['status'], 'Request inspector должен открываться');
+    assertTrueValue(str_contains($inspector['body'], 'Что показывает Inspector'), 'Inspector должен объяснять пустое состояние логов');
     assertTrueValue(str_contains($inspector['body'], 'Bot API request/response'), 'Inspector должен показывать Bot API секцию');
     assertTrueValue(str_contains($inspector['body'], 'Webhook delivery request/response'), 'Inspector должен показывать webhook секцию');
     assertTrueValue(str_contains($inspector['body'], 'sendMessage'), 'Inspector должен фильтровать Bot API method');

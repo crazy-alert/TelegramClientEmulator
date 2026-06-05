@@ -10,7 +10,6 @@ $navItems = [
     ['href' => '/group-chats', 'label' => 'Группы'],
     ['href' => '/profiles', 'label' => 'Пользователи'],
     ['href' => '/delivery-attempts', 'label' => 'Webhook attempts'],
-    ['href' => '/health', 'label' => 'Health'],
 ];
 $isActiveNav = static function (string $href) use ($currentPath): bool {
     if ($href === '/') {

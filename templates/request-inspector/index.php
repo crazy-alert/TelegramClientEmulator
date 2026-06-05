@@ -11,6 +11,15 @@ $prettyJson = static function (?string $value): string {
 };
 ?>
 
+<section class="panel" style="margin-bottom: 18px;">
+    <h2>Что показывает Inspector</h2>
+    <p class="muted">
+        Inspector читает локальные HTTP JSONL-логи Bot API и webhook delivery attempts.
+        Если бот еще не делал запросы к локальному Bot API и webhook-доставок не было,
+        ниже будут только фильтры и пустые состояния.
+    </p>
+</section>
+
 <form class="editor" method="get" action="/request-inspector" style="margin-bottom: 18px;">
     <div class="grid">
         <label>

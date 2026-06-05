@@ -91,3 +91,22 @@
     </p>
     <p class="muted">База данных: <code><?= e($databasePath) ?></code></p>
 </section>
+
+<section class="panel" style="margin-top: 18px;">
+    <h2>Health</h2>
+    <p>
+        Сервис отвечает, хранилище подключено через SQLite.
+    </p>
+    <p class="muted">
+        Raw health endpoint остается доступен напрямую:
+        <a href="/health"><code>/health</code></a>.
+    </p>
+    <dl>
+        <dt>service</dt>
+        <dd><code>telegram-emulator</code></dd>
+        <dt>storage.driver</dt>
+        <dd><code>sqlite</code></dd>
+        <dt>storage.path</dt>
+        <dd><code><?= e($databasePath) ?></code></dd>
+    </dl>
+</section>
